@@ -1,0 +1,28 @@
+# Fill with actual values and ranges used in training
+seed: 12345
+optimizer: "adam"
+learning_rate:
+  chosen: 1e-3
+  search_range: [1e-4, 5e-3]
+batch_size:
+  chosen: 1024
+  search_range: [256, 2048]
+epochs:
+  chosen: 100
+early_stopping:
+  metric: "val_loss"
+  patience: 10
+regularization:
+  l2: 0.0
+  dropout: 0.0
+model_family: "CTGAN"
+ctgan:
+  generator_dims: [128, 128]
+  discriminator_dims: [128, 128]
+  pac: 10
+  embedding_dim: 128
+loss:
+  objective: "minimize E[...]"  # put the exact formal objective here
+constraints:
+  fairness: null  # e.g., equalized_odds <= 0.05
+  privacy: null   # e.g., epsilon: 3.0, delta: 1e-5

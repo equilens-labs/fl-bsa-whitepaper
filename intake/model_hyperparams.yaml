@@ -1,0 +1,101 @@
+model_family: CTGAN
+seed: 42
+training_protocol:
+  early_stopping: false
+  epochs: 100
+  notes: Branch-specific tuning used; no early stopping.
+branches:
+  amplification:
+    chosen:
+      batch_size: 500
+      cuda: false
+      discriminator_dim:
+      - 128
+      - 128
+      discriminator_lr: 0.0002
+      discriminator_steps: 1
+      embedding_dim: 64
+      epochs: 100
+      generator_dim:
+      - 128
+      - 128
+      generator_lr: 0.0002
+      pac: 10
+    search_ranges:
+      epochs:
+      - 50
+      - 300
+      batch_size:
+      - 128
+      - 1024
+      embedding_dim:
+      - 32
+      - 256
+      generator_lr:
+      - 0.0001
+      - 0.001
+      discriminator_lr:
+      - 0.0001
+      - 0.001
+      generator_dim:
+      - - 64
+        - 64
+      - - 128
+        - 128
+      - - 256
+        - 256
+      discriminator_dim:
+      - - 64
+        - 64
+      - - 128
+        - 128
+      - - 256
+        - 256
+      pac:
+      - 1
+      - 10
+  intrinsic:
+    chosen:
+      batch_size: 500
+      cuda: false
+      discriminator_dim:
+      - 128
+      - 128
+      discriminator_lr: 0.0002
+      discriminator_steps: 1
+      embedding_dim: 64
+      epochs: 100
+      generator_dim:
+      - 128
+      - 128
+      generator_lr: 0.0002
+      pac: 10
+    search_ranges:
+      epochs:
+      - 100
+      - 300
+      batch_size:
+      - 128
+      - 1024
+      embedding_dim:
+      - 32
+      - 128
+      generator_lr:
+      - 0.0001
+      - 0.001
+      discriminator_lr:
+      - 0.0001
+      - 0.001
+      generator_dim:
+      - - 64
+        - 64
+      - - 128
+        - 128
+      discriminator_dim:
+      - - 64
+        - 64
+      - - 128
+        - 128
+      pac:
+      - 1
+      - 10

@@ -1,0 +1,5 @@
+run_id,split,model_id,attribute,group,TP,FP,TN,FN
+# Provide per-run confusion-matrix counts by attribute group.
+# Requires true label column and predicted decisions.
+# Example:
+# 7d5c...,synthetic,generator_...,gender,male,123,45,678,90

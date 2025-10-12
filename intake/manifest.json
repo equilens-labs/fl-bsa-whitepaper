@@ -1,0 +1,62 @@
+{
+  "schema_version": "v1",
+  "generated_at": "2025-10-07T16:00:30.137185Z",
+  "source": "/data/projects/fl-bsa/artifacts/gold/20251007T101329Z",
+  "runs": [
+    {
+      "run_id": "fe36ee5c-6e80-46a6-959f-636e1a4e9061",
+      "scenario": "balanced",
+      "dataset_hash": "sha256:a1e5092dc204fa780587e7502a0519f3655157f6039cf47256f2bc4f9d7758ee",
+      "code_commit": "bd6c6337812fec5942c06fd4718ff769e1347b75",
+      "container_digest": "not_available",
+      "start_ts": "2025-10-07T10:13:27.233644+00:00",
+      "end_ts": "2025-10-07T10:13:49.490444+00:00",
+      "software_version": "0.1.0",
+      "rng_seed": 42
+    },
+    {
+      "run_id": "7d5c6c30-fb8e-4d48-ade4-0756b6500cf0",
+      "scenario": "gender_bias",
+      "dataset_hash": "sha256:97b07673f2260c2fdef7713ac156029ec1651f4546a27167085ca844001a9491",
+      "code_commit": "bd6c6337812fec5942c06fd4718ff769e1347b75",
+      "container_digest": "not_available",
+      "start_ts": "2025-10-07T10:13:50.819756+00:00",
+      "end_ts": "2025-10-07T10:14:10.879656+00:00",
+      "software_version": "0.1.0",
+      "rng_seed": 42
+    },
+    {
+      "run_id": "6bcc37db-56ab-4ed2-87eb-65aa77d34f98",
+      "scenario": "outliers",
+      "dataset_hash": "sha256:76b50ea1ede1b4ba32fa7e8c1ec16bba084460207d34abb9e5b35a50e274fb7e",
+      "code_commit": "bd6c6337812fec5942c06fd4718ff769e1347b75",
+      "container_digest": "not_available",
+      "start_ts": "2025-10-07T10:14:11.470122+00:00",
+      "end_ts": "2025-10-07T10:14:30.032222+00:00",
+      "software_version": "0.1.0",
+      "rng_seed": 42
+    },
+    {
+      "run_id": "930cfaab-7a11-45bb-ae99-779d1f3e7cc8",
+      "scenario": "security",
+      "dataset_hash": "sha256:f6758cbe494017c9d369bd5110d5fc771e87448b14b87878eeba6a38f5932a6f",
+      "code_commit": "bd6c6337812fec5942c06fd4718ff769e1347b75",
+      "container_digest": "not_available",
+      "start_ts": "2025-10-07T10:14:30.904151+00:00",
+      "end_ts": "2025-10-07T10:14:49.426951+00:00",
+      "software_version": "0.1.0",
+      "rng_seed": 42
+    },
+    {
+      "run_id": "a80b1ad2-64b3-46ac-8964-62fa340163a6",
+      "scenario": "evidence_tamper",
+      "dataset_hash": "sha256:79270ae6195ca4b3b925a2010c0f2daca9e4e5ff8bff838c053a604ec478d2c2",
+      "code_commit": "bd6c6337812fec5942c06fd4718ff769e1347b75",
+      "container_digest": "not_available",
+      "start_ts": "2025-10-07T10:14:50.874824+00:00",
+      "end_ts": "2025-10-07T10:15:08.395224+00:00",
+      "software_version": "0.1.0",
+      "rng_seed": 42
+    }
+  ]
+}

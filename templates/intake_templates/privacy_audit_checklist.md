@@ -1,0 +1,12 @@
+# Privacy & Security Audit Checklist (fill Y/N with notes)
+
+- [ ] Data egress policy documented (notes: )
+- [ ] Key management documented (KMS/HSM) (notes: )
+- [ ] SBOM available for all containers (notes: )
+- [ ] Vulnerability scans (tool, date, findings) (notes: )
+- [ ] Patching policy & cadence (notes: )
+- [ ] Membership inference test results (notes: )
+- [ ] Attribute inference test results (notes: )
+- [ ] Differential privacy accounting (ε, δ) (notes: )
+- [ ] DR/backup & recovery objectives (RPO/RTO) (notes: )
+- [ ] Monitoring & SLOs (notes: )

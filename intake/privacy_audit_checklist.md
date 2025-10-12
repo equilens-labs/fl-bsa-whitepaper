@@ -1,0 +1,12 @@
+# Privacy & Security Audit Checklist (fill Y/N with notes)
+
+- [x] Data egress policy documented (notes: see docs/SECURITY-CHECKLIST.md; docs/gold/p3-implementation-summary.md)
+- [x] Key management documented (KMS/HSM) (notes: see docs/SECURITY-CHECKLIST.md; docs/gold/p3-implementation-summary.md)
+- [x] SBOM available for containers (notes: artifacts/licenses/attributions.txt) (notes: see docs/SECURITY-CHECKLIST.md; docs/gold/p3-implementation-summary.md)
+- [x] Vulnerability scans (tool, date, findings) (notes: CI daily CVE scans; see docs/_CURRENT_STATE.md) (notes: see docs/SECURITY-CHECKLIST.md; docs/gold/p3-implementation-summary.md)
+- [ ] Patching policy & cadence (notes: see docs/SECURITY-CHECKLIST.md; docs/gold/p3-implementation-summary.md)
+- [ ] Membership inference test results (notes: see docs/SECURITY-CHECKLIST.md; docs/gold/p3-implementation-summary.md)
+- [ ] Attribute inference test results (notes: see docs/SECURITY-CHECKLIST.md; docs/gold/p3-implementation-summary.md)
+- [ ] Differential privacy accounting (ε, δ) (notes: see docs/SECURITY-CHECKLIST.md; docs/gold/p3-implementation-summary.md)
+- [ ] DR/backup & recovery objectives (RPO/RTO) (notes: see docs/SECURITY-CHECKLIST.md; docs/gold/p3-implementation-summary.md)
+- [ ] Monitoring & SLOs (notes: see docs/SECURITY-CHECKLIST.md; docs/gold/p3-implementation-summary.md)

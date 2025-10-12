@@ -1,0 +1,10 @@
+{
+  "run_id": "YYYYMMDD-##",
+  "dataset_hash": "sha256:\u2026",
+  "code_commit": "abcdef1",
+  "container_digest": "sha256:\u2026",
+  "rng_seed": 12345,
+  "hardware": "CPU/GPU details",
+  "start_ts": "\u2026",
+  "end_ts": "\u2026"
+}

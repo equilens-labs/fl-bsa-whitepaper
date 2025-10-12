@@ -1,0 +1,5 @@
+role,name,org,email,responsibility
+Model Risk (MRM),TBD,,,Validation & model governance
+Compliance,TBD,,,Regulatory mapping & attestations
+Security,TBD,,,"SBOM/CVE, infra, egress"
+Legal,TBD,,,"Licenses/IP, adverse-action language"

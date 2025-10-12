@@ -1,0 +1,5 @@
+run_id,split,model_id,bin_lower,bin_upper,n,avg_score,empirical_positive_rate
+# Provide per-run calibration binning for ECE / reliability diagrams.
+# Requires probability scores per sample and true labels.
+# Example:
+# fe36...,synthetic,generator_...,0.0,0.1,500,0.05,0.048

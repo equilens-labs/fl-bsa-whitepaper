@@ -1,0 +1,16 @@
+{
+  "schema_version": "v1",
+  "run": {
+    "run_id": "7d5c6c30-fb8e-4d48-ade4-0756b6500cf0",
+    "scenario": "gender_bias",
+    "dataset_hash": "sha256:97b07673f2260c2fdef7713ac156029ec1651f4546a27167085ca844001a9491",
+    "code_commit": "bd6c6337812fec5942c06fd4718ff769e1347b75",
+    "container_digest": "not_available",
+    "start_ts": "2025-10-07T10:13:50.819756+00:00",
+    "end_ts": "2025-10-07T10:14:10.879656+00:00",
+    "software_version": "0.1.0",
+    "rng_seed": 42
+  },
+  "generated_at": "2025-10-07T16:29:08.506741Z",
+  "source": "/data/projects/fl-bsa/artifacts/gold/20251007T101329Z"
+}

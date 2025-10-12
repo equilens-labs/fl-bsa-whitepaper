@@ -1,0 +1,6 @@
+dataset_id,split,n,positive_rate,timeframe_start,timeframe_end,geography,notes
+balanced,synthetic,2000,0.5655,,,,gold_run=20251007T101329Z; status=pass; di=0.992888
+gender_bias,synthetic,2000,0.475,,,,gold_run=20251007T101329Z; status=fail; di=0.690800
+outliers,synthetic,2000,0.5445,,,,gold_run=20251007T101329Z; status=pass; di=1.002783
+security,synthetic,2000,0.564,,,,gold_run=20251007T101329Z; status=pass; di=1.008855
+evidence_tamper,synthetic,2000,0.574,,,,gold_run=20251007T101329Z; status=pass; di=1.008814

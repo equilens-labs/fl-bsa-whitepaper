@@ -1,0 +1,7 @@
+# Ignore editor/OS cruft
+.DS_Store
+Thumbs.db
+
+# Ignore generated outputs that should not be versioned
+*.tmp
+*.log

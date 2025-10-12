@@ -1,0 +1,7 @@
+framework,requirement,control,evidence,owner,status,notes
+ECOA/Reg B,Disparate impact (4/5ths rule),Automated DI/AIR testing; thresholds & alerts,Gold run metrics_api.json; metrics_long.csv; report.pdf,Compliance,in-place,"Gender bias scenario intentionally fails as stress test; security scenario race AIR ≈ 0.78 (FAIL, remediation planned)"
+EU AI Act (Art.10),Representative data; bias testing; documentation,Dual-branch testing; PDF templates; evidence bundle,report.pdf; evidence.zip; SAP.md; runs.json,Compliance,in-place,Pre-production gate
+FCA Consumer Duty,Avoid foreseeable harm; diverse customer outcomes,Protected groups analysis; monitoring SLOs,metrics_long.csv; summary.json,Compliance,in-place,
+SR 11-7,Model risk governance; validation,MRM sign-off; BVH contracts; certificate chain,synthetic_validation_certificate.json; COMPLIANCE-TEST-SUITE,MRM,in-place,
+NIST AI RMF,Risk management; measurement; monitoring,Continuous metrics; determinism gates; perf gates,Makefile gates; docs/_CURRENT_STATE.md,MRM,in-place,
+ISO/IEC 23894,AI risk management processes,Evidence bundles; SBOM/CVE process,privacy_audit_checklist.md; licenses_inventory.csv,Security,in-place,
