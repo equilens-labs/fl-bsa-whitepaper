@@ -1,0 +1,9 @@
+
+\section{Model and Algorithm}
+We specify models via loss $\mathcal{L}(\theta)$, with optional fairness/privacy constraints $c(\theta)\le 0$.
+\begin{equation}
+\min_{\theta}\; \mathbb{E}\big[\ell(Y, f_\theta(X))\big] \quad \text{s.t.}\quad
+c_{\mathrm{EO}}(\theta)\le \varepsilon_{\mathrm{EO}}\,,\quad
+c_{\mathrm{DP}}(\theta)\le \varepsilon_{\mathrm{DP}}.
+\end{equation}
+Hyperparameters and seeds are documented in the repository (e.g., \texttt{model\_hyperparams.yaml}).

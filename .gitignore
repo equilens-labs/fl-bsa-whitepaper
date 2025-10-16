@@ -5,3 +5,18 @@ Thumbs.db
 # Ignore generated outputs that should not be versioned
 *.tmp
 *.log
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+*.toc
+*.synctex.gz
+main.pdf
+
+# Local build directories
+dist/
+out/

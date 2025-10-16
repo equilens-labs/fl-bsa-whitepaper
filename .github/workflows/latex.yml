@@ -1,0 +1,57 @@
+
+name: latex-build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  release:
+    types: [ published ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas pyyaml
+      - name: Generate TeX macros from metrics (tolerate missing intake/)
+        run: |
+          python3 scripts/gen_tex_macros_from_metrics.py --metrics intake/metrics_long.csv --sap config/sap.yaml --outdir includes || true
+      - name: Compile LaTeX
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: main.tex
+          latexmk_use_xelatex: false
+      - name: Prepare artifacts directory
+        run: |
+          mkdir -p dist
+          cp main.pdf dist/whitepaper.pdf
+      - name: Upload PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: whitepaper-pdf
+          path: main.pdf
+      - name: Package arXiv source
+        run: |
+          bash scripts/arxiv_pack.sh
+      - name: Upload arXiv source
+        uses: actions/upload-artifact@v4
+        with:
+          name: arxiv-source
+          path: dist/whitepaper_arxiv_source.zip
+      - name: Attach artifacts to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/whitepaper.pdf
+            dist/whitepaper_arxiv_source.zip

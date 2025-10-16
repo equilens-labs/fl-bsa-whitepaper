@@ -1,0 +1,128 @@
+name: pull-wp-intake
+
+on:
+  # Cross-repo automation strategies:
+  # 1) repository_dispatch from fl-bsa (preferred) — see docs/ci_intake.md
+  # 2) scheduled pull (daily)
+  # 3) manual dispatch with inputs
+  repository_dispatch:
+    types: [wp-intake-ready]
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      producer_repo:
+        description: "owner/repo of producer (fl-bsa)"
+        required: false
+        default: "equilens-labs/fl-bsa"
+      artifact_name:
+        description: "artifact name to download"
+        required: false
+        default: "wp-intake"
+      workflow_file:
+        description: "producer workflow file (for manual fetch)"
+        required: false
+        default: "ci-comprehensive.yml"
+      branch:
+        description: "producer branch (manual fetch)"
+        required: false
+        default: "main"
+
+jobs:
+  fetch-build:
+    if: |
+      github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' ||
+      github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download wp-intake (from workflow_run)
+        if: github.event_name == 'workflow_run'
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          repo: ${{ github.event.workflow_run.repository.full_name }}
+          run_id: ${{ github.event.workflow_run.id }}
+          name: wp-intake
+          path: wp-intake
+          if_no_artifact_found: warn
+          github_token: ${{ secrets.PRODUCER_TOKEN || github.token }}
+
+      - name: Download wp-intake (manual/scheduled/dispatch)
+        if: github.event_name != 'workflow_run'
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          repo: ${{ github.event_name == 'workflow_dispatch' && inputs.producer_repo || github.event_name == 'repository_dispatch' && github.event.client_payload.producer_repo || 'equilens-labs/fl-bsa' }}
+          workflow: ${{ github.event_name == 'workflow_dispatch' && inputs.workflow_file || github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'ci-comprehensive.yml' }}
+          workflow_conclusion: success
+          branch: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.event_name == 'repository_dispatch' && github.event.client_payload.branch || 'main' }}
+          name: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_name || github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_name || 'wp-intake' }}
+          path: wp-intake
+          if_no_artifact_found: warn
+          github_token: ${{ secrets.PRODUCER_TOKEN || github.token }}
+
+      - name: Show intake index (if any)
+        run: |
+          if [ -f wp-intake/index.json ]; then
+            echo "Found wp-intake/index.json";
+            cat wp-intake/index.json || true;
+          else
+            echo "No wp-intake/index.json found — skipping copy.";
+          fi
+
+      - name: Copy latest pipeline files into repo (intake/ & provenance/)
+        if: hashFiles('wp-intake/index.json') != ''
+        run: |
+          python3 - <<'PY'
+          import json, shutil, os
+          from pathlib import Path
+          idxp = Path('wp-intake/index.json')
+          data = json.loads(idxp.read_text())
+          pipes = data.get('pipelines') or []
+          if not pipes:
+            raise SystemExit('No pipelines in index.json')
+          p = pipes[-1]
+          pid = p.get('pipeline_id')
+          pdir = Path('wp-intake')/pid
+          dest_intake = Path('intake'); dest_intake.mkdir(exist_ok=True)
+          for name in ['selection_rates.csv','metrics_long.csv','group_confusion.csv','metrics.json']:
+            src = pdir/name
+            if src.exists():
+              shutil.copy(src, dest_intake/src.name)
+          prov_src = pdir/'provenance'/'manifest.json'
+          if prov_src.exists():
+            Path('provenance').mkdir(exist_ok=True)
+            shutil.copy(prov_src, 'provenance/manifest.json')
+          print('Copied from pipeline:', pid)
+          PY
+
+      - name: Generate TeX macros from metrics (tolerant)
+        run: |
+          python3 scripts/gen_tex_macros_from_metrics.py --metrics intake/metrics_long.csv --sap config/sap.yaml --outdir includes || true
+
+      - name: Compile LaTeX
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: main.tex
+          latexmk_use_xelatex: false
+
+      - name: Upload PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: whitepaper-pdf-from-intake
+          path: main.pdf
+
+      - name: Package arXiv source
+        run: |
+          bash scripts/arxiv_pack.sh
+
+      - name: Upload arXiv source
+        uses: actions/upload-artifact@v4
+        with:
+          name: arxiv-source-from-intake
+          path: dist/whitepaper_arxiv_source.zip

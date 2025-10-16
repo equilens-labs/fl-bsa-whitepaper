@@ -1,0 +1,10 @@
+{
+  "run_id": "YYYYMMDD-HHMMSS",
+  "dataset_hash": "sha256:not_available",
+  "code_commit": "not_available",
+  "container_digest": "not_available",
+  "rng_seed": 42,
+  "hardware": "not_recorded",
+  "start_ts": "not_recorded",
+  "end_ts": "not_recorded"
+}

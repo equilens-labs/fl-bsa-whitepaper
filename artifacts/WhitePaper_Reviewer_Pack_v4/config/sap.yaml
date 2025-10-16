@@ -1,0 +1,12 @@
+alpha: 0.05
+
+thresholds:
+  air_min: 0.8
+  tpr_gap_max: 0.05
+  fpr_gap_max: 0.05
+  ece_max: 0.02
+
+bootstrap:
+  B: 2000
+  seed: 42
+  method: percentile

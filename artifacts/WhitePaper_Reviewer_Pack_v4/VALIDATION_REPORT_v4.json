@@ -1,0 +1,10 @@
+{
+  "checks": [],
+  "result": "FAIL",
+  "reasons": [
+    "Missing global metrics in intake/metrics_long.csv: ['air', 'ece', 'fpr_gap', 'tpr_gap']",
+    "Manifest container_digest is placeholder (must be repo@sha256:\u2026)",
+    "Manifest dataset_hash is placeholder (must be sha256:<hash>)",
+    "intake/regulatory_matrix.csv is empty (no in-scope entries)."
+  ]
+}

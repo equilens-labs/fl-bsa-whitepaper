@@ -1,0 +1,20 @@
+
+\section{Problem and Estimands}
+Let $A$ be a protected attribute with values $g\in\mathcal{A}$, $Y\in\{0,1\}$ a label, $S\in[0,1]$ a score, and $\hat{Y}=\mathbf{1}[S\ge t]$ a decision.
+
+\paragraph{Adverse Impact Ratio (AIR).}
+\begin{equation}
+\mathrm{AIR} \;=\; \min_{g\in\mathcal{A}} \frac{\Pr(\hat{Y}=1\mid A=g)}{\Pr(\hat{Y}=1\mid A=g^\star)}\,,\quad
+g^\star=\arg\max_g \Pr(\hat{Y}=1\mid A=g).
+\end{equation}
+
+\paragraph{Equalized-Odds.}
+$\mathrm{TPR}_g=\Pr(\hat{Y}=1\!\mid\!Y=1,A=g)$,\quad
+$\mathrm{FPR}_g=\Pr(\hat{Y}=1\!\mid\!Y=0,A=g)$.
+Gaps: $\mathrm{TPR\_gap}=\max_g \mathrm{TPR}_g-\min_g \mathrm{TPR}_g$ and similarly for FPR.
+
+\paragraph{Calibration (ECE).}
+For bins $B_k$ with counts $n_k$, mean score $\bar s_k$, and empirical positive rate $\hat p_k$:
+\begin{equation}
+\mathrm{ECE} \;=\; \sum_k \frac{n_k}{\sum_j n_j} \,\lvert \hat p_k - \bar s_k\rvert.
+\end{equation}

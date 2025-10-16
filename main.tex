@@ -1,0 +1,58 @@
+
+\documentclass[11pt]{article}
+
+% --- Packages (arXiv-friendly) ---
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage[capitalise,noabbrev]{cleveref}
+\usepackage[numbers]{natbib}
+\usepackage{url}
+\usepackage{authblk}
+
+% --- Includes ---
+\input{includes/macros}
+\input{includes/metrics_macros}
+
+% --- Title ---
+\title{\papertitle}
+\author[ ]{First Last$^{1}$ \quad Second Last$^{2}$}
+\affil[1]{Organization/Team 1}
+\affil[2]{Organization/Team 2}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We present a regulator-ready, statistically rigorous evaluation of \sysname. The paper formalizes estimands (AIR, Equalized Odds, ECE), describes data-privacy boundaries, and reports uncertainty-aware results. This draft compiles cleanly with partial metrics; tables auto-populate when \texttt{intake/metrics_long.csv} and \texttt{provenance/manifest.json} are present.
+\end{abstract}
+
+\input{sections/01_executive_summary}
+\input{sections/02_problem_estimands}
+\input{sections/03_methods}
+\input{sections/04_model_algorithm}
+\input{sections/05_evaluation}
+\input{sections/06_results}
+\input{sections/07_compliance}
+\input{sections/08_security_privacy}
+\input{sections/09_reproducibility}
+\input{sections/10_limitations_monitoring}
+
+\bibliographystyle{plainnat}
+\bibliography{bib/references}
+
+\appendix
+\input{sections/appendix_a_sap}
+\input{sections/appendix_b_metrics_defs}
+
+\end{document}

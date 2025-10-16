@@ -1,0 +1,24 @@
+
+% ---------- Global macros & style toggles ----------
+\newif\ifdraft
+\draftfalse % set \drafttrue to watermark
+
+% Typography helpers
+\newcommand{\sysname}{\textsc{fl-bsa}\xspace}
+\newcommand{\papertitle}{Synthetic Audit & Fairness Evaluation for \sysname}
+
+% Threshold macros (defaults; will be overwritten by includes/metrics_macros.tex if generated)
+\newcommand{\AIRThreshold}{0.80}
+\newcommand{\TprGapThreshold}{0.05}
+\newcommand{\FprGapThreshold}{0.05}
+\newcommand{\EceThreshold}{0.02}
+
+% Placeholder metric summaries (overwritten by generator)
+\newcommand{\MinAIR}{TBD}
+\newcommand{\NumAIRViolations}{TBD}
+\newcommand{\MaxECE}{TBD}
+\newcommand{\NumTPRGapViol}{TBD}
+\newcommand{\NumFPRGapViol}{TBD}
+
+% Utility for TBD notes (easy to search/strip)
+\newcommand{\tbd}[1]{\textcolor{red}{[\textsf{TBD}: #1]}}

@@ -1,0 +1,7 @@
+
+\section{Methods}
+\textbf{Data scope (aggregated only).} We use split-level aggregates: selection counts and rates, per-group confusion counts, and calibration bins. No row-level data is required.
+
+\textbf{Estimators and uncertainty.} Proportions use Wilson 95\% CIs. AIR and EO gaps use parametric bootstrap (resamples $B$ from SAP). ECE uses bootstrap over calibration bins.
+
+\textbf{Multiplicity.} False discovery rate controlled by Benjamini--Hochberg (e.g., $q=0.10$) across metrics and slices.
