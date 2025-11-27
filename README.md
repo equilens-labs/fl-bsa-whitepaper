@@ -1,35 +1,145 @@
 # FL-BSA Whitepaper Evidence Repository
 
-This repository houses the evidence, reviewer packs, and publication assets that back the FL-BSA whitepaper.
+This repository houses the evidence, reviewer packs, and publication assets for the FL-BSA (Fair-Lending Bias-Simulation Appliance) regulatory whitepaper.
 
-## Repo Map
+---
 
-- `artifacts/WhitePaper_Reviewer_Pack_v4/` — working copy of the latest reviewer bundle (metrics, provenance, privacy evidence).
-- `artifacts/archive/` — historical bundles and reference zips.
-- `intake/` — source evidence from the most recent reviewer drop (datasets, manifests, checklists).
-- `config/sap.yaml` — statistical analysis plan thresholds shared by tooling and LaTeX macros.
-- `docs/` — narrative docs (SAP, RFI, compiled intake summary) plus task notes.
-- `templates/` — starter templates for future intake refresh cycles.
-- `scripts/` — LaTeX helper scripts (metric macro generation, arXiv packaging).
-- `sections/`, `includes/`, `main.tex`, `Makefile`, `.latexmkrc`, `bib/` — publication-ready LaTeX project.
-- `ops/` — operational runbooks (bundle spec, strict-acceptance patch, bundling helper script).
-- `tasks/` — task blocks and resync notes delivered with reviewer packs.
+## Quick Start
 
-## Updating Evidence & Bundles
+### Build PDF from Existing Metrics
+```bash
+# Generate LaTeX macros from current intake data
+make macros
 
-1. Generate fresh aggregated metrics and manifests from the main `fl-bsa` repo.
-2. Drop the results into `intake/` (metrics, manifests, regulatory matrix, privacy evidence).
-3. Run the bundling helper (`ops/runbook_bundle_v4.sh`) or `python3 scripts/compute_metrics.py ...` once the metric pipeline lands to rebuild `artifacts/WhitePaper_Reviewer_Pack_v4/`.
-4. Ensure provenance (`provenance/manifest.json`) carries real dataset hashes and container digests.
-5. Run `make verify` (once the acceptance tooling is present) followed by `make bundle` to emit `out/WhitePaper_Reviewer_Pack_v4.zip`.
+# Build the whitepaper PDF
+make pdf
+# Output: dist/whitepaper.pdf
 
-## Publishing the Whitepaper
+# Package for arXiv submission
+make arxiv
+# Output: dist/whitepaper_arxiv_source.zip
+```
 
-- Generate LaTeX macros from the latest metrics: `python3 scripts/gen_tex_macros_from_metrics.py --metrics intake/metrics_long.csv --sap config/sap.yaml --outdir includes`.
-- Build the PDF locally: `make pdf` (outputs `dist/whitepaper.pdf`).
-- Package an arXiv-ready source bundle: `make arxiv` (produces `dist/whitepaper_arxiv_source.zip`).
-- GitHub Actions (`.github/workflows/latex.yml`) mirrors these steps on every push/PR and attaches both the PDF and arXiv bundle to published releases.
+### Update Evidence from fl-bsa
+```bash
+# 1. In fl-bsa repo, generate fresh evidence bundle
+cd /path/to/fl-bsa
+make gate-wp
+# Produces: artifacts/WhitePaper_Reviewer_Pack_v4.zip
+
+# 2. In this repo, import the bundle
+unzip /path/to/WhitePaper_Reviewer_Pack_v4.zip -d /tmp/bundle
+cp /tmp/bundle/intake/*.csv intake/
+cp /tmp/bundle/provenance/manifest.json intake/manifest.json
+
+# 3. Rebuild PDF with updated metrics
+make pdf
+```
+
+---
+
+## Repository Structure
+
+```
+fl-bsa-whitepaper/
+├── main.tex                    # LaTeX entry point
+├── sections/                   # Document sections (12 files)
+├── includes/                   # Macros and auto-generated tables
+├── bib/                        # Bibliography (references.bib)
+├── intake/                     # Evidence data (CSVs, manifests)
+├── config/                     # SAP thresholds (sap.yaml)
+├── scripts/                    # Build helpers
+├── docs/                       # Detailed specifications
+├── ops/                        # Bundle spec
+├── tasks/                      # Task documentation
+├── artifacts/                  # Reviewer bundles (current + archive)
+├── templates/                  # Intake templates for future cycles
+├── Makefile                    # Build targets
+└── .github/workflows/          # CI (LaTeX build, intake pull)
+```
+
+---
+
+## Workflow
+
+### Evidence Generation (Producer: fl-bsa)
+
+The `fl-bsa` repository contains the FL-BSA runtime and the `gate-wp` target that generates deterministic evidence bundles:
+
+```bash
+make gate-wp
+```
+
+This:
+1. Starts FL-BSA services (API, Worker, Redis)
+2. Generates a seeded synthetic dataset
+3. Runs full bias analysis pipeline
+4. Computes fairness metrics (AIR, EO, ECE) with 95% CIs
+5. Captures provenance (dataset hash, container digests, seeds)
+6. Validates and packages: `WhitePaper_Reviewer_Pack_v4.zip`
+
+### Publication (This Repo)
+
+1. Import bundle to `intake/`
+2. Run `make pdf` to compile LaTeX with updated metrics
+3. CI automatically builds on push/PR
+
+---
+
+## Key Files
+
+| Location | Description |
+|----------|-------------|
+| `intake/metrics_long.csv` | Fairness metrics with confidence intervals |
+| `intake/manifest.json` | Provenance (hashes, commits, seeds) |
+| `config/sap.yaml` | Statistical Analysis Plan thresholds |
+| `includes/metrics_macros.tex` | Auto-generated LaTeX macros |
+| `dist/whitepaper.pdf` | Compiled whitepaper |
+
+---
+
+## SAP Thresholds
+
+Defined in `config/sap.yaml`:
+- **AIR** ≥ 0.80 (four-fifths rule)
+- **TPR gap** ≤ 0.05 (equalized odds)
+- **FPR gap** ≤ 0.05 (equalized odds)
+- **ECE** ≤ 0.02 (calibration error)
+
+---
+
+## CI/CD
+
+### GitHub Actions Workflows
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| `latex.yml` | push, PR, release | Build PDF and arXiv bundle |
+| `pull-wp-intake.yml` | dispatch, schedule | (Future) Pull intake from producer |
+
+On release, the CI attaches `whitepaper.pdf` and `whitepaper_arxiv_source.zip` to the GitHub release.
+
+---
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| `docs/data_pipeline_spec.md` | Evidence pipeline architecture |
+| `docs/SAP.md` | Statistical Analysis Plan narrative |
+| `ops/Bundle_Spec_v4.md` | Reviewer bundle format spec |
+| `tasks/Intake.md` | Bundle consumption instructions |
+| `tasks/LaTeX-Structure.md` | LaTeX project structure |
+
+---
 
 ## Provenance
 
-The assets in this repo originated from `chore/ci-stabilize-pr-path` (`local-uncommitted-whitepaper`) and were separated from the runtime `fl-bsa` repository to keep operational evidence and publication materials independent.
+Evidence bundles include full reproducibility metadata:
+- **Dataset hash**: SHA256 of input data
+- **Code commit**: Git SHA of producer code
+- **Container digests**: Exact image versions
+- **RNG seeds**: All random number generator seeds
+- **Timestamps**: Start and end times
+
+This ensures any evidence can be reproduced exactly.
