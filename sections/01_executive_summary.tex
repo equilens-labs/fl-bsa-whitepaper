@@ -1,7 +1,14 @@
 
 \section{Executive Summary}
-\textbf{Purpose.} Demonstrate that the system is fit-for-purpose, fair, private, secure, and reproducible under thresholds in \texttt{config/sap.yaml}: AIR $\ge \AIRThreshold$, EO gaps $\le \TprGapThreshold/\FprGapThreshold$, ECE $\le \EceThreshold$.
 
-\textbf{Snapshot (populates from evidence).}
-Minimum AIR observed: \MinAIR. ECE (max across splits): \MaxECE. EO gap violations --- TPR: \NumTPRGapViol, FPR: \NumFPRGapViol. 
-If these read \texttt{TBD}, the metrics macros have not been generated yet.
+\subsection{Scope and Positioning}
+This whitepaper documents a \textit{synthetic audit scenario} (\ScenarioLabel{}) and the evidence artefacts generated (report, metrics manifest, certificate links). It provides metrics and documentation building blocks aligned with the Equal Credit Opportunity Act (\ECOA) and Regulation B (\RegB) \citep{ecoa_regb}, the \EUAIAct{} Article 10 data-governance requirements \citep{eu_ai_act}, and related frameworks. It is not a legal opinion and does not constitute a complete compliance submission for any specific deployment.
+
+\subsection{Purpose}
+The purpose of this whitepaper is twofold. First, we demonstrate that the system is fit-for-purpose, fair, private, secure, and reproducible. Second, we assess performance against pre-specified fairness and calibration thresholds: AIR $\ge \AIRThreshold$, equalised-odds gaps $\le \TprGapThreshold/\FprGapThreshold$, and ECE $\le \EceThreshold$.\footnote{These thresholds are specified in the SAP for this synthetic audit scenario; see Appendix~A.}
+
+\subsection{Run Status}
+Under the SAP for this run, thresholds are AIR $\ge \AirMin$, equalised-odds gaps $\le \EoGapMax$, and ECE $\le \EceMax$. For the synthetic audit scenario reported here, the number of AIR violations is \NumAIRViolations, the numbers of EO-gap violations are TPR: \NumTPRGapViol{} and FPR: \NumFPRGapViol, and the ECE status is \ifnum\EceEvaluated>0 ECE violations \NumECEViolations\else not evaluated (compliance unknown)\fi.
+
+\subsection{Snapshot (Populates from Evidence)}
+For this run, the minimum AIR observed is \MinAIR; the EO gap violations are TPR: \NumTPRGapViol{} and FPR: \NumFPRGapViol; and \ifnum\EceEvaluated>0 the maximum ECE across splits is \MaxECE\else ECE was not evaluated (no probability scores or calibration bins were available; compliance unknown)\fi. If any of these values read \texttt{TBD}, the metrics macros have not yet been generated.

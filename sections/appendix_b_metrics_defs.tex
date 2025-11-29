@@ -1,7 +1,9 @@
 
 \section{Metric Definitions (Quick Reference)}
 \begin{itemize}[leftmargin=*]
-\item \textbf{AIR}: $\min_g \Pr(\hat{Y}=1\mid A=g) / \max_g \Pr(\hat{Y}=1\mid A=g)$.
-\item \textbf{TPR/FPR gaps}: $\max_g - \min_g$ across groups.
-\item \textbf{ECE}: weighted absolute gap between empirical rate and predicted probability over calibration bins.
+\item \textbf{AIR}: $\min_g \Pr(\hat{Y}=1\mid A=g) / \max_g \Pr(\hat{Y}=1\mid A=g)$ (Adverse Impact Ratio).
+\item \textbf{TPR/FPR gaps}: $\max_g - \min_g$ across groups (true positive / false positive rate gaps).
+\item \textbf{ECE}: weighted absolute gap between empirical rate and predicted probability over calibration bins (expected calibration error).
+\item \textbf{SAP}: pre-specified Statistical Analysis Plan describing estimands, thresholds, and inference methods for this audit scenario.
+\item \textbf{BCa bootstrap}: bias-corrected and accelerated bootstrap procedure used to construct confidence intervals for derived metrics.
 \end{itemize}

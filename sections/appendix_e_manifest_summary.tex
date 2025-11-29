@@ -1,0 +1,31 @@
+\section{Run Manifest}
+
+\Cref{tab:manifest_summary} lists key fields from the provenance manifest for this synthetic audit run.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+Field & Value \\
+\midrule
+rng\_seed & 42 \\
+bootstrap\_seed & 42 \\
+code\_commit & b7f63d96d229bbbd62ebdc173d4718487d9e1883 \\
+dataset\_hash & 7fbc4c8b4d24b2173d2c536e5d3f62c8fcc28cfdf3a165071c6ad04864721ba8 \\
+api\_image\_digest & sha256:99c7da9f74d0a838392ea50948e77cb4357df01251b990b64903d82b2b632ca0 \\
+worker\_image\_digest & sha256:5dfc445412f07fcfe212552fcbe6ce6719ced62ec75345c447655288caa71a19 \\
+schema\_version & wp-intake.v1 \\
+run\_id & 427d4729-775d-441b-9bbd-463b3c6d48f9 \\
+config\_hash & da5f5f8a240ce50be3acd4b35f8e31291e261806b589beaa359960a6aa5fd05c \\
+\texttt{eo\_enabled} & true \\
+\texttt{ece\_enabled} & false \\
+inference\_method & bca \\
+inference\_replicates & 2000 \\
+inference\_alpha & 0.05 \\
+inference\_smoothing & $10^{-6}$ \\
+\bottomrule
+\end{tabular}
+\caption{Key provenance fields for this synthetic audit run, including seeds, hashes, image digests, capabilities, and inference configuration.}
+\label{tab:manifest_summary}
+\end{table}

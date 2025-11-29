@@ -1,20 +1,38 @@
 
 \section{Problem and Estimands}
-Let $A$ be a protected attribute with values $g\in\mathcal{A}$, $Y\in\{0,1\}$ a label, $S\in[0,1]$ a score, and $\hat{Y}=\mathbf{1}[S\ge t]$ a decision.
+We use the following notation:
+\begin{itemize}
+\item $A$ denotes a protected attribute (for example, gender or race), with group values $g\in\mathcal{A}$;
+\item $Y\in\{0,1\}$ denotes the true label (e.g.\ good \emph{vs.} bad credit outcome);
+\item $S\in[0,1]$ denotes a score interpreted as an estimated probability; and
+\item $\hat{Y}=\mathbf{1}[S\ge t]$ denotes the binary decision obtained by thresholding the score at level $t$.
+\end{itemize}
 
-\paragraph{Adverse Impact Ratio (AIR).}
+\subsection{Adverse Impact Ratio}
 \begin{equation}
 \mathrm{AIR} \;=\; \min_{g\in\mathcal{A}} \frac{\Pr(\hat{Y}=1\mid A=g)}{\Pr(\hat{Y}=1\mid A=g^\star)}\,,\quad
 g^\star=\arg\max_g \Pr(\hat{Y}=1\mid A=g).
+\label{eq:air}
 \end{equation}
+This corresponds to the regulatory four-fifths rule for disparate impact \citep{eeoc_uniform_guidelines}.
 
-\paragraph{Equalized-Odds.}
-$\mathrm{TPR}_g=\Pr(\hat{Y}=1\!\mid\!Y=1,A=g)$,\quad
-$\mathrm{FPR}_g=\Pr(\hat{Y}=1\!\mid\!Y=0,A=g)$.
-Gaps: $\mathrm{TPR\_gap}=\max_g \mathrm{TPR}_g-\min_g \mathrm{TPR}_g$ and similarly for FPR.
+\subsection{Equalised Odds}
+For each group $g\in\mathcal{A}$, the true positive rate (TPR) and false positive rate (FPR) are defined as
+\begin{align}
+\mathrm{TPR}_g &= \Pr(\hat{Y}=1\mid Y=1,A=g),\\
+\mathrm{FPR}_g &= \Pr(\hat{Y}=1\mid Y=0,A=g).
+\end{align}
+Gaps are summarised as
+\begin{equation}
+\mathrm{TPR\_gap}=\max_g \mathrm{TPR}_g-\min_g \mathrm{TPR}_g
+\label{eq:eo-gap}
+\end{equation}
+and analogously for FPR, following the equalised-odds criterion of \citet{hardt2016equality}.
 
-\paragraph{Calibration (ECE).}
-For bins $B_k$ with counts $n_k$, mean score $\bar s_k$, and empirical positive rate $\hat p_k$:
+\subsection{Calibration}
+For bins $B_k$ with counts $n_k$, mean score $\bar s_k$, and empirical positive rate $\hat p_k$, the expected calibration error (ECE) is
 \begin{equation}
 \mathrm{ECE} \;=\; \sum_k \frac{n_k}{\sum_j n_j} \,\lvert \hat p_k - \bar s_k\rvert.
+\label{eq:ece}
 \end{equation}
+We use ECE as a scalar summary of calibration quality, in line with modern empirical calibration work \citep{guo2017calibration}.

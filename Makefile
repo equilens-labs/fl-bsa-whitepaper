@@ -5,8 +5,13 @@ all: pdf
 
 macros:
 	python3 scripts/gen_tex_macros_from_metrics.py --metrics intake/metrics_long.csv --sap config/sap.yaml --outdir includes || true
+	python3 scripts/gen_tex_preamble_from_manifest.py --manifest intake/manifest.json --sap config/sap.yaml --out includes/provenance_macros.tex || true
+	python3 scripts/gen_tex_hyperparams_from_yaml.py --config intake/model_hyperparams.yaml --outdir includes || true
 
-pdf: macros
+plots:
+	python3 scripts/gen_plots_from_intake.py --selection intake/selection_rates.csv --metrics intake/metrics_long.csv --outdir figures || true
+
+pdf: macros plots
 	latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
 	mkdir -p dist && cp main.pdf $(PDF)
 

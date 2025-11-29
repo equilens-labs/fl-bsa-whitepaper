@@ -11,31 +11,66 @@
 \usepackage{xcolor}
 \usepackage{xspace}
 \usepackage{booktabs}
+\usepackage[font=small]{caption}
+\usepackage{fancyhdr}
+\usepackage[section]{placeins}
 \usepackage{siunitx}
 \usepackage{amsmath,amssymb,amsthm,mathtools}
 \usepackage{enumitem}
 \usepackage{hyperref}
-\usepackage[capitalise,noabbrev]{cleveref}
+\usepackage[capitalise]{cleveref}
 \usepackage[numbers]{natbib}
 \usepackage{url}
-\usepackage{authblk}
+\setlength{\headheight}{24pt}
+\addtolength{\topmargin}{-4pt}
+
+\sisetup{
+  detect-all,
+  round-mode=places,
+  round-precision=3,
+  table-number-alignment=center
+}
+
+\crefname{equation}{Eq.}{Eqs.}
+\Crefname{equation}{Equation}{Equations}
+\crefname{table}{Table}{Tables}
+\Crefname{table}{Table}{Tables}
+\crefname{figure}{Figure}{Figures}
+\Crefname{figure}{Figure}{Figures}
 
 % --- Includes ---
 \input{includes/macros}
+\input{includes/provenance_macros}
 \input{includes/metrics_macros}
 
 % --- Title ---
 \title{\papertitle}
-\author[ ]{First Last$^{1}$ \quad Second Last$^{2}$}
-\affil[1]{Organization/Team 1}
-\affil[2]{Organization/Team 2}
+\author{FL-BSA Team \\ Equilens}
 \date{\today}
 
 \begin{document}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\raisebox{-0.35\height}{\includegraphics[height=0.6cm]{figures/equilens-wordmark-light.png}}}
+\fancyhead[R]{\scriptsize Equilens \textbar{} Synthetic Audit \& Fairness Evaluation for \sysname}
+\fancyfoot[L]{\scriptsize Equilens}
+\fancyfoot[R]{\scriptsize page~\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyhead[L]{\raisebox{-0.35\height}{\includegraphics[height=0.6cm]{figures/equilens-wordmark-light.png}}}
+  \fancyhead[R]{\scriptsize Equilens \textbar{} Synthetic Audit \& Fairness Evaluation for \sysname}
+  \fancyfoot[L]{\scriptsize Equilens}
+  \fancyfoot[R]{\scriptsize page~\thepage}
+  \renewcommand{\headrulewidth}{0.4pt}
+  \renewcommand{\footrulewidth}{0pt}
+}
+
 \maketitle
 
 \begin{abstract}
-We present a regulator-ready, statistically rigorous evaluation of \sysname. The paper formalizes estimands (AIR, Equalized Odds, ECE), describes data-privacy boundaries, and reports uncertainty-aware results. This draft compiles cleanly with partial metrics; tables auto-populate when \texttt{intake/metrics\_long.csv} and \texttt{provenance/manifest.json} are present.
+We present a regulator-ready, statistically rigorous evaluation of Equilens' Fair Lending Bias-Simulation Appliance (FL-BSA). The paper formalises core fairness and calibration estimands---including the Adverse Impact Ratio (AIR), Equalised Odds (EO), and the Expected Calibration Error (ECE)---and specifies a Statistical Analysis Plan (SAP) based on Wilson score intervals for proportions and bias-corrected and accelerated (BCa) bootstrap confidence intervals for derived metrics. We describe the data-privacy and provenance boundaries, and demonstrate the framework on a synthetic fair-lending audit scenario, reporting quantified uncertainty for key metrics in a form suitable for regulatory review.
 \end{abstract}
 
 \input{sections/01_executive_summary}
@@ -52,8 +87,15 @@ We present a regulator-ready, statistically rigorous evaluation of \sysname. The
 \bibliographystyle{plainnat}
 \bibliography{bib/references}
 
+\clearpage
+\section*{Appendices}
+\addcontentsline{toc}{section}{Appendices}
 \appendix
 \input{sections/appendix_a_sap}
 \input{sections/appendix_b_metrics_defs}
+\input{sections/appendix_c_implementation_reference}
+\input{sections/appendix_d_regulatory_matrix}
+\input{sections/appendix_e_manifest_summary}
+\input{sections/appendix_f_hyperparams}
 
 \end{document}

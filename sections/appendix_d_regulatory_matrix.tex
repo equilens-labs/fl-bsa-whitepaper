@@ -1,0 +1,18 @@
+\section{Regulatory Mapping}
+
+\Cref{tab:reg_matrix} reproduces the regulatory mapping used for this synthetic audit run, based on the evidence intake for this whitepaper.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{llp{5cm}p{6cm}}
+\toprule
+Framework & Citation & Requirement & Control assurance and evidence \\
+\midrule
+\EUAIAct & Art.~10(3) & Data governance and quality for training, validation and testing data & Dataset quality computed; coverage and missingness thresholds enforced; selection rates and metrics persisted for auditability. Evidence is provided via the provenance manifest and selection-rate summaries. \\
+CFPB/\ECOA & 12 CFR 1002 & Evaluate disparate impact and record selection disparities by protected class & AIR computed with bootstrap confidence intervals; Equalised Odds supported when EO is enabled; intake generated under the Gate-WP pipeline. Evidence is provided via metrics tables and the provenance manifest for this run. \\
+\bottomrule
+\end{tabular}
+\caption{Regulatory requirements and corresponding controls and evidence for this synthetic audit scenario.}
+\label{tab:reg_matrix}
+\end{table}
