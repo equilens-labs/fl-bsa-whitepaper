@@ -25,6 +25,13 @@ def main():
 
     # Normalize
     m["metric_l"] = m["metric"].str.lower()
+    # Prefer canonical CI columns when available (future Gate-WP schema)
+    if "ci_low" in m.columns and "ci_high" in m.columns:
+        m["LCI"] = m["ci_low"]
+        m["UCI"] = m["ci_high"]
+    else:
+        m["LCI"] = m["lower_ci"]
+        m["UCI"] = m["upper_ci"]
     # AIR
     air = m[m["metric_l"]=="air"].copy()
     min_air = air["value"].min() if not air.empty else float("nan")
@@ -39,6 +46,7 @@ def main():
     # ECE
     ece = m[m["metric_l"]=="ece"].copy()
     max_ece = ece["value"].max() if not ece.empty else float("nan")
+    num_ece_viol = int((ece["value"] > ece_thr).sum()) if not ece.empty else 0
 
     # Write macros
     outdir = Path(args.outdir); outdir.mkdir(parents=True, exist_ok=True)
@@ -59,46 +67,79 @@ def main():
         f.write("\\renewcommand{\\NumAIRViolations}{%d}\n" % num_air_viol)
         f.write("\\renewcommand{\\NumTPRGapViol}{%d}\n" % num_tpr_viol)
         f.write("\\renewcommand{\\NumFPRGapViol}{%d}\n" % num_fpr_viol)
+        f.write("\\renewcommand{\\NumECEViolations}{%d}\n" % num_ece_viol)
+
+    def _fmt(x):
+        try:
+            return f"\\num{{{float(x):.3f}}}"
+        except Exception:
+            return str(x)
 
     # AIR table (per attribute)
     rows = []
     if not air.empty:
-        # Expect group like "attr:global"
-        air["attr"] = air["group"].str.split(":").str[0]
-        for (attr), sub in air.groupby("attr"):
+        air["attribute"] = air["group"].str.split(":", n=1).str[0]
+        for attr, sub in air.groupby("attribute"):
             for _, r in sub.iterrows():
-                rows.append([r.get("run_id",""), r.get("model_id",""), r.get("split",""), attr, r.get("value",""), r.get("lower_ci",""), r.get("upper_ci","")])
+                rows.append(
+                    [
+                        attr,
+                        _fmt(r.get("value", "")),
+                        _fmt(r.get("LCI", "")),
+                        _fmt(r.get("UCI", "")),
+                    ]
+                )
     with open(outdir / "table_air_summary.tex", "w", encoding="utf-8") as f:
-        f.write("\\begin{tabular}{llllrrr}\n\\toprule\n")
-        f.write("run & model & split & attr & AIR & LCI & UCI\\\\\n\\midrule\n")
+        f.write("\\begin{tabular}{lSSS}\n\\toprule\n")
+        f.write("attribute & {AIR} & {LCI} & {UCI}\\\\\n\\midrule\n")
         for r in rows:
-            f.write(f"{r[0]} & {r[1]} & {r[2]} & {r[3]} & {r[4]} & {r[5]} & {r[6]}\\\\\n")
+            f.write(f"{r[0]} & {r[1]} & {r[2]} & {r[3]}\\\\\n")
         if not rows:
-            f.write("\\multicolumn{7}{c}{\\emph{No AIR rows found in metrics}}\\\\\n")
+            f.write("\\multicolumn{4}{c}{\\emph{No AIR rows found in metrics}}\\\\\n")
         f.write("\\bottomrule\n\\end{tabular}\n")
 
-    # EO table
+    # EO table (TPR/FPR gaps by attribute)
     eo_rows = []
-    for name in ["tpr_gap","fpr_gap"]:
-        sub = m[m["metric_l"]==name]
+    for name in ["tpr_gap", "fpr_gap"]:
+        sub = m[m["metric_l"] == name]
         for _, r in sub.iterrows():
-            eo_rows.append([name, r.get("run_id",""), r.get("model_id",""), r.get("split",""), r.get("group",""), r.get("value",""), r.get("lower_ci",""), r.get("upper_ci","")])
+            metric_name = name.replace("_", "\\_")
+            group_key = str(r.get("group", ""))
+            attr = group_key.split(":", 1)[0] if ":" in group_key else group_key
+            eo_rows.append(
+                [
+                    attr,
+                    metric_name,
+                    _fmt(r.get("value", "")),
+                    _fmt(r.get("LCI", "")),
+                    _fmt(r.get("UCI", "")),
+                ]
+            )
     with open(outdir / "table_eo_summary.tex", "w", encoding="utf-8") as f:
-        f.write("\\begin{tabular}{llllllll}\n\\toprule\n")
-        f.write("metric & run & model & split & group & value & LCI & UCI\\\\\n\\midrule\n")
+        f.write("\\begin{tabular}{llSSS}\n\\toprule\n")
+        f.write("attribute & metric & {value} & {LCI} & {UCI}\\\\\n\\midrule\n")
         for r in eo_rows:
-            f.write(f"{r[0]} & {r[1]} & {r[2]} & {r[3]} & {r[4]} & {r[5]} & {r[6]} & {r[7]}\\\\\n")
+            f.write(f"{r[0]} & {r[1]} & {r[2]} & {r[3]} & {r[4]}\\\\\n")
         if not eo_rows:
-            f.write("\\multicolumn{8}{c}{\\emph{No EO rows found in metrics}}\\\\\n")
+            f.write("\\multicolumn{5}{c}{\\emph{No EO rows found in metrics}}\\\\\n")
         f.write("\\bottomrule\n\\end{tabular}\n")
 
     # ECE table
     ece_rows = []
     for _, r in ece.iterrows():
-        ece_rows.append([r.get("run_id",""), r.get("model_id",""), r.get("split",""), r.get("value",""), r.get("lower_ci",""), r.get("upper_ci","")])
+        ece_rows.append(
+            [
+                r.get("run_id", ""),
+                r.get("model_id", ""),
+                r.get("split", ""),
+                _fmt(r.get("value", "")),
+                _fmt(r.get("LCI", "")),
+                _fmt(r.get("UCI", "")),
+            ]
+        )
     with open(outdir / "table_ece_summary.tex", "w", encoding="utf-8") as f:
-        f.write("\\begin{tabular}{llllrr}\n\\toprule\n")
-        f.write("run & model & split & ECE & LCI & UCI\\\\\n\\midrule\n")
+        f.write("\\begin{tabular}{llllSS}\n\\toprule\n")
+        f.write("run & model & split & {ECE} & {LCI} & {UCI}\\\\\n\\midrule\n")
         for r in ece_rows:
             f.write(f"{r[0]} & {r[1]} & {r[2]} & {r[3]} & {r[4]} & {r[5]}\\\\\n")
         if not ece_rows:

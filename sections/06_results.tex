@@ -1,13 +1,62 @@
 
 \section{Results}
-\subsection{Fairness (AIR)}
+\subsection{Fairness}
+\begin{table}[t]
+\centering
 \input{includes/table_air_summary}
+\caption{Adverse Impact Ratio by protected attribute on the synthetic audit test split. AIR is the minimum ratio of group-wise selection rates as defined in \cref{eq:air}, with 95\% BCa bootstrap confidence intervals, reported as lower and upper confidence limits (LCI/UCI). AIR values below the 0.80 threshold indicate a potential disparate impact under the four-fifths rule.}
+\label{tab:air_summary}
+\end{table}
 
-\subsection{Equalized-Odds}
+\IfFileExists{figures/air_summary.pdf}{%
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.6\textwidth]{figures/air_summary.pdf}
+\caption{Adverse impact ratio per protected attribute with 95\% BCa confidence intervals. The dashed line shows the 0.80 threshold.}
+\label{fig:air_summary}
+\end{figure}
+}{}
+
+\IfFileExists{figures/selection_rates.pdf}{%
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/selection_rates.pdf}
+\caption{Selection rates by protected attribute (gender and race) on the synthetic audit test split, with 95\% Wilson confidence intervals. These rates underlie the AIR calculations in \Cref{tab:air_summary}.}
+\label{fig:selection_rates}
+\end{figure}
+}{}
+
+\FloatBarrier
+
+\subsection{Equalised Odds}
+\begin{table}[t]
+\centering
 \input{includes/table_eo_summary}
+\caption{Equalised Odds gaps (TPR and FPR differences) by protected attribute on the synthetic audit test split, with 95\% BCa bootstrap confidence intervals, reported as lower and upper confidence limits (LCI/UCI). Gaps are computed as in \cref{eq:eo-gap}, that is, as the maximum minus the minimum group-wise TPR/FPR across categories of each attribute.}
+\label{tab:eo_summary}
+\end{table}
 
-\subsection{Calibration (ECE)}
+\ifnum\HasDegenerateCIs>0
+\noindent\emph{Note.} Some groups in this synthetic scenario have rates at 0\% or 100\%. With aggregate bootstrap this can yield zero-width confidence intervals, even though real-world uncertainty would be larger. FL-BSA compliance reports use row-level BCa bootstrap to mitigate this effect.
+\fi
+
+\FloatBarrier
+
+\subsection{Calibration}
+\begin{table}[t]
+\centering
 \input{includes/table_ece_summary}
+\caption{ECE summary for this run. ECE is defined in \cref{eq:ece}. In this synthetic audit scenario, ECE is not evaluated because no probability scores are available in the intake bundle; calibration compliance is therefore unknown.}
+\label{tab:ece_summary}
+\end{table}
+
+\ifnum\EceEvaluated>0\relax
+% Calibration evaluated; no additional note.
+\else
+\noindent\emph{Note.} Calibration (ECE) was not evaluated in this scenario; calibration compliance is therefore unknown in this whitepaper.
+\fi
+
+\FloatBarrier
 
 \subsection{Provenance}
-The run manifest records dataset hash, container digest, seed, and timestamps. See \texttt{provenance/manifest.json}.
+The run manifest records the dataset hash, code commit, container image digests, random seeds, and timestamps; key fields are listed in Appendix~E.

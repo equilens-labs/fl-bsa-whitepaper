@@ -1,2 +1,0 @@
-# acceptance_strict.yml — patch for intake/ layout
-- run: python scripts/verify_reviewer_bundle.py         --metrics intake/metrics_long.csv         --manifest provenance/manifest.json         --regulatory intake/regulatory_matrix.csv         --privacy privacy/tests         --sap config/sap.yaml

@@ -1,7 +1,11 @@
 
 \section{Methods}
-\textbf{Data scope (aggregated only).} We use split-level aggregates: selection counts and rates, per-group confusion counts, and calibration bins. No row-level data is required.
 
-\textbf{Estimators and uncertainty.} Proportions use Wilson 95\% CIs. AIR and EO gaps use parametric bootstrap (resamples $B$ from SAP). ECE uses bootstrap over calibration bins.
+\subsection{Data Scope}
+We work with aggregated data only. For each split we use selection counts and rates, per-group confusion counts, and calibration-bin summaries. No row-level data is required for the analyses in this whitepaper.
 
-\textbf{Multiplicity.} False discovery rate controlled by Benjamini--Hochberg (e.g., $q=0.10$) across metrics and slices.
+\subsection{Estimators and Uncertainty}
+Proportions use Wilson 95\% confidence intervals \citep{brown2001interval}. Unless otherwise stated, AIR (\cref{eq:air}), equalised-odds gaps (\cref{eq:eo-gap}), and ECE (\cref{eq:ece}) use a BCa bootstrap with $B=\InferenceReplicates{}$ replicates at level $\InferenceAlpha$, following standard bootstrap practice \citep{efron1994bootstrap}. When smoothing is enabled in the Statistical Analysis Plan (SAP), probabilities at 0 or 1 are clipped slightly before resampling to avoid degenerate intervals.
+
+\subsection{Multiplicity Adjustment}
+We control the false discovery rate using the Benjamini--Hochberg procedure \citep{benjamini1995fdr}, with target level $q=0.10$, across the family of metrics and slices included in this audit.

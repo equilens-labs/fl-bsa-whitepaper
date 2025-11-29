@@ -1,0 +1,8 @@
+run_id,split,model_id,attribute,group,TP,FP,TN,FN
+427d4729-775d-441b-9bbd-463b3c6d48f9,test,ctgan,gender,female,639,0,808,0
+427d4729-775d-441b-9bbd-463b3c6d48f9,test,ctgan,gender,male,890,0,663,0
+427d4729-775d-441b-9bbd-463b3c6d48f9,test,ctgan,race,asian,83,0,96,0
+427d4729-775d-441b-9bbd-463b3c6d48f9,test,ctgan,race,black,204,0,187,0
+427d4729-775d-441b-9bbd-463b3c6d48f9,test,ctgan,race,hispanic,278,0,240,0
+427d4729-775d-441b-9bbd-463b3c6d48f9,test,ctgan,race,other,44,0,41,0
+427d4729-775d-441b-9bbd-463b3c6d48f9,test,ctgan,race,white,920,0,907,0
