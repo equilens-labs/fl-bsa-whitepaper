@@ -44,6 +44,7 @@ so it falls back to the default GITHUB_TOKEN for public repos but uses the secre
 
 The workflow downloads `WhitePaper_Reviewer_Pack_v4.zip`, unpacks it, and syncs the relevant contents into this repo:
 - `intake/selection_rates.csv`
+- `intake/fairness_slices.json` (gender AIR by slice: historical/amplification/intrinsic)
 - `intake/metrics_uncertainty.json` (v4 SoT for the PDF)
 - `intake/metrics_long.csv` (legacy/annex/back-compat)
 - `intake/group_confusion.csv` (if present)

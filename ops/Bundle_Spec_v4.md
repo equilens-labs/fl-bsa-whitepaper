@@ -14,6 +14,7 @@ The reviewer-ready bundle `WhitePaper_Reviewer_Pack_v4.zip` contains:
 | `intake/metrics_uncertainty.json` | **v4 SoT**: deterministic fairness uncertainty surface (AIR + approval-rate gap with CIs and p-values; race pairwise vs reference) |
 | `intake/metrics_long.csv` | Legacy/annex/back-compat metrics surface (may include bootstrap methods; not SoT for v4 PDF) |
 | `intake/selection_rates.csv` | Per-group selection rates used by plots and cross-checks |
+| `intake/fairness_slices.json` | Gender AIR by slice (historical baseline / amplification / intrinsic) to prevent “single AIR” misinterpretation |
 | `provenance/manifest.json` | Container digests, dataset hash, code commit, RNG seed, timestamps, and fairness orientation mapping/policy |
 | `config/fairness_config.yaml` | Deterministic reference/protected mapping + visibility policy (mirrored into the manifest) |
 | `intake/regulatory_matrix.csv` | No TBDs for in-scope controls |

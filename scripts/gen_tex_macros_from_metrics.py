@@ -13,6 +13,7 @@ Secondary/fallback sources:
 Outputs (under includes/):
 - metrics_macros.tex
 - table_air_summary.tex
+- table_gender_air_slices.tex
 - table_srg_summary.tex
 - table_ece_summary.tex
 """
@@ -102,6 +103,7 @@ def _write_table(
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--uncertainty", default="intake/metrics_uncertainty.json")
+    ap.add_argument("--slices", default="intake/fairness_slices.json")
     ap.add_argument("--metrics", default="intake/metrics_long.csv")
     ap.add_argument("--sap", default="config/sap.yaml")
     ap.add_argument("--outdir", default="includes")
@@ -150,6 +152,92 @@ def main() -> int:
 
     air_rows: list[list[str]] = []
     srg_rows: list[list[str]] = []
+    slice_rows: list[list[str]] = []
+    gender_slices_available = 0
+
+    hist_air_point: Any = None
+    hist_air_ci: Any = None
+    amp_air_point: Any = None
+    amp_air_ci: Any = None
+    intr_air_point: Any = None
+    intr_air_ci: Any = None
+    gender_uplift_abs: Any = None
+    gender_uplift_rel: Any = None
+    gender_fidelity_abs: Any = None
+    gender_fidelity_rel: Any = None
+
+    slices_path = Path(args.slices)
+    slices_payload = _load_json(slices_path) if slices_path.exists() else {}
+    if isinstance(slices_payload, dict) and slices_payload.get("schema_version") == "fairness_slices.v1":
+        gender_slices_available = 1
+        slices = slices_payload.get("slices") if isinstance(slices_payload.get("slices"), dict) else {}
+        # Prefer slice payload group orientation for display.
+        gender_ref = str(slices_payload.get("reference_group") or gender_ref)
+        gender_prot = str(slices_payload.get("protected_group") or gender_prot)
+
+        def _pair_air(pair: Any) -> tuple[Any, Any]:
+            if not isinstance(pair, dict):
+                return None, None
+            air = pair.get("air") if isinstance(pair.get("air"), dict) else {}
+            return air.get("point"), air.get("ci95")
+
+        def _counts(pair: Any) -> tuple[int, int]:
+            if not isinstance(pair, dict):
+                return 0, 0
+            counts = pair.get("counts") if isinstance(pair.get("counts"), dict) else {}
+            try:
+                ref_n = int(counts.get("ref_n", 0) or 0)
+            except Exception:
+                ref_n = 0
+            try:
+                prot_n = int(counts.get("prot_n", 0) or 0)
+            except Exception:
+                prot_n = 0
+            return ref_n, prot_n
+
+        def _compliance_label(point: Any) -> str:
+            try:
+                return "PASS" if float(point) >= air_thr else "FAIL"
+            except Exception:
+                return "TBD"
+
+        for key, label in (
+            ("historical", "Historical"),
+            ("amplification", "Amplification (bias-preserving)"),
+            ("intrinsic", "Intrinsic (de-biased)"),
+        ):
+            pair = slices.get(key)
+            if not isinstance(pair, dict):
+                continue
+            pt, ci = _pair_air(pair)
+            lo, hi = _ci_parts(ci)
+            ref_n, prot_n = _counts(pair)
+            slice_rows.append(
+                [
+                    _latex_escape(label),
+                    _fmt_num(ref_n, decimals=0),
+                    _fmt_num(prot_n, decimals=0),
+                    _fmt_num(pt),
+                    _fmt_num(lo),
+                    _fmt_num(hi),
+                    _latex_escape(_compliance_label(pt)),
+                ]
+            )
+
+        hist_air_point, hist_air_ci = _pair_air(slices.get("historical"))
+        amp_air_point, amp_air_ci = _pair_air(slices.get("amplification"))
+        intr_air_point, intr_air_ci = _pair_air(slices.get("intrinsic"))
+
+        imp = slices_payload.get("improvement") if isinstance(slices_payload.get("improvement"), dict) else {}
+        bp = (
+            slices_payload.get("bias_preservation")
+            if isinstance(slices_payload.get("bias_preservation"), dict)
+            else {}
+        )
+        gender_uplift_abs = imp.get("abs_uplift_air")
+        gender_uplift_rel = imp.get("rel_uplift_air")
+        gender_fidelity_abs = bp.get("abs_delta_air")
+        gender_fidelity_rel = bp.get("rel_delta_air")
 
     uncertainty_path = Path(args.uncertainty)
     uncertainty = _load_json(uncertainty_path) if uncertainty_path.exists() else {}
@@ -344,6 +432,61 @@ def main() -> int:
             f.write(f"\\renewcommand{{\\GenderSRGLCI}}{{{_fmt_num(gender_srg_ci[0])}}}\n")
             f.write(f"\\renewcommand{{\\GenderSRGUCI}}{{{_fmt_num(gender_srg_ci[1])}}}\n")
 
+        # Slice-level gender AIR (historical / amplification / intrinsic)
+        f.write(f"\\renewcommand{{\\GenderSlicesAvailable}}{{{int(gender_slices_available)}}}\n")
+        f.write(f"\\renewcommand{{\\GenderAIRHistorical}}{{{_fmt_num(hist_air_point)}}}\n")
+        if isinstance(hist_air_ci, (list, tuple)) and len(hist_air_ci) == 2:
+            f.write(
+                f"\\renewcommand{{\\GenderAIRHistoricalLCI}}{{{_fmt_num(hist_air_ci[0])}}}\n"
+            )
+            f.write(
+                f"\\renewcommand{{\\GenderAIRHistoricalUCI}}{{{_fmt_num(hist_air_ci[1])}}}\n"
+            )
+        else:
+            f.write("\\renewcommand{\\GenderAIRHistoricalLCI}{TBD}\n")
+            f.write("\\renewcommand{\\GenderAIRHistoricalUCI}{TBD}\n")
+
+        f.write(f"\\renewcommand{{\\GenderAIRAmplification}}{{{_fmt_num(amp_air_point)}}}\n")
+        if isinstance(amp_air_ci, (list, tuple)) and len(amp_air_ci) == 2:
+            f.write(
+                f"\\renewcommand{{\\GenderAIRAmplificationLCI}}{{{_fmt_num(amp_air_ci[0])}}}\n"
+            )
+            f.write(
+                f"\\renewcommand{{\\GenderAIRAmplificationUCI}}{{{_fmt_num(amp_air_ci[1])}}}\n"
+            )
+        else:
+            f.write("\\renewcommand{\\GenderAIRAmplificationLCI}{TBD}\n")
+            f.write("\\renewcommand{\\GenderAIRAmplificationUCI}{TBD}\n")
+
+        f.write(f"\\renewcommand{{\\GenderAIRIntrinsic}}{{{_fmt_num(intr_air_point)}}}\n")
+        if isinstance(intr_air_ci, (list, tuple)) and len(intr_air_ci) == 2:
+            f.write(
+                f"\\renewcommand{{\\GenderAIRIntrinsicLCI}}{{{_fmt_num(intr_air_ci[0])}}}\n"
+            )
+            f.write(
+                f"\\renewcommand{{\\GenderAIRIntrinsicUCI}}{{{_fmt_num(intr_air_ci[1])}}}\n"
+            )
+        else:
+            f.write("\\renewcommand{\\GenderAIRIntrinsicLCI}{TBD}\n")
+            f.write("\\renewcommand{\\GenderAIRIntrinsicUCI}{TBD}\n")
+
+        # Uplift/fidelity summaries (AIR)
+        f.write(f"\\renewcommand{{\\GenderAIRUpliftAbs}}{{{_fmt_num(gender_uplift_abs)}}}\n")
+        try:
+            f.write(
+                f"\\renewcommand{{\\GenderAIRUpliftRelPct}}{{\\num{{{float(gender_uplift_rel) * 100.0:.1f}}}}}\n"
+            )
+        except Exception:
+            f.write("\\renewcommand{\\GenderAIRUpliftRelPct}{TBD}\n")
+
+        f.write(f"\\renewcommand{{\\GenderAIRFidelityAbs}}{{{_fmt_num(gender_fidelity_abs)}}}\n")
+        try:
+            f.write(
+                f"\\renewcommand{{\\GenderAIRFidelityRelPct}}{{\\num{{{float(gender_fidelity_rel) * 100.0:.2f}}}}}\n"
+            )
+        except Exception:
+            f.write("\\renewcommand{\\GenderAIRFidelityRelPct}{TBD}\n")
+
         f.write(f"\\renewcommand{{\\ShowRaceMain}}{{{int(show_race_main)}}}\n")
         f.write(f"\\renewcommand{{\\RaceReferenceGroup}}{{{_latex_escape(race_ref)}}}\n")
         f.write(f"\\renewcommand{{\\RaceWorstCaseGroup}}{{{_latex_escape(race_worst)}}}\n")
@@ -414,6 +557,15 @@ def main() -> int:
         empty_span_cols=6,
         header="run & model & split & {ECE} & {LCI} & {UCI}\\\\",
         rows=ece_rows,
+    )
+
+    # Slice table (gender only)
+    _write_table(
+        outdir / "table_gender_air_slices.tex",
+        column_spec="lSSSSSl",
+        empty_span_cols=7,
+        header="slice & {$n_{ref}$} & {$n_{prot}$} & {AIR} & {LCI} & {UCI} & {compliance}\\\\",
+        rows=slice_rows,
     )
 
     return 0

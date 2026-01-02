@@ -1,10 +1,19 @@
 
 \section{Results}
 \subsection{Fairness}
+\ifnum\GenderSlicesAvailable>0\relax
+\begin{table}[t]
+\centering
+\input{includes/table_gender_air_slices}
+\caption{Gender disparity ratio (AIR-equivalent) by data slice. We report historical baseline, bias-preserving amplification, and de-biased intrinsic slices for the configured pair (\GenderProtectedGroup{} vs \GenderReferenceGroup{}), with deterministic confidence intervals and counts.}
+\label{tab:gender_air_slices}
+\end{table}
+\fi
+
 \begin{table}[t]
 \centering
 \input{includes/table_air_summary}
-\caption{Disparity ratios (AIR-equivalent) by protected attribute on the synthetic audit test split. For gender we report the configured pair (\GenderProtectedGroup{} vs \GenderReferenceGroup{}). Race is shown in the main body only when the race small-n display policy is satisfied; otherwise it is reported in the annex. Intervals are deterministic (delta-method on $\log(\mathrm{AIR})$), and p-values are two-sided with small-n safeguards.}
+\caption{Disparity ratios (AIR-equivalent) by protected attribute for the amplification (bias-preserving) synthetic slice. For gender we report the configured pair (\GenderProtectedGroup{} vs \GenderReferenceGroup{}). Race is shown in the main body only when the race small-n display policy is satisfied; otherwise it is reported in the annex. Intervals are deterministic (delta-method on $\log(\mathrm{AIR})$), and p-values are two-sided with small-n safeguards.}
 \label{tab:air_summary}
 \end{table}
 
@@ -12,7 +21,7 @@
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.6\textwidth]{figures/air_summary.pdf}
-\caption{Disparity ratio (AIR-equivalent) with deterministic 95\% confidence intervals. The dashed line shows the 0.80 threshold.}
+\caption{Amplification-slice disparity ratio (AIR-equivalent) with deterministic 95\% confidence intervals. The dashed line shows the 0.80 threshold.}
 \label{fig:air_summary}
 \end{figure}
 }{}
@@ -21,7 +30,7 @@
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/selection_rates.pdf}
-\caption{Selection rates by protected attribute on the synthetic audit test split, with 95\% Wilson confidence intervals. Race is shown only when the race small-n display policy is satisfied. These rates underlie the disparity ratios in \Cref{tab:air_summary}.}
+\caption{Selection rates by protected attribute for the amplification (bias-preserving) synthetic slice, with 95\% Wilson confidence intervals. Race is shown only when the race small-n display policy is satisfied. These rates underlie the disparity ratios in \Cref{tab:air_summary}.}
 \label{fig:selection_rates}
 \end{figure}
 }{}

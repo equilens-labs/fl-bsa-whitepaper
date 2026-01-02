@@ -34,6 +34,7 @@ This document describes how evidence artifacts flow from the FL-BSA runtime (`fl
 │    ├─ metrics_uncertainty.json (v4 SoT)                     │
 │    ├─ metrics_long.csv (legacy/annex)                       │
 │    ├─ selection_rates.csv                                   │
+│    ├─ fairness_slices.json                                  │
 │    ├─ manifest.json                                         │
 │    ├─ certificates/*.json                                   │
 │    └─ (other supporting CSVs)                               │
@@ -78,6 +79,7 @@ output/<pipeline_id>/
 ├── intake/
 │   ├── selection_rates.csv      # Per-group selection rates
 │   ├── metrics_long.csv         # All fairness metrics with CIs
+│   ├── fairness_slices.json     # Gender AIR by slice (historical/amp/intrinsic)
 │   ├── group_confusion.csv      # Confusion matrices (EO)
 │   ├── calibration_bins.csv     # Calibration analysis (when score/probabilities available)
 │   └── regulatory_matrix.csv    # Compliance mapping
