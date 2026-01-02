@@ -2,7 +2,7 @@
   "schema_version": "wp-intake.v1",
   "run_id": "7d94fa9a-1ef3-43d3-a095-58bc2ed78d70",
   "created": "2026-01-02T12:20:34.396166+00:00",
-  "dataset_hash": "7fbc4c8b4d24b2173d2c536e5d3f62c8fcc28cfdf3a165071c6ad04864721ba8",
+  "dataset_hash": "sha256:7fbc4c8b4d24b2173d2c536e5d3f62c8fcc28cfdf3a165071c6ad04864721ba8",
   "dataset_hash_source": "metrics.dataset_hash",
   "dataset_hash_path": "/app/output/7d94fa9a-1ef3-43d3-a095-58bc2ed78d70/dataset_7d94fa9a-1ef3-43d3-a095-58bc2ed78d70.csv",
   "commit_sha": "f3cad9686c7ef3f889ebb90a8b73b9e2439a51a1",
