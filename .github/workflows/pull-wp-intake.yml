@@ -15,14 +15,14 @@ on:
         description: "owner/repo of producer (fl-bsa)"
         required: false
         default: "equilens-labs/fl-bsa"
-      artifact_name:
-        description: "artifact name to download"
-        required: false
-        default: "wp-intake"
       workflow_file:
-        description: "producer workflow file (for manual fetch)"
+        description: "producer workflow file"
         required: false
-        default: "ci-comprehensive.yml"
+        default: "wp-evidence-nightly.yml"
+      artifact_name:
+        description: "producer artifact name to download"
+        required: false
+        default: "wp-reviewer-pack-v4"
       branch:
         description: "producer branch (manual fetch)"
         required: false
@@ -30,9 +30,6 @@ on:
 
 jobs:
   fetch-build:
-    if: |
-      github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' ||
-      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,68 +39,60 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Download wp-intake (from workflow_run)
-        if: github.event_name == 'workflow_run'
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          repo: ${{ github.event.workflow_run.repository.full_name }}
-          run_id: ${{ github.event.workflow_run.id }}
-          name: wp-intake
-          path: wp-intake
-          if_no_artifact_found: warn
-          github_token: ${{ secrets.PRODUCER_TOKEN || github.token }}
+      - name: Install Python deps (for macro/plot generation)
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas pyyaml matplotlib
 
-      - name: Download wp-intake (manual/scheduled/dispatch)
-        if: github.event_name != 'workflow_run'
+      - name: Download reviewer bundle from producer
         uses: dawidd6/action-download-artifact@v6
         with:
           repo: ${{ github.event_name == 'workflow_dispatch' && inputs.producer_repo || github.event_name == 'repository_dispatch' && github.event.client_payload.producer_repo || 'equilens-labs/fl-bsa' }}
-          workflow: ${{ github.event_name == 'workflow_dispatch' && inputs.workflow_file || github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'ci-comprehensive.yml' }}
+          workflow: ${{ github.event_name == 'workflow_dispatch' && inputs.workflow_file || github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'wp-evidence-nightly.yml' }}
           workflow_conclusion: success
           branch: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.event_name == 'repository_dispatch' && github.event.client_payload.branch || 'main' }}
-          name: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_name || github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_name || 'wp-intake' }}
-          path: wp-intake
-          if_no_artifact_found: warn
+          name: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_name || github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_name || 'wp-reviewer-pack-v4' }}
+          path: wp-bundle
+          if_no_artifact_found: fail
           github_token: ${{ secrets.PRODUCER_TOKEN || github.token }}
 
-      - name: Show intake index (if any)
+      - name: Unpack reviewer bundle
         run: |
-          if [ -f wp-intake/index.json ]; then
-            echo "Found wp-intake/index.json";
-            cat wp-intake/index.json || true;
-          else
-            echo "No wp-intake/index.json found — skipping copy.";
+          set -euo pipefail
+          bundle_path="$(find wp-bundle -maxdepth 5 -name 'WhitePaper_Reviewer_Pack_v4.zip' -print -quit || true)"
+          if [ -z "$bundle_path" ]; then
+            echo "Bundle zip not found under wp-bundle/" >&2
+            find wp-bundle -maxdepth 5 -type f -print >&2 || true
+            exit 1
           fi
+          rm -rf bundle && mkdir -p bundle
+          unzip -q "$bundle_path" -d bundle
+          test -f bundle/intake/metrics_uncertainty.json
+          test -f bundle/provenance/manifest.json
+          test -f bundle/certificates/synthetic_quality_certificate.json
 
-      - name: Copy latest pipeline files into repo (intake/ & provenance/)
-        if: hashFiles('wp-intake/index.json') != ''
+      - name: Sync bundle contents into repo (intake/ + config/)
         run: |
-          python3 - <<'PY'
-          import json, shutil, os
-          from pathlib import Path
-          idxp = Path('wp-intake/index.json')
-          data = json.loads(idxp.read_text())
-          pipes = data.get('pipelines') or []
-          if not pipes:
-            raise SystemExit('No pipelines in index.json')
-          p = pipes[-1]
-          pid = p.get('pipeline_id')
-          pdir = Path('wp-intake')/pid
-          dest_intake = Path('intake'); dest_intake.mkdir(exist_ok=True)
-          for name in ['selection_rates.csv','metrics_long.csv','group_confusion.csv','metrics.json']:
-            src = pdir/name
-            if src.exists():
-              shutil.copy(src, dest_intake/src.name)
-          prov_src = pdir/'provenance'/'manifest.json'
-          if prov_src.exists():
-            Path('provenance').mkdir(exist_ok=True)
-            shutil.copy(prov_src, 'provenance/manifest.json')
-          print('Copied from pipeline:', pid)
-          PY
+          set -euo pipefail
+          mkdir -p intake
+          cp bundle/intake/*.csv intake/ || true
+          cp bundle/intake/*.json intake/ || true
+          cp bundle/provenance/manifest.json intake/manifest.json
+          mkdir -p intake/certificates
+          cp bundle/certificates/*.json intake/certificates/
+          mkdir -p config
+          cp bundle/config/sap.yaml config/sap.yaml
+          if [ -f bundle/config/fairness_config.yaml ]; then
+            cp bundle/config/fairness_config.yaml config/fairness_config.yaml
+          fi
 
       - name: Generate TeX macros from metrics (tolerant)
         run: |
-          python3 scripts/gen_tex_macros_from_metrics.py --metrics intake/metrics_long.csv --sap config/sap.yaml --outdir includes || true
+          make macros
+
+      - name: Generate figures from intake (tolerant)
+        run: |
+          make plots
 
       - name: Compile LaTeX
         uses: xu-cheng/latex-action@v3
@@ -116,6 +105,12 @@ jobs:
         with:
           name: whitepaper-pdf-from-intake
           path: main.pdf
+
+      - name: Upload reviewer bundle used
+        uses: actions/upload-artifact@v4
+        with:
+          name: reviewer-bundle-used
+          path: wp-bundle/**/WhitePaper_Reviewer_Pack_v4.zip
 
       - name: Package arXiv source
         run: |
