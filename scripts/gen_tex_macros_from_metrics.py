@@ -168,8 +168,10 @@ def main() -> int:
 
     slices_path = Path(args.slices)
     slices_payload = _load_json(slices_path) if slices_path.exists() else {}
-    if isinstance(slices_payload, dict) and slices_payload.get("schema_version") == "fairness_slices.v1":
-        gender_slices_available = 1
+    if (
+        isinstance(slices_payload, dict)
+        and slices_payload.get("schema_version") == "fairness_slices.v1"
+    ):
         slices = slices_payload.get("slices") if isinstance(slices_payload.get("slices"), dict) else {}
         # Prefer slice payload group orientation for display.
         gender_ref = str(slices_payload.get("reference_group") or gender_ref)
@@ -227,6 +229,12 @@ def main() -> int:
         hist_air_point, hist_air_ci = _pair_air(slices.get("historical"))
         amp_air_point, amp_air_ci = _pair_air(slices.get("amplification"))
         intr_air_point, intr_air_ci = _pair_air(slices.get("intrinsic"))
+
+        gender_slices_available = int(
+            isinstance(slices.get("historical"), dict)
+            and isinstance(slices.get("amplification"), dict)
+            and isinstance(slices.get("intrinsic"), dict)
+        )
 
         imp = slices_payload.get("improvement") if isinstance(slices_payload.get("improvement"), dict) else {}
         bp = (
