@@ -21,7 +21,7 @@ This document describes how evidence artifacts flow from the FL-BSA runtime (`fl
 │                                                             │
 │  Key tools:                                                 │
 │    - tools/wp/run_wp_evidence.py (orchestrator)             │
-│    - tools/wp/validate_wp_intake.py (validation)            │
+│    - tools/ci/validate_wp_intake.py (validation; schema contract) │
 │    - flbsa/metrics/wp_intake.py (metrics computation)       │
 └─────────────────────────────────────────────────────────────┘
                               │
@@ -31,9 +31,11 @@ This document describes how evidence artifacts flow from the FL-BSA runtime (`fl
 │  fl-bsa-whitepaper (Consumer / This Repo)                   │
 │                                                             │
 │  intake/                                                    │
-│    ├─ metrics_long.csv                                      │
+│    ├─ metrics_uncertainty.json (v4 SoT)                     │
+│    ├─ metrics_long.csv (legacy/annex)                       │
 │    ├─ selection_rates.csv                                   │
 │    ├─ manifest.json                                         │
+│    ├─ certificates/*.json                                   │
 │    └─ (other supporting CSVs)                               │
 │                                                             │
 │  make pdf                                                   │
@@ -77,8 +79,14 @@ output/<pipeline_id>/
 │   ├── selection_rates.csv      # Per-group selection rates
 │   ├── metrics_long.csv         # All fairness metrics with CIs
 │   ├── group_confusion.csv      # Confusion matrices (EO)
-│   ├── calibration_bins.csv     # Calibration analysis
+│   ├── calibration_bins.csv     # Calibration analysis (when score/probabilities available)
 │   └── regulatory_matrix.csv    # Compliance mapping
+│   ├── air_status.json          # WP summary JSON (per-attribute AIR status)
+│   ├── eo_status.json           # WP summary JSON (per-attribute EO status)
+│   ├── ece_status.json          # WP summary JSON (ECE status; may be not evaluated)
+│   └── run_summary.json         # WP summary JSON (unified compliance payload)
+├── validation/
+│   └── metrics_uncertainty.json # v4 deterministic SoT (fairness uncertainty surface)
 ├── provenance/
 │   └── manifest.json            # Full provenance
 └── (other pipeline outputs)
@@ -93,10 +101,10 @@ output/<pipeline_id>/
 | Metric | Description | CI Method |
 |--------|-------------|-----------|
 | `selection_rate` | Per-group approval rate | Wilson 95% |
-| `air` | Adverse Impact Ratio (four-fifths rule) | Bootstrap percentile |
+| `air` (v4 SoT) | Disparity ratio (AIR-equivalent) | Delta-method CI on log(AIR) (`wilson+delta`) |
 | `tpr`, `fpr` | Per-group true/false positive rates | Wilson 95% |
-| `tpr_gap`, `fpr_gap` | Max gaps in TPR/FPR | Bootstrap percentile |
-| `ece` | Expected Calibration Error | Bootstrap percentile |
+| `tpr_gap`, `fpr_gap` | Max gaps in TPR/FPR | Bootstrap (BCa or percentile) |
+| `ece` | Expected Calibration Error | Bootstrap (BCa or percentile; only when score/probabilities exist) |
 
 ### SAP Thresholds
 
@@ -107,9 +115,8 @@ Defined in `config/sap.yaml`:
 - ECE ≤ 0.02
 
 ### Bootstrap Configuration
-- Iterations: 2000
-- Seed: 42
-- Method: percentile
+- Bootstrap replicates, alpha, and method are pinned by `config/sap.yaml` and recorded in `provenance/manifest.json` under `inference{...}`.
+- Gate-WP can run `bootstrap_bca` or `bootstrap_percentile` depending on configuration.
 
 ---
 
@@ -124,7 +131,11 @@ Defined in `config/sap.yaml`:
 # 2. Extract to intake/
 unzip WhitePaper_Reviewer_Pack_v4.zip -d /tmp/bundle
 cp /tmp/bundle/intake/*.csv intake/
+cp /tmp/bundle/intake/*.json intake/
 cp /tmp/bundle/provenance/manifest.json intake/manifest.json
+mkdir -p intake/certificates && cp /tmp/bundle/certificates/*.json intake/certificates/
+cp /tmp/bundle/config/sap.yaml config/sap.yaml
+cp /tmp/bundle/config/fairness_config.yaml config/fairness_config.yaml
 
 # 3. Generate TeX macros
 make macros
@@ -136,23 +147,29 @@ make pdf
 ### Macro Generation
 
 `scripts/gen_tex_macros_from_metrics.py` reads:
-- `intake/metrics_long.csv`
+- `intake/metrics_uncertainty.json` (preferred SoT for v4)
+- `intake/metrics_long.csv` (legacy fallback for ECE tables / back-compat)
 - `config/sap.yaml`
 
 And generates:
 - `includes/metrics_macros.tex` — threshold values, summary statistics
 - `includes/table_air_summary.tex` — AIR table
-- `includes/table_eo_summary.tex` — EO gaps table
+- `includes/table_srg_summary.tex` — approval-rate gap (SRG) table
 - `includes/table_ece_summary.tex` — ECE table
 
 ---
 
 ## CSV Schemas
 
+### metrics_uncertainty.json (v4 SoT)
+
+- **Format:** JSON (schema version `fairness_uncertainty.v1`)
+- **Meaning:** Deterministic fairness uncertainty surface (AIR + approval-rate gap) with race pairwise vs reference, p-values, and visibility gating signals.
+
 ### metrics_long.csv
 
 ```
-run_id,split,model_id,metric,group,value,lower_ci,upper_ci,n,method
+run_id,split,model_id,metric,group,value,lower_ci,upper_ci,n,method,ci_degenerate
 ```
 
 | Column | Type | Description |
@@ -166,7 +183,8 @@ run_id,split,model_id,metric,group,value,lower_ci,upper_ci,n,method
 | lower_ci | float | Lower 95% CI bound |
 | upper_ci | float | Upper 95% CI bound |
 | n | int | Sample size |
-| method | string | CI method (wilson, bootstrap_percentile) |
+| method | string | CI method (wilson, bootstrap_bca, bootstrap_percentile) |
+| ci_degenerate | bool | Whether the CI is effectively zero-width |
 
 ### selection_rates.csv
 
@@ -191,29 +209,33 @@ run_id,split,model_id,attribute,group,selected,n
   "dataset_hash": "sha256:abc123...",
   "commit_sha": "def456...",
   "container_digests": {
-    "api": "repo@sha256:...",
-    "worker": "repo@sha256:..."
+    "api_image_digest": "sha256:...",
+    "worker_image_digest": "sha256:..."
   },
-  "seeds": {"rng": 42},
+  "seeds": {"rng_seed": 42, "bootstrap_seed": 42},
   "capabilities": {
     "eo_enabled": true,
-    "ece_enabled": true
-  }
+    "ece_enabled": false
+  },
+  "fairness_reference_groups": {"gender": "male", "race": "white"},
+  "fairness_protected_groups": {"gender": ["female"], "race": ["black", "asian", "hispanic", "other"]},
+  "fairness_policy": {"display_race_in_main_pdf": {"min_group_n": 300, "min_group_pct": 0.05}},
+  "inference": {"method": "bca", "replicates": 2000, "alpha": 0.05, "seed": 42, "smoothing": 1e-6}
 }
 ```
 
 ---
 
-## CI Integration (Future)
+## CI Integration
 
 The `.github/workflows/pull-wp-intake.yml` workflow can:
 1. Trigger on producer CI completion (`repository_dispatch`)
-2. Download `wp-intake` artifact from producer
+2. Download the reviewer bundle artifact from producer (`wp-reviewer-pack-v4` from `wp-evidence-nightly.yml`)
 3. Copy to `intake/`
 4. Regenerate macros and build PDF
 5. Upload PDF artifact
 
-Currently manual; will be wired when cross-repo integration is finalized.
+This workflow is intended to keep the PDF build reproducible and up to date with the producer’s latest evidence run.
 
 ---
 
@@ -221,7 +243,7 @@ Currently manual; will be wired when cross-repo integration is finalized.
 
 ### Producer-Side (fl-bsa)
 
-`tools/wp/validate_wp_intake.py` checks:
+`tools/ci/validate_wp_intake.py` checks:
 - Required CSV columns present
 - CI bounds are sensible (lower ≤ value ≤ upper)
 - All values in valid ranges (e.g., rates in [0,1])
