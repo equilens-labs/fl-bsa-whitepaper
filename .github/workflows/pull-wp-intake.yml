@@ -71,6 +71,33 @@ jobs:
           test -f bundle/provenance/manifest.json
           test -f bundle/certificates/synthetic_quality_certificate.json
 
+      - name: Validate bundle schema versions
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest = Path("bundle/provenance/manifest.json")
+          m = json.loads(manifest.read_text(encoding="utf-8"))
+          schema = str(m.get("schema_version") or "")
+          if schema != "wp-intake.v1":
+              raise SystemExit(
+                  f"Unexpected bundle provenance schema_version={schema!r}; expected 'wp-intake.v1'"
+              )
+
+          mu_path = Path("bundle/intake/metrics_uncertainty.json")
+          mu = json.loads(mu_path.read_text(encoding="utf-8"))
+          mu_schema = str(mu.get("schema_version") or "")
+          if mu_schema != "fairness_uncertainty.v1":
+              raise SystemExit(
+                  "Unexpected bundle metrics_uncertainty.schema_version="
+                  f"{mu_schema!r}; expected 'fairness_uncertainty.v1'"
+              )
+
+          print("Bundle schema versions OK")
+          PY
+
       - name: Sync bundle contents into repo (intake/ + config/)
         run: |
           set -euo pipefail
