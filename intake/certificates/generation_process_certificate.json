@@ -1,0 +1,93 @@
+{
+  "branch_mode": "intrinsic",
+  "certificate_hash": "de8728d3dd6893b9a1ff20cd957f96770fbb57d8d2d4a6298c6b095b2fb1f307",
+  "certificate_id": "430cfcdf-8eae-4eb8-91b9-67e289ca13a0",
+  "certificate_signature": "a0d8b4382783506c40a78864ca3e05ebca2b78bc60d86b745d58a553d050e7434fdfb41d91eb06aa0545e495e80dc518ccc80cf5e87fa1bb3d66e8a5fec4c4eb",
+  "certificate_type": "generation_process_certificate",
+  "certificate_version": "1.0",
+  "generation_completed_at": "2026-01-02T12:20:06.543405+00:00",
+  "generation_environment": {
+    "cpu_count": 48,
+    "ctgan_version": "0.7.5",
+    "cuda_available": false,
+    "cuda_version": null,
+    "memory_available_gb": 99.78,
+    "numpy_version": "1.26.4",
+    "pandas_version": "2.3.3",
+    "python_version": "3.11.2",
+    "system": "Linux",
+    "torch_version": "2.6.0+cu124"
+  },
+  "generation_parameters": {
+    "batch_size": 500,
+    "condition_column": null,
+    "condition_value": null,
+    "include_metadata": true,
+    "n_samples": 10000,
+    "output_format": "csv",
+    "random_seed": null,
+    "sampling_strategy": "random",
+    "stratification_column": null,
+    "temperature": 1.0
+  },
+  "generation_started_at": "2026-01-02T12:20:05.431285+00:00",
+  "issued_at": "2026-01-02T12:20:06.543183+00:00",
+  "issued_by": "FL-BSA Generation Process Validation System",
+  "model_certificate_hash": "5fe0ca6749e8c8f67d1d1a37c8c5f9307f4a04eaaec3d1aec23240b48e972730",
+  "model_path": "/app/output/7d94fa9a-1ef3-43d3-a095-58bc2ed78d70/generator_7d94fa9a-1ef3-43d3-a095-58bc2ed78d70_both.pkl",
+  "model_type": "CTGAN",
+  "output_file_hash": "877d12366f971c45962dd18ec67c24c86668405efea5d9e83f9b3a17acf2c79a",
+  "output_file_path": "/app/output/7d94fa9a-1ef3-43d3-a095-58bc2ed78d70/synthetic_data.csv",
+  "output_file_size_mb": 0.39941883087158203,
+  "pipeline_id": "7d94fa9a-1ef3-43d3-a095-58bc2ed78d70",
+  "previous_certificate_hash": "5fe0ca6749e8c8f67d1d1a37c8c5f9307f4a04eaaec3d1aec23240b48e972730",
+  "public_key_fingerprint": "b3cf460cad0c6c91",
+  "recommendations": [
+    "Successfully generated 10000 samples for intrinsic branch"
+  ],
+  "signature_algorithm": "ECDSA-P256-SHA256",
+  "signed_at": "2026-01-02T12:20:06.545551",
+  "status": "valid",
+  "total_generation_time": 1.1121199131011963,
+  "validation_results": {
+    "actual_model_hash": "",
+    "available_memory_gb": 99.78,
+    "error_message": null,
+    "error_occurred": false,
+    "estimated_memory_gb": 0.009313225746154785,
+    "expected_columns": [
+      "age",
+      "income",
+      "credit_score",
+      "loan_amount",
+      "debt_to_income",
+      "gender",
+      "race"
+    ],
+    "expected_model_hash": "",
+    "generated_columns": [
+      "age",
+      "income",
+      "credit_score",
+      "loan_amount",
+      "debt_to_income",
+      "gender",
+      "race"
+    ],
+    "generation_completed": true,
+    "generation_time_seconds": 1.1121199131011963,
+    "memory_sufficient": true,
+    "model_hash_verified": true,
+    "model_loaded_successfully": true,
+    "output_schema_matches": true,
+    "parameter_validation_errors": [],
+    "parameters_valid": true,
+    "samples_generated": 10000,
+    "samples_requested": 10000,
+    "warnings": []
+  },
+  "warnings": [
+    "No random seed specified - results may not be reproducible",
+    "CUDA not available - generation may be slower without GPU"
+  ]
+}

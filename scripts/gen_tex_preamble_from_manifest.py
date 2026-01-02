@@ -48,6 +48,15 @@ def _load_sap_thresholds(path: Path) -> Dict[str, float]:
         return {"air_min": 0.80, "eo_gap_max": 0.05, "ece_max": 0.02}
 
 
+def _truthy_int(val: Any) -> int:
+    if isinstance(val, bool):
+        return 1 if val else 0
+    if val is None:
+        return 0
+    s = str(val).strip().lower()
+    return 1 if s in {"1", "true", "yes", "on"} else 0
+
+
 def _emit_macros(
     manifest: Dict[str, Any],
     sap_path: Path,
@@ -109,6 +118,30 @@ def _emit_macros(
     scenario_type = sc.get("type", "synthetic_audit") or "synthetic_audit"
     scenario_label = sc.get("label", "Synthetic audit") or "Synthetic audit"
 
+    # General provenance fields for templating/appendices
+    run_id = str(manifest.get("run_id") or "not_available")
+    schema_version = str(manifest.get("schema_version") or "not_available")
+    dataset_hash = str(manifest.get("dataset_hash") or "not_available")
+    config_hash = str(manifest.get("config_hash") or "not_available")
+
+    dig = manifest.get("container_digests") if isinstance(manifest, dict) else None
+    if not isinstance(dig, dict):
+        dig = {}
+    api_image_digest = str(dig.get("api_image_digest") or "not_available")
+    worker_image_digest = str(dig.get("worker_image_digest") or "not_available")
+
+    seeds = manifest.get("seeds") if isinstance(manifest, dict) else None
+    if not isinstance(seeds, dict):
+        seeds = {}
+    rng_seed = seeds.get("rng_seed")
+    bootstrap_seed = seeds.get("bootstrap_seed")
+
+    caps = manifest.get("capabilities") if isinstance(manifest, dict) else None
+    if not isinstance(caps, dict):
+        caps = {}
+    eo_enabled = _truthy_int(caps.get("eo_enabled"))
+    ece_enabled = _truthy_int(caps.get("ece_enabled") or caps.get("calibration_enabled"))
+
     # Optional metrics inspection (for ECE / degeneracy flags)
     has_ece = False
     has_degenerate = False
@@ -148,6 +181,19 @@ def _emit_macros(
         f.write("\\newcommand{\\EoGapMax}{%.3f}\n" % float(thresholds["eo_gap_max"]))
         f.write("\\newcommand{\\EceMax}{%.3f}\n" % float(thresholds["ece_max"]))
         f.write("\\newcommand{\\CodeCommit}{%s}\n" % code_commit)
+        f.write("\\newcommand{\\RunId}{%s}\n" % run_id)
+        f.write("\\newcommand{\\SchemaVersion}{%s}\n" % schema_version)
+        f.write("\\newcommand{\\DatasetHash}{%s}\n" % dataset_hash)
+        f.write("\\newcommand{\\ConfigHash}{%s}\n" % config_hash)
+        f.write("\\newcommand{\\ApiImageDigest}{%s}\n" % api_image_digest)
+        f.write("\\newcommand{\\WorkerImageDigest}{%s}\n" % worker_image_digest)
+        f.write("\\newcommand{\\RngSeed}{%s}\n" % (rng_seed if rng_seed is not None else ""))
+        f.write(
+            "\\newcommand{\\BootstrapSeed}{%s}\n"
+            % (bootstrap_seed if bootstrap_seed is not None else "")
+        )
+        f.write("\\newcommand{\\EoEnabled}{%d}\n" % eo_enabled)
+        f.write("\\newcommand{\\EceEnabled}{%d}\n" % ece_enabled)
         f.write("\\newcommand{\\HasDegenerateCIs}{%d}\n" % (1 if has_degenerate else 0))
         f.write("\\newcommand{\\EceEvaluated}{%d}\n" % (1 if has_ece else 0))
 

@@ -5,7 +5,7 @@
 We work with aggregated data only. For each split we use selection counts and rates, per-group confusion counts, and calibration-bin summaries. No row-level data is required for the analyses in this whitepaper.
 
 \subsection{Estimators and Uncertainty}
-Proportions use Wilson 95\% confidence intervals \citep{brown2001interval}. Unless otherwise stated, AIR (\cref{eq:air}), equalised-odds gaps (\cref{eq:eo-gap}), and ECE (\cref{eq:ece}) use a BCa bootstrap with $B=\InferenceReplicates{}$ replicates at level $\InferenceAlpha$, following standard bootstrap practice \citep{efron1994bootstrap}. When smoothing is enabled in the Statistical Analysis Plan (SAP), probabilities at 0 or 1 are clipped slightly before resampling to avoid degenerate intervals.
+Selection-rate proportions use Wilson 95\% confidence intervals \citep{brown2001interval}. For the disparity ratio (\cref{eq:air}), we use a deterministic delta-method confidence interval on $\log(\mathrm{AIR})$; approval-rate gaps (\cref{eq:srg}) use a Newcombe/Wilson construction derived from Wilson endpoints. Two-sided p-values use a two-proportion z-test by default, switching to Fisher's exact test under a small-sample policy (small group size or sparse $2\\times 2$ cells).
 
 \subsection{Multiplicity Adjustment}
-We control the false discovery rate using the Benjamini--Hochberg procedure \citep{benjamini1995fdr}, with target level $q=0.10$, across the family of metrics and slices included in this audit.
+For multi-class race, we perform pairwise comparisons against a fixed reference group. P-values across the race-pair family are adjusted using the Holm--Bonferroni step-down procedure at level $\\alpha=0.05$. Confidence intervals are reported per pair and are not multiplicity-adjusted.

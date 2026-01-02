@@ -1,8 +1,8 @@
-\begin{tabular}{lrrrrrr}
+\begin{tabular}{lrrrllrr}
 \toprule
-branch & batch size & epochs & embedding dim & pac & gen. layers & disc. layers\\
+branch & batch size & epochs & pac & gen. layers & disc. layers & gen. lr & disc. lr\\
 \midrule
-amplification & 500 & 100 & 64 & 10 & 128-128 & 128-128\\
-intrinsic & 500 & 100 & 64 & 10 & 128-128 & 128-128\\
+amplification & 30 & 170 & 5 & 64-64 & 64-128-64 & \num{0.000143} & \num{0.000114}\\
+intrinsic & 30 & 220 & 5 & 64-128-64 & 64-64 & \num{0.00061} & \num{0.000158}\\
 \bottomrule
 \end{tabular}

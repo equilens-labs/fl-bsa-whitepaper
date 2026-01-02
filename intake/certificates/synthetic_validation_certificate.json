@@ -1,0 +1,137 @@
+{
+  "branch_mode": "intrinsic",
+  "certificate_hash": "a0c5c4d7753d3a4681b48f9e2546f90115862db1e599bde2a0cf1ab48f4ed051",
+  "certificate_id": "566c7fd1-fe6e-47f2-9f67-50a6c776557a",
+  "certificate_signature": "f4cae889e1ec0967881ab2440faabd82011e206a856e66b8a0754cb9311cc50d72568413585a8a42072c72ea45f8d728c34f67e70417190d6f4258ba9757f845",
+  "certificate_type": "synthetic_validation",
+  "certificate_version": "1.0",
+  "data_columns": 8,
+  "data_rows": 10000,
+  "data_schema_valid": true,
+  "generation_successful": true,
+  "generation_time_seconds": 1.1121199131011963,
+  "generator_path": "/app/output/7d94fa9a-1ef3-43d3-a095-58bc2ed78d70/generator_7d94fa9a-1ef3-43d3-a095-58bc2ed78d70_both.pkl",
+  "generator_type": "CTGAN",
+  "issued_at": "2026-01-02T12:20:06Z",
+  "issued_by": "FL-BSA Synthetic Validation Service",
+  "issues_found": [],
+  "metrics_summary": {},
+  "n_samples_generated": 10000,
+  "n_samples_requested": 10000,
+  "pipeline_id": "7d94fa9a-1ef3-43d3-a095-58bc2ed78d70",
+  "post_processing_applied": [
+    "type_conversion",
+    "outlier_clipping",
+    "category_standardization"
+  ],
+  "previous_certificate_hash": "de8728d3dd6893b9a1ff20cd957f96770fbb57d8d2d4a6298c6b095b2fb1f307",
+  "protected_attributes": [
+    "gender",
+    "race"
+  ],
+  "public_key_fingerprint": "b3cf460cad0c6c91",
+  "quality_metrics": {
+    "basic_quality": {
+      "error": null,
+      "issues": [],
+      "stats": {
+        "column_count": 7,
+        "null_counts": {
+          "age": 0,
+          "credit_score": 0,
+          "debt_to_income": 0,
+          "gender": 0,
+          "income": 0,
+          "loan_amount": 0,
+          "race": 0
+        },
+        "row_count": 10000
+      },
+      "valid": true
+    },
+    "correlations": {
+      "correlation_summary": {
+        "high_correlation_pairs": 0,
+        "max_correlation": 1.0,
+        "mean_abs_correlation": 0.3176253525080655,
+        "note": "Feature correlations are not critical for FL-BSA bias detection"
+      },
+      "error": "Income-credit score correlation too weak",
+      "errors": [
+        "Income-credit score correlation too weak"
+      ],
+      "valid": false,
+      "warnings": []
+    },
+    "demographics": {
+      "distributions": {
+        "age": {
+          "max": 68,
+          "mean": 45.1376,
+          "median": 47.0,
+          "min": 18,
+          "std": 16.587687644097286
+        },
+        "gender": {
+          "female": 0.5567,
+          "male": 0.4433
+        },
+        "race": {
+          "asian": 0.1187,
+          "black": 0.1883,
+          "hispanic": 0.2137,
+          "other": 0.0634,
+          "white": 0.4159
+        }
+      },
+      "error": null,
+      "errors": [],
+      "valid": true,
+      "warnings": []
+    },
+    "financial": {
+      "error": null,
+      "errors": [],
+      "statistics": {
+        "credit_score": {
+          "mean": 740.013,
+          "median": 794.0,
+          "prime_pct": 0.6391,
+          "std": 116.80968659014597,
+          "subprime_pct": 0.2227
+        },
+        "income": {
+          "max": 238000.0,
+          "mean": 101547.08525477155,
+          "median": 80000.0,
+          "min": 20000.0,
+          "std": 78036.35572647807,
+          "zero_income_pct": 0.0
+        },
+        "loan_to_income": {
+          "high_lti_pct": 0.0,
+          "max": 3.9521927527260607,
+          "mean": 0.7608169870320706,
+          "median": 0.5057413133182377
+        }
+      },
+      "valid": true,
+      "warnings": []
+    }
+  },
+  "recommendations": [],
+  "signature_algorithm": "ECDSA-P256-SHA256",
+  "signed_at": "2026-01-02T12:20:06.581750",
+  "status": "valid",
+  "synthetic_data_hash": "b26058cc02f03e1bcc75a490a2f25402e99a0baedc07cd1bd85af91865ef0da5",
+  "synthetic_data_path": "/app/output/7d94fa9a-1ef3-43d3-a095-58bc2ed78d70/synthetic_data.csv",
+  "task_id": "9ed133dd-a083-4e33-9f02-29a4d2f52381",
+  "validation_summary": {
+    "columns": 7,
+    "issues_count": 0,
+    "message": "All validation checks passed",
+    "rows": 10000,
+    "warnings_count": 0
+  },
+  "warnings": []
+}

@@ -5,10 +5,14 @@
 This whitepaper documents a \textit{synthetic audit scenario} (\ScenarioLabel{}) and the evidence artefacts generated (report, metrics manifest, certificate links). It provides metrics and documentation building blocks aligned with the Equal Credit Opportunity Act (\ECOA) and Regulation B (\RegB) \citep{ecoa_regb}, the \EUAIAct{} Article 10 data-governance requirements \citep{eu_ai_act}, and related frameworks. It is not a legal opinion and does not constitute a complete compliance submission for any specific deployment.
 
 \subsection{Purpose}
-The purpose of this whitepaper is twofold. First, we demonstrate that the system is fit-for-purpose, fair, private, secure, and reproducible. Second, we assess performance against pre-specified fairness and calibration thresholds: AIR $\ge \AIRThreshold$, equalised-odds gaps $\le \TprGapThreshold/\FprGapThreshold$, and ECE $\le \EceThreshold$.\footnote{These thresholds are specified in the SAP for this synthetic audit scenario; see Appendix~A.}
+This whitepaper documents a synthetic audit scenario (\ScenarioLabel{}) and the evidence artefacts generated (metrics intake, provenance manifest, and certificates). We evaluate selection-rate fairness and quantify uncertainty, surfacing violations when present. We report a disparity ratio (AIR-equivalent) and approval-rate gaps against pre-specified thresholds.\footnote{Thresholds are specified in the SAP for this scenario; see Appendix~A.}
 
 \subsection{Run Status}
-Under the SAP for this run, thresholds are AIR $\ge \AirMin$, equalised-odds gaps $\le \EoGapMax$, and ECE $\le \EceMax$. For the synthetic audit scenario reported here, the number of AIR violations is \NumAIRViolations, the numbers of EO-gap violations are TPR: \NumTPRGapViol{} and FPR: \NumFPRGapViol, and the ECE status is \ifnum\EceEvaluated>0 ECE violations \NumECEViolations\else not evaluated (compliance unknown)\fi.
+Under the SAP for this run, the minimum disparity ratio threshold is AIR $\ge \AirMin$. For gender (\GenderProtectedGroup{} vs \GenderReferenceGroup{}), the estimated disparity ratio is \GenderAIR{} with 95\% CI [\GenderAIRLCI{}, \GenderAIRUCI{}], which falls below the \AirMin{} threshold and therefore constitutes a potential disparate-impact finding under the four-fifths rule.
+
+\noindent Race comparisons are \ifnum\ShowRaceMain>0 included (worst-case pair vs \RaceReferenceGroup{})\else reported in the annex only due to small-n policy\fi. Calibration (ECE) is not evaluated in this scenario; calibration compliance is therefore unknown.
+
+\noindent Synthetic quality is advisory in v4: the threshold used is \SqThresholdUsed{}, and this run \ifnum\SqThresholdMet>0 meets\else does not meet\fi\ the threshold.
 
 \subsection{Snapshot (Populates from Evidence)}
-For this run, the minimum AIR observed is \MinAIR; the EO gap violations are TPR: \NumTPRGapViol{} and FPR: \NumFPRGapViol; and \ifnum\EceEvaluated>0 the maximum ECE across splits is \MaxECE\else ECE was not evaluated (no probability scores or calibration bins were available; compliance unknown)\fi. If any of these values read \texttt{TBD}, the metrics macros have not yet been generated.
+Key tables in \Cref{tab:air_summary,tab:srg_summary} are generated directly from the evidence intake. If any values read \texttt{TBD}, the intake macros have not yet been generated for the current bundle.
