@@ -11,16 +11,19 @@ The reviewer-ready bundle `WhitePaper_Reviewer_Pack_v4.zip` contains:
 
 | File | Description |
 |------|-------------|
-| `intake/metrics_long.csv` | Global metrics (AIR, tpr_gap, fpr_gap, ece) with 95% CIs; per-group selection_rate, tpr, fpr with CIs |
-| `provenance/manifest.json` | Non-placeholder container digest, dataset hash, code commit, RNG seed, timestamps |
+| `intake/metrics_uncertainty.json` | **v4 SoT**: deterministic fairness uncertainty surface (AIR + approval-rate gap with CIs and p-values; race pairwise vs reference) |
+| `intake/metrics_long.csv` | Legacy/annex/back-compat metrics surface (may include bootstrap methods; not SoT for v4 PDF) |
+| `intake/selection_rates.csv` | Per-group selection rates used by plots and cross-checks |
+| `intake/fairness_slices.json` | Gender AIR by slice (historical baseline / amplification / intrinsic) to prevent “single AIR” misinterpretation |
+| `provenance/manifest.json` | Container digests, dataset hash, code commit, RNG seed, timestamps, and fairness orientation mapping/policy |
+| `config/fairness_config.yaml` | Deterministic reference/protected mapping + visibility policy (mirrored into the manifest) |
 | `intake/regulatory_matrix.csv` | No TBDs for in-scope controls |
-| `privacy/tests/*.json` | privacy_evidence_membership.json, privacy_evidence_attribute.json, dp_accounting.json |
-| `config/sap.yaml` | Thresholds and bootstrap settings |
+| `certificates/*.json` | Evidence certificates (includes `synthetic_quality_certificate.json` for SQ threshold advisory text) |
+| `config/sap.yaml` | Thresholds + reporting/SoT notes (methods/thresholds referenced by the whitepaper) |
 
 **Optional but recommended:**
-- `intake/group_summary_*.csv`
-- `intake/feature_missingness_*.csv`
 - `intake/calibration_bins.csv`
+- `privacy/**` (if present in the run output and in scope)
 
 ---
 
@@ -47,45 +50,59 @@ The `gate-wp` target:
 
 ## 3. Required Bundle Contents
 
-### 3.1 intake/metrics_long.csv
+### 3.1 intake/metrics_uncertainty.json (v4 SoT)
+
+This file is the single source of truth for the v4 PDF’s fairness tables/plots.
+
+**Required (high-level):**
+- `schema_version`
+- `primary_ratio_metric` (must be `air`)
+- `fairness_uncertainty.gender` (binary AIR/SRG vs deterministic reference)
+- `fairness_uncertainty.race` (multi-class, pairwise vs deterministic reference; includes `display_in_main_pdf` policy signal)
+
+**Key contract points:**
+- AIR CI: deterministic delta-method CI on log(AIR) (method: `wilson+delta`).
+- Selection-rate CIs: Wilson.
+- Race p-values: include Holm–Bonferroni adjusted values (`p_value_adjusted`, `p_value_adjustment: holm_bonferroni`).
+
+### 3.2 intake/metrics_long.csv (legacy/annex/back-compat)
 
 **Required columns:** `run_id,split,model_id,metric,group,value,lower_ci,upper_ci,n,method`
 
-**Required metrics:**
-- Global: `air`, `tpr_gap`, `fpr_gap`, `ece` — each with 95% CIs and `n`
-- Per-group: `selection_rate`, `tpr`, `fpr` for each `attr:value` with Wilson CIs
+This file may include bootstrap metrics and legacy metric naming; it must not be treated as SoT for the v4 PDF.
 
-**Conventions:**
-- `metric` names lowercase
-- `group` formatted as `attr:value` (e.g., `gender:female`, `race:asian`)
-- `split` ∈ {`train`, `validation`, `test`, `synthetic`}
-- Stable `run_id` across runs
-
-### 3.2 provenance/manifest.json
+### 3.3 provenance/manifest.json
 
 **Required keys:**
 - `run_id` — unique pipeline run identifier
-- `dataset_hash` — `sha256:...` of input dataset
+- `dataset_hash` — `sha256:<hex>` of input dataset (prefix required)
 - `commit_sha` — git commit of producer code
 - `container_digest` — `repo@sha256:...` (no placeholders in CI)
 - `rng_seed` — RNG seed for reproducibility
 - `hardware` — execution environment info
 - `start_ts`, `end_ts` — ISO timestamps
 
-### 3.3 intake/regulatory_matrix.csv
+**v4 additions (required for deterministic orientation):**
+- `fairness_reference_groups` (e.g., `{"gender":"male","race":"white"}`)
+- `fairness_protected_groups` (e.g., `{"gender":["female"],"race":["black","asian","hispanic","other"]}`)
+- `fairness_policy` (e.g., race visibility thresholds for the main PDF)
+
+### 3.4 intake/regulatory_matrix.csv
 
 **Required columns:** `framework, citation, requirement_text, control_assurance, evidence_artifact, owner, status, notes`
 
 **Status values:** `in-place`, `validated`, `planned` (no `TBD` for in-scope items)
 
-### 3.4 privacy/tests/
+### 3.5 certificates/
 
-**Required files:**
-- `privacy_evidence_membership.json` — keys: `mi_auc`, `method`, `notes`
-- `privacy_evidence_attribute.json` — keys: `ai_auc`, `method`, `notes`
-- `dp_accounting.json` — keys: `epsilon`, `delta`, `accountant`, `notes` (or `claimed: false`)
+At minimum, the bundle must include:
+- `certificates/synthetic_quality_certificate.json` (SQ threshold values used by the PDF)
+- `certificates/synthetic_validation_certificate.json`
+- `certificates/regulatory_alignment_certificate.json`
+- `certificates/model_certificate_amplification.json`
+- `certificates/model_certificate_intrinsic.json`
 
-### 3.5 config/sap.yaml
+### 3.6 config/sap.yaml
 
 **Required thresholds:**
 ```yaml
@@ -94,11 +111,11 @@ thresholds:
   tpr_gap_max: 0.05
   fpr_gap_max: 0.05
   ece_max: 0.02
-
-bootstrap:
-  B: 2000
-  seed: 42
-  method: percentile
+statistical:
+  alpha: 0.05
+inference:
+  method: bca
+  replicates: 2000
 ```
 
 ---
@@ -111,7 +128,11 @@ unzip /path/to/WhitePaper_Reviewer_Pack_v4.zip -d /tmp/bundle
 
 # Copy intake files to this repo
 cp /tmp/bundle/intake/*.csv intake/
+cp /tmp/bundle/intake/*.json intake/
 cp /tmp/bundle/provenance/manifest.json intake/manifest.json
+mkdir -p intake/certificates && cp /tmp/bundle/certificates/*.json intake/certificates/
+cp /tmp/bundle/config/sap.yaml config/sap.yaml
+cp /tmp/bundle/config/fairness_config.yaml config/fairness_config.yaml
 
 # Generate LaTeX macros and build PDF
 make pdf
@@ -124,8 +145,8 @@ make pdf
 The producer repo (`fl-bsa`) includes validation:
 
 ```bash
-# In fl-bsa
-python tools/wp/validate_wp_intake.py --root output/<pipeline_id>/intake
+# In fl-bsa (root contains one or more pipeline directories)
+python tools/ci/validate_wp_intake.py --root output
 ```
 
 Validation checks:

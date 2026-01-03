@@ -11,12 +11,14 @@ The producer repo (`fl-bsa`) exports a compact bundle via `make gate-wp` with al
 
 **Required:**
 - `selection_rates.csv`
-- `metrics_long.csv`
+- `metrics_uncertainty.json` (v4 SoT for fairness tables/plots)
 - `provenance/manifest.json`
-- `metrics.json`
+- `config/sap.yaml`
+- `certificates/synthetic_quality_certificate.json` (SQ advisory text in v4 PDF)
 
-**Optional (EO):**
-- `group_confusion.csv` (when ground_truth is available)
+**Optional (legacy/annex):**
+- `metrics_long.csv` (legacy/back-compat; may include bootstrap methods)
+- `group_confusion.csv` (label-based diagnostics; presence depends on scenario/config)
 
 **Bundle locations:**
 - Local (after a run): `artifacts/WhitePaper_Reviewer_Pack_v4.zip` or `output/<pipeline_id>/intake/`
@@ -54,16 +56,20 @@ unzip artifacts/WhitePaper_Reviewer_Pack_v4.zip -d /tmp/bundle
 
 # Copy intake files
 cp /tmp/bundle/intake/*.csv intake/
+cp /tmp/bundle/intake/*.json intake/
 cp /tmp/bundle/provenance/manifest.json intake/manifest.json
+mkdir -p intake/certificates && cp /tmp/bundle/certificates/*.json intake/certificates/
+cp /tmp/bundle/config/sap.yaml config/sap.yaml
+cp /tmp/bundle/config/fairness_config.yaml config/fairness_config.yaml
 
 # Generate LaTeX macros and build PDF
 make pdf
 ```
 
-### CI Pull (Future)
+### CI Pull
 The `.github/workflows/pull-wp-intake.yml` workflow can be configured to:
 - Trigger on producer CI completion or on demand
-- Download the wp-intake artifact from the producer repo
+- Download the reviewer bundle artifact from the producer repo
 - Copy files to `intake/` and regenerate PDF
 
 ---
@@ -76,6 +82,7 @@ WhitePaper_Reviewer_Pack_v4.zip
 ├── intake/
 │   ├── selection_rates.csv
 │   ├── metrics_long.csv
+│   ├── metrics_uncertainty.json (v4 SoT)
 │   ├── group_confusion.csv (optional; EO only)
 │   ├── regulatory_matrix.csv
 │   └── calibration_bins.csv
@@ -83,6 +90,9 @@ WhitePaper_Reviewer_Pack_v4.zip
 │   └── manifest.json
 ├── config/
 │   └── sap.yaml
+│   └── fairness_config.yaml
+├── certificates/
+│   └── *.json
 └── privacy/
     └── tests/
         ├── privacy_evidence_membership.json
@@ -98,13 +108,15 @@ WhitePaper_Reviewer_Pack_v4.zip
 - **Header:** `run_id,split,model_id,attribute,group,selected,n`
 - **Meaning:** Per `(split, attribute, group)`; `selected` is count of `loan_approved=1`; `n` is group size (0 ≤ selected ≤ n).
 
+### metrics_uncertainty.json (v4 SoT)
+- **Format:** JSON (schema version `fairness_uncertainty.v1`)
+- **Meaning:** Deterministic fairness uncertainty surface (AIR + approval-rate gap), including race multi-class pairwise vs reference.
+
 ### metrics_long.csv
 - **Header:** `run_id,split,model_id,metric,group,value,lower_ci,upper_ci,n,method`
 - **Rows:**
   - `selection_rate` for each `attribute:group` (95% CI, `method=wilson`)
-  - `air` for each `attribute:all` (adverse impact ratio, 95% CI, `method=bootstrap_percentile`)
-  - `tpr_gap`, `fpr_gap` (EO metrics, when available)
-  - `ece` (calibration error)
+  - Other legacy/annex metrics (may include bootstrap methods); **not SoT for the v4 PDF**
 
 ### group_confusion.csv (if present)
 - **Header:** `run_id,split,model_id,attribute,group,TP,FP,TN,FN`
@@ -120,7 +132,7 @@ WhitePaper_Reviewer_Pack_v4.zip
 - `schema_version` — manifest schema version
 - `run_id` — unique pipeline run identifier
 - `created` — ISO timestamp
-- `dataset_hash` — SHA256 of input dataset
+- `dataset_hash` — `sha256:<hex>` of input dataset
 - `commit_sha` — git commit of producer code
 - `container_digests` — API and worker image digests
 - `seeds` — RNG seeds for reproducibility
@@ -152,8 +164,8 @@ Validate shapes/values before consumption:
 
 The producer repo includes a validator:
 ```bash
-# In fl-bsa
-python tools/wp/validate_wp_intake.py --root output/<pipeline_id>/intake
+# In fl-bsa (root contains one or more pipeline directories)
+python tools/ci/validate_wp_intake.py --root output
 ```
 
 ---
@@ -180,6 +192,7 @@ def load_intake(intake_dir: str = "intake"):
     root = Path(intake_dir)
     return {
         "selection_rates": pd.read_csv(root / "selection_rates.csv") if (root / "selection_rates.csv").exists() else pd.DataFrame(),
+        "metrics_uncertainty": json.loads((root / "metrics_uncertainty.json").read_text()) if (root / "metrics_uncertainty.json").exists() else {},
         "metrics_long": pd.read_csv(root / "metrics_long.csv") if (root / "metrics_long.csv").exists() else pd.DataFrame(),
         "group_confusion": pd.read_csv(root / "group_confusion.csv") if (root / "group_confusion.csv").exists() else pd.DataFrame(),
         "manifest": json.loads((root / "manifest.json").read_text()) if (root / "manifest.json").exists() else {},

@@ -1,12 +1,39 @@
-alpha: 0.05
-
 thresholds:
-  air_min: 0.8
-  tpr_gap_max: 0.05
-  fpr_gap_max: 0.05
-  ece_max: 0.02
+  air_min: 0.80           # Four-fifths rule
+  tpr_gap_max: 0.05       # (When evaluated) gap threshold for label-based parity metrics
+  fpr_gap_max: 0.05       # (When evaluated) gap threshold for label-based parity metrics
+  ece_max: 0.02           # (When evaluated) calibration error threshold
+statistical:
+  alpha: 0.05             # 95% confidence intervals
+  bootstrap_iterations: 2000  # Bootstrap settings apply to metrics_long.csv (annex/back-compat)
+  multiplicity_control: BH    # Bootstrap-era default; v4 deterministic race p-values use Holm–Bonferroni
+  q_fdr: 0.10                 # Used only when BH/FDR control is enabled
 
-bootstrap:
-  B: 2000
-  seed: 42
-  method: percentile
+inference:
+  method: bca             # "bca" | "percentile"
+  replicates: 2000        # B (bootstrap iterations)
+  alpha: 0.05             # 95% CI
+  smoothing: 0.000001     # boundary probability clipping (1e-6)
+
+# ---------------------------------------------------------------------------
+# Whitepaper v4 (Deterministic SoT for the PDF)
+# ---------------------------------------------------------------------------
+whitepaper_v4:
+  # Single source of truth (SoT) for the PDF:
+  # - Produced at: output/<run_id>/validation/metrics_uncertainty.json
+  # - Bundled as:  intake/metrics_uncertainty.json
+  sot:
+    fairness_uncertainty:
+      selection_rate_ci: wilson
+      air_ci: delta_log_ratio
+      race_pair_p_value_adjustment: holm_bonferroni
+      note: "CIs are deterministic; Holm–Bonferroni applies to race p-values only."
+    bootstrap_annex:
+      source: intake/metrics_long.csv
+      note: "Bootstrap/BCa outputs are optional annex/back-compat and are not SoT for the v4 PDF."
+  # Calibration (ECE) is scenario-dependent: only evaluated when probability scores exist.
+  calibration:
+    evaluated: false
+    when_enabled_requires:
+      - "capabilities.ece_enabled=true"
+      - "intake/calibration_bins.csv present"

@@ -1,9 +1,4 @@
 
 \section{Model and Algorithm}
-We specify models via loss $\mathcal{L}(\theta)$, with optional fairness/privacy constraints $c(\theta)\le 0$.
-\begin{equation}
-\min_{\theta}\; \mathbb{E}\big[\ell(Y, f_\theta(X))\big] \quad \text{s.t.}\quad
-c_{\mathrm{EO}}(\theta)\le \varepsilon_{\mathrm{EO}}\,,\quad
-c_{\mathrm{DP}}(\theta)\le \varepsilon_{\mathrm{DP}}.
-\end{equation}
+FL-BSA uses a dual-branch CTGAN-style generator to produce synthetic borrower portfolios from tabular lending data. In this whitepaper, fairness is evaluated \emph{post hoc} from aggregate selection counts and does not rely on training-time fairness constraints. The intrinsic branch may apply a deterministic post-labelling policy to inject fair decisions; this is recorded in the run artefacts and certificates when enabled.
 Hyperparameters and seeds for the CTGAN generator branches used in this run are summarised in Appendix~F.

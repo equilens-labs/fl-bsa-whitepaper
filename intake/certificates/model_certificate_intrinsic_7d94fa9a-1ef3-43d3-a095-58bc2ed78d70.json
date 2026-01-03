@@ -1,0 +1,281 @@
+{
+  "branch_mode": "intrinsic",
+  "certificate_hash": "5fe0ca6749e8c8f67d1d1a37c8c5f9307f4a04eaaec3d1aec23240b48e972730",
+  "certificate_id": "model_cert_7d94fa9a-1ef3-43d3-a095-58bc2ed78d70_intrinsic",
+  "certificate_signature": "4c48b85c9ef358bc9055850e0371171b53be568032a17a679ff56f4dc8228be079369f4dc6ebf0d168ffa37df2104f4f03946a00257a5092938ea42c3fee4825",
+  "config_version": "1.0.0",
+  "data_fingerprint": "f5556ac8e05ac4c0",
+  "hyperparameters": {
+    "batch_size": 30,
+    "discriminator_decay": 3.912141628549696e-06,
+    "discriminator_dim": [
+      64,
+      64
+    ],
+    "discriminator_lr": 0.0001583703155911876,
+    "epochs": 220,
+    "generator_decay": 3.2676417657817645e-06,
+    "generator_dim": [
+      64,
+      128,
+      64
+    ],
+    "generator_lr": 0.0006097839109531517,
+    "guardrails": {
+      "batch": {
+        "original": 1024,
+        "source": "realism_gates",
+        "value": 32
+      },
+      "fingerprint": {
+        "max_corr": 0.8808936584289787,
+        "n": 3000.0,
+        "rho_p": 0.8808936584289787,
+        "rho_s": 0.8652764874238226
+      },
+      "pac": {
+        "original": 1,
+        "source": "realism_gates",
+        "value": 5
+      }
+    },
+    "pac": 5
+  },
+  "model_type": "CTGAN",
+  "performance_metrics": {
+    "final_discriminator_loss": -0.5177119970321655,
+    "final_generator_loss": 0.7821577191352844,
+    "training_time_minutes": 7.3822274804115295
+  },
+  "pipeline_id": "7d94fa9a-1ef3-43d3-a095-58bc2ed78d70",
+  "previous_certificate_hash": "a4277cd6e1d49550ce0d6a91e8f105c8117c0157339fdcb452f6308b3d90db9f",
+  "public_key_fingerprint": "b3cf460cad0c6c91",
+  "signature_algorithm": "ECDSA-P256-SHA256",
+  "signed_at": "2026-01-02T12:19:59.114616",
+  "timestamp": "2026-01-02T12:19:59.113551+00:00",
+  "training_duration_minutes": 7.3822274804115295,
+  "training_metadata": {
+    "branch_purpose": "intrinsic fairness test",
+    "epochs": 220,
+    "features_included": [
+      "age",
+      "income",
+      "credit_score",
+      "loan_amount",
+      "debt_to_income",
+      "gender",
+      "race",
+      "income_bin"
+    ],
+    "guardrails": {
+      "batch": {
+        "original": 1024,
+        "source": "realism_gates",
+        "value": 32
+      },
+      "fingerprint": {
+        "max_corr": 0.8808936584289787,
+        "n": 3000.0,
+        "rho_p": 0.8808936584289787,
+        "rho_s": 0.8652764874238226
+      },
+      "pac": {
+        "original": 1,
+        "source": "realism_gates",
+        "value": 5
+      }
+    },
+    "includes_loan_decisions": false,
+    "records_trained": 3000,
+    "transforms": {
+      "columns": [
+        "income",
+        "loan_amount"
+      ],
+      "income_bin": {
+        "bins_q": 10,
+        "enabled": true
+      },
+      "log1p": true,
+      "standardize": {
+        "income": {
+          "mean": 10.834793829598036,
+          "std": 0.6319221232251022
+        },
+        "loan_amount": {
+          "mean": 9.579199735862602,
+          "std": 0.7307366466811133
+        }
+      },
+      "winsorize": {
+        "income": {
+          "lower": 20000.0,
+          "lower_q": 0.01,
+          "upper": 237554.58999999816,
+          "upper_q": 0.99
+        },
+        "loan_amount": {
+          "lower": 3066.83,
+          "lower_q": 0.01,
+          "upper": 82761.24999999994,
+          "upper_q": 0.99
+        }
+      }
+    }
+  },
+  "validation_results": {
+    "branch": "intrinsic",
+    "business_value": "Demonstrates achievable fairness baseline for regulatory compliance",
+    "checks": {
+      "fair_decisions": {
+        "details": {
+          "gender": {
+            "approval_rates": {
+              "female": 0.699661137863385,
+              "male": 0.6995219667653084
+            },
+            "standard_deviation": 9.840882719513904e-05,
+            "target_rate": 0.7
+          },
+          "race": {
+            "approval_rates": {
+              "asian": 0.6993243243243243,
+              "black": 0.6997885835095138,
+              "hispanic": 0.699594046008119,
+              "other": 0.6990595611285266,
+              "white": 0.6996805111821086
+            },
+            "standard_deviation": 0.00029537961900733234,
+            "target_rate": 0.7
+          }
+        },
+        "errors": [],
+        "message": "Fair decisions generated successfully",
+        "valid": true
+      },
+      "feature_independence": {
+        "details": {
+          "credit_score_by_gender": {
+            "coefficient_of_variation": 0.07602465500957072,
+            "group_means": {
+              "female": 717.6675584091314,
+              "male": 799.2112451627589
+            },
+            "independent": true
+          },
+          "credit_score_by_race": {
+            "coefficient_of_variation": 0.05251439202714103,
+            "group_means": {
+              "asian": 805.3809121621622,
+              "black": 719.1823467230444,
+              "hispanic": 775.8912945421741,
+              "other": 806.6912225705329,
+              "white": 733.7952813959204
+            },
+            "independent": true
+          },
+          "debt_to_income_by_gender": {
+            "coefficient_of_variation": 0.06649268656266286,
+            "group_means": {
+              "female": 0.13716474272998408,
+              "male": 0.1506993735418852
+            },
+            "independent": true
+          },
+          "debt_to_income_by_race": {
+            "coefficient_of_variation": 0.31230452986607854,
+            "group_means": {
+              "asian": 0.15365498371196862,
+              "black": 0.10573799306688567,
+              "hispanic": 0.12105050663808295,
+              "other": 0.22978296852822097,
+              "white": 0.15584929214091153
+            },
+            "independent": false
+          },
+          "income_by_gender": {
+            "coefficient_of_variation": 0.9748169144035553,
+            "group_means": {
+              "female": 0.9028063428349544,
+              "male": 0.16604647142992665
+            },
+            "independent": false
+          },
+          "income_by_race": {
+            "coefficient_of_variation": 0.5372660017303568,
+            "group_means": {
+              "asian": 0.7833516886535034,
+              "black": 0.2750290545921484,
+              "hispanic": 0.3995464205798765,
+              "other": 0.2587668490236816,
+              "white": 0.8092273970288694
+            },
+            "independent": false
+          }
+        },
+        "errors": [
+          "income varies too much by gender (CV=0.97, threshold=0.15). Means: {'female': 0.9028063428349544, 'male': 0.16604647142992665}",
+          "income varies too much by race (CV=0.54, threshold=0.15). Means: {'asian': 0.7833516886535034, 'black': 0.2750290545921484, 'hispanic': 0.3995464205798765, 'other': 0.2587668490236816, 'white': 0.8092273970288694}",
+          "debt_to_income varies too much by race (CV=0.31, threshold=0.15). Means: {'asian': 0.15365498371196862, 'black': 0.10573799306688567, 'hispanic': 0.12105050663808295, 'other': 0.22978296852822097, 'white': 0.15584929214091153}"
+        ],
+        "valid": false
+      },
+      "minimal_bias": {
+        "details": {
+          "demographic_parity": 0.0001391710980765959,
+          "disparate_impact": 0.9998010878544696,
+          "statistical_parity_difference": 0.0001391710980765959
+        },
+        "errors": [],
+        "message": "Minimal bias achieved - demonstrates fair lending baseline",
+        "valid": true
+      },
+      "population_diversity": {
+        "details": {
+          "age_range": 56,
+          "age_std": 16.799289837784972,
+          "credit_score_range": 571,
+          "credit_score_std": 132.1108542917355,
+          "income_range": 5.9821700802504285,
+          "income_std": 1.7480252588169585,
+          "unique_protected_combinations": 10
+        },
+        "errors": [
+          "Income diversity too low: std=1.7480252588169585"
+        ],
+        "valid": false
+      }
+    },
+    "edge_case_details": {
+      "dataset_size": 10000,
+      "missing_ratio": 0.0,
+      "protected_attributes": {
+        "gender": {
+          "max_group_ratio": 0.5607,
+          "min_group_size": 4393,
+          "unique_values": 2,
+          "value_counts": {
+            "female": 5607,
+            "male": 4393
+          }
+        },
+        "race": {
+          "max_group_ratio": 0.4069,
+          "min_group_size": 638,
+          "unique_values": 5,
+          "value_counts": {
+            "asian": 1184,
+            "black": 1892,
+            "hispanic": 2217,
+            "other": 638,
+            "white": 4069
+          }
+        }
+      }
+    },
+    "edge_case_type": "normal",
+    "training_records": 3000,
+    "valid": false,
+    "validation_samples": 10000
+  }
+}

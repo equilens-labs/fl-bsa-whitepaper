@@ -1,0 +1,74 @@
+{
+  "branch_mode": "amplification",
+  "cache_confidence": 1.0,
+  "cache_hit": true,
+  "cache_source": "exact",
+  "categorical_columns": [
+    "gender",
+    "race"
+  ],
+  "certificate_hash": "bd035159dac2965cec56e7a03203a2bbfee2c6365c28ca9ca8a6cb156fbd47ab",
+  "certificate_id": "bd06c8e2-faa5-4152-83f7-147d44c5bca3",
+  "certificate_signature": "3b40669b9ea408676d68adb3cf0d308ad007fb8f00a7fc26db7f25788daf45e25de84b537b6a68fe7756888a40feb0e1eecaa85ef77f7ffbf1dd2c0d6311e5f8",
+  "certificate_version": "1.0",
+  "config_version": "1.0",
+  "data_columns": 8,
+  "data_profile_fingerprint": "af451650c2b612b4",
+  "data_rows": 3000,
+  "fallback_used": false,
+  "hyperparameter_validation_passed": true,
+  "issued_at": "2026-01-02T11:59:10Z",
+  "issued_by": "FL-BSA Hyperparameter Tuner",
+  "n_trials": 0,
+  "optimal_hyperparameters": {
+    "batch_size": 32,
+    "discriminator_decay": 3.991305878561677e-06,
+    "discriminator_dim": [
+      64,
+      128,
+      64
+    ],
+    "discriminator_lr": 0.00011430983876313228,
+    "embedding_dim": 128,
+    "epochs": 170,
+    "generator_decay": 7.348118405270443e-06,
+    "generator_dim": [
+      64,
+      64
+    ],
+    "generator_lr": 0.00014321698289111514,
+    "guardrails": {
+      "batch": {
+        "original": 128,
+        "source": "realism_gates",
+        "value": 32
+      },
+      "fingerprint": {
+        "max_corr": 0.8808936584289787,
+        "n": 3000.0,
+        "rho_p": 0.8808936584289787,
+        "rho_s": 0.8652764874238226
+      },
+      "pac": {
+        "original": 1,
+        "source": "realism_gates",
+        "value": 5
+      }
+    },
+    "pac": 5
+  },
+  "optimization_time_seconds": 0.0,
+  "optimization_trials_completed": 0,
+  "previous_certificate_hash": "f9494683b1efc03f9f26c33ad3b2415ebc6763223d83312994ec2019498040ae",
+  "public_key_fingerprint": "b3cf460cad0c6c91",
+  "signature_algorithm": "ECDSA-P256-SHA256",
+  "signed_at": "2026-01-02T11:59:10.969496",
+  "status": "valid",
+  "timeout_seconds": 0,
+  "tuner_version": "1.0.0",
+  "tuning_enabled": true,
+  "tuning_environment": "production",
+  "tuning_method": "cache_lookup",
+  "tuning_successful": true,
+  "validation_warnings": []
+}

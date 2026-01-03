@@ -1,0 +1,128 @@
+{
+  "branch_mode": "intrinsic",
+  "categorical_features": [
+    "gender",
+    "race"
+  ],
+  "categorical_statistics": {
+    "gender": {
+      "most_frequent": "male",
+      "unique_count": 2
+    },
+    "race": {
+      "most_frequent": "white",
+      "unique_count": 5
+    }
+  },
+  "certificate_hash": "f9494683b1efc03f9f26c33ad3b2415ebc6763223d83312994ec2019498040ae",
+  "certificate_id": "data_profiling_intrinsic_7d94fa9a-1ef3-43d3-a095-58bc2ed78d70",
+  "certificate_signature": "f8430a3bd957e917ca2cf796631fa19df3029411c0afaa8c165c81e9a53797e60288654efd743ee858b17b141fd039100c56f7c56ef1c930bd62305b0d9d14bf",
+  "certificate_type": "data_profiling_certificate",
+  "certificate_version": "1.0",
+  "data_quality_score": 0.95,
+  "data_shape": {
+    "columns": 7,
+    "rows": 3000
+  },
+  "missing_value_summary": {},
+  "numeric_features": [
+    "age",
+    "income",
+    "credit_score",
+    "loan_amount",
+    "debt_to_income"
+  ],
+  "numeric_statistics": {
+    "age": {
+      "kurtosis": -0.3261056402744207,
+      "max": 65.0,
+      "mean": 34.41866666666667,
+      "median": 34.0,
+      "min": 18.0,
+      "quantiles": {
+        "q05": 18.0,
+        "q25": 27.0,
+        "q50": 34.0,
+        "q75": 41.0,
+        "q95": 51.0
+      },
+      "skew": 0.29314477908973613,
+      "std": 9.755055369258956
+    },
+    "credit_score": {
+      "kurtosis": -0.1447622155033068,
+      "max": 850.0,
+      "mean": 679.3993333333333,
+      "median": 679.0,
+      "min": 386.0,
+      "quantiles": {
+        "q05": 547.0,
+        "q25": 625.0,
+        "q50": 679.0,
+        "q75": 734.0,
+        "q95": 816.0499999999997
+      },
+      "skew": -0.08986326022753084,
+      "std": 81.3557954586342
+    },
+    "debt_to_income": {
+      "kurtosis": -0.23462606669258523,
+      "max": 0.4179596270574621,
+      "mean": 0.14516177399071956,
+      "median": 0.13791863590307052,
+      "min": 0.0003612944732134,
+      "quantiles": {
+        "q05": 0.03271564583330788,
+        "q25": 0.08286989386356595,
+        "q50": 0.13791863590307052,
+        "q75": 0.19567117674557694,
+        "q95": 0.29178983115327084
+      },
+      "skew": 0.5297488232276275,
+      "std": 0.07945038640282023
+    },
+    "income": {
+      "kurtosis": 5.752313629784219,
+      "max": 300000.0,
+      "mean": 62654.53466666667,
+      "median": 49374.5,
+      "min": 20000.0,
+      "quantiles": {
+        "q05": 20000.0,
+        "q25": 31072.0,
+        "q50": 49374.5,
+        "q75": 77945.5,
+        "q95": 151601.55
+      },
+      "skew": 2.0832102347986257,
+      "std": 45939.03003398765
+    },
+    "loan_amount": {
+      "kurtosis": 7.043707479923819,
+      "max": 133774.0,
+      "mean": 18954.486666666668,
+      "median": 14343.0,
+      "min": 2000.0,
+      "quantiles": {
+        "q05": 4600.9,
+        "q25": 8532.5,
+        "q50": 14343.0,
+        "q75": 23917.5,
+        "q95": 50813.6
+      },
+      "skew": 2.2642737659206356,
+      "std": 15688.543417942952
+    }
+  },
+  "pipeline_id": "7d94fa9a-1ef3-43d3-a095-58bc2ed78d70",
+  "previous_certificate_hash": "a4c60b67289dc9f066fc8d32e02260a3e01f9a25556c45b3f292661444958938",
+  "protected_attributes_found": [
+    "age",
+    "gender",
+    "race"
+  ],
+  "public_key_fingerprint": "b3cf460cad0c6c91",
+  "signature_algorithm": "ECDSA-P256-SHA256",
+  "signed_at": "2026-01-02T11:50:42.778149",
+  "timestamp": "2026-01-02T11:50:42.777385+00:00"
+}

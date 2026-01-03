@@ -10,7 +10,7 @@ The whitepaper is a publication-ready LaTeX project designed for:
 - **Regulatory review**: Precise, evidence-forward tone with equations and references
 - **arXiv submission**: No shell-escape, no custom fonts, uses natbib + BibTeX
 - **Partial results**: Compiles with "TBD" placeholders when metrics are missing
-- **Auto-population**: Tables fill automatically from `intake/metrics_long.csv`
+- **Auto-population**: Tables fill automatically from `intake/metrics_uncertainty.json` (v4 SoT)
 
 ---
 
@@ -23,10 +23,10 @@ includes/
   macros.tex              % global macros, thresholds (defaults)
   metrics_macros.tex      % auto-generated (safe placeholder if absent)
   table_air_summary.tex   % auto-generated from metrics
-  table_eo_summary.tex    % auto-generated from metrics
+  table_srg_summary.tex   % auto-generated from metrics (approval-rate gap)
   table_ece_summary.tex   % auto-generated from metrics
 scripts/
-  gen_tex_macros_from_metrics.py  % reads intake/metrics_long.csv + config/sap.yaml -> includes/*.tex
+  gen_tex_macros_from_metrics.py  % reads intake/metrics_uncertainty.json (preferred) + config/sap.yaml -> includes/*.tex
   arxiv_pack.sh                   % packages arXiv source
 bib/references.bib        % natbib (arXiv-friendly)
 .github/workflows/latex.yml % CI: build PDF + arXiv source
@@ -48,7 +48,7 @@ python3 scripts/gen_tex_macros_from_metrics.py \
 
 This writes:
 - `includes/metrics_macros.tex` — macros like `\MinAIR`, `\NumAIRViolations`, thresholds, etc.
-- `includes/table_air_summary.tex`, `table_eo_summary.tex`, `table_ece_summary.tex` — ready-to-`\input{}` tables using booktabs.
+- `includes/table_air_summary.tex`, `table_srg_summary.tex`, `table_ece_summary.tex` — ready-to-`\input{}` tables using booktabs.
 
 ---
 
@@ -56,10 +56,10 @@ This writes:
 
 | Section | Content |
 |---------|---------|
-| Executive Summary | Purpose, thresholds, and live metric snapshot (`\MinAIR`, `\MaxECE`, EO violations) |
-| Problem & Estimands | Formal definitions (AIR, EO, ECE) with equations |
-| Methods | Estimators, uncertainty (Wilson CIs, bootstrap), multiplicity |
-| Model & Algorithm | Objective + constraints (EO/DP placeholders), succinct equation block |
+| Executive Summary | Purpose, thresholds, and live metric snapshot (AIR + approval-rate gap) |
+| Problem & Estimands | Formal definitions (AIR, approval-rate gap, calibration note) with equations |
+| Methods | Estimators and uncertainty (Wilson + delta-log AIR CI; small-n safeguards) |
+| Model & Algorithm | Dual-branch generator description and post-hoc fairness evaluation |
 | Evaluation Design | Splits, calibration, robustness |
 | Results | Tables auto-`\input{}` from `includes/table_*.tex` |
 | Compliance | Regulatory anchors (ECOA, EU AI Act, FCA) |
@@ -89,7 +89,7 @@ make arxiv
 
 ### CI/CD (GitHub Actions)
 The `.github/workflows/latex.yml` workflow:
-1. Generates macros from `intake/metrics_long.csv` + `config/sap.yaml`
+1. Generates macros from `intake/metrics_uncertainty.json` (preferred) + `config/sap.yaml`
 2. Compiles LaTeX with latexmk → PDF artifact
 3. Packages arXiv source → `dist/whitepaper_arxiv_source.zip`
 4. On release: attaches PDF and arXiv bundle to GitHub release
@@ -107,7 +107,7 @@ The `.github/workflows/latex.yml` workflow:
 
 ## Partial Results Handling
 
-If `intake/metrics_long.csv` is missing or incomplete:
+If the v4 SoT (`intake/metrics_uncertainty.json`) is missing or incomplete:
 - Executive Summary shows **TBD** where numbers would appear
 - Tables compile with placeholder rows
 - Once metrics are added, regenerate macros and recompile

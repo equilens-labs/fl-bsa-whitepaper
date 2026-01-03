@@ -1,0 +1,11 @@
+attributes:
+  gender:
+    reference: "male"
+    protected: ["female"]
+  race:
+    reference: "white"
+    protected: ["black", "asian", "hispanic", "other"]
+policy:
+  display_race_in_main_pdf:
+    min_group_n: 300
+    min_group_pct: 0.05

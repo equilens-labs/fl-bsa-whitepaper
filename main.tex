@@ -70,7 +70,7 @@
 \maketitle
 
 \begin{abstract}
-We present a regulator-ready, statistically rigorous evaluation of Equilens' Fair Lending Bias-Simulation Appliance (FL-BSA). The paper formalises core fairness and calibration estimands---including the Adverse Impact Ratio (AIR), Equalised Odds (EO), and the Expected Calibration Error (ECE)---and specifies a Statistical Analysis Plan (SAP) based on Wilson score intervals for proportions and bias-corrected and accelerated (BCa) bootstrap confidence intervals for derived metrics. We describe the data-privacy and provenance boundaries, and demonstrate the framework on a synthetic fair-lending audit scenario, reporting quantified uncertainty for key metrics in a form suitable for regulatory review.
+We present a regulator-ready, statistically rigorous evaluation of Equilens' Fair Lending Bias-Simulation Appliance (FL-BSA). The paper formalises core selection-rate fairness estimands---including a disparity ratio (AIR-equivalent) and approval-rate gaps---and reports deterministic uncertainty using Wilson confidence intervals for group rates and a delta-method confidence interval for the AIR ratio. We describe the data-privacy and provenance boundaries, and demonstrate the framework on a synthetic fair-lending audit scenario, surfacing violations (when present) with quantified uncertainty suitable for regulatory review. Calibration (ECE) is not evaluated in this scenario.
 \end{abstract}
 
 \input{sections/01_executive_summary}

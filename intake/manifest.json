@@ -1,20 +1,23 @@
 {
   "schema_version": "wp-intake.v1",
-  "run_id": "427d4729-775d-441b-9bbd-463b3c6d48f9",
-  "created": "2025-11-28T19:10:07.445435+00:00",
-  "dataset_hash": "7fbc4c8b4d24b2173d2c536e5d3f62c8fcc28cfdf3a165071c6ad04864721ba8",
-  "commit_sha": "b7f63d96d229bbbd62ebdc173d4718487d9e1883",
-  "code_commit": "b7f63d96d229bbbd62ebdc173d4718487d9e1883",
+  "run_id": "7d94fa9a-1ef3-43d3-a095-58bc2ed78d70",
+  "created": "2026-01-02T12:20:34.396166+00:00",
+  "dataset_hash": "sha256:7fbc4c8b4d24b2173d2c536e5d3f62c8fcc28cfdf3a165071c6ad04864721ba8",
+  "dataset_hash_source": "metrics.dataset_hash",
+  "dataset_hash_path": "/app/output/7d94fa9a-1ef3-43d3-a095-58bc2ed78d70/dataset_7d94fa9a-1ef3-43d3-a095-58bc2ed78d70.csv",
+  "commit_sha": "f3cad9686c7ef3f889ebb90a8b73b9e2439a51a1",
+  "code_commit": "f3cad9686c7ef3f889ebb90a8b73b9e2439a51a1",
+  "software_commit": "f3cad9686c7ef3f889ebb90a8b73b9e2439a51a1",
   "container_digests": {
-    "api_image_digest": "sha256:99c7da9f74d0a838392ea50948e77cb4357df01251b990b64903d82b2b632ca0",
-    "worker_image_digest": "sha256:5dfc445412f07fcfe212552fcbe6ce6719ced62ec75345c447655288caa71a19"
+    "api_image_digest": "sha256:0941ac891dee766f81928eb9a6b6f31f2c544474b1e49ad08e4d3976a5e47120",
+    "worker_image_digest": "sha256:c07f7c486e324f8be60bd554f52c0dd594938e52a1523712519706c87e0bac45"
   },
-  "container_digest": "sha256:99c7da9f74d0a838392ea50948e77cb4357df01251b990b64903d82b2b632ca0",
+  "container_digest": "sha256:0941ac891dee766f81928eb9a6b6f31f2c544474b1e49ad08e4d3976a5e47120",
   "seeds": {
     "rng_seed": 42,
     "bootstrap_seed": 42
   },
-  "config_hash": "da5f5f8a240ce50be3acd4b35f8e31291e261806b589beaa359960a6aa5fd05c",
+  "config_hash": "20d3f12a090c213d9c5b29991f96cebb7a1b165ea12d8d380580ad2b0ef43641",
   "capabilities": {
     "eo_enabled": true,
     "ece_enabled": false
@@ -23,13 +26,13 @@
     "level": 0.95,
     "wilson_continuity_correction": false
   },
-  "start_ts": "2025-11-28T19:10:07.445449+00:00",
-  "end_ts": "2025-11-28T19:10:07.445456+00:00",
+  "start_ts": "2026-01-02T12:20:34.396180+00:00",
+  "end_ts": "2026-01-02T12:20:34.396186+00:00",
   "hardware": {
     "cpu_count": 48,
     "machine": "x86_64",
     "processor": "",
-    "ram_bytes": 135036321792
+    "ram_bytes": 135036325888
   },
   "inference": {
     "method": "bca",
@@ -37,5 +40,26 @@
     "alpha": 0.05,
     "seed": 42,
     "smoothing": 1e-06
+  },
+  "fairness_reference_groups": {
+    "gender": "male",
+    "race": "white"
+  },
+  "fairness_protected_groups": {
+    "gender": [
+      "female"
+    ],
+    "race": [
+      "black",
+      "asian",
+      "hispanic",
+      "other"
+    ]
+  },
+  "fairness_policy": {
+    "display_race_in_main_pdf": {
+      "min_group_n": 300,
+      "min_group_pct": 0.05
+    }
   }
 }
