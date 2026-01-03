@@ -7,13 +7,13 @@ in the latest clean rebuild, and the remaining work items to close before extern
 
 Producer (FL‑BSA):
 - Bundle: `/home/daimakaimura/fl-bsa/artifacts/WhitePaper_Reviewer_Pack_v4.zip`
-- sha256: `bc84f887a1e7f44bb24a9ed4a6ca6b1451c9d5e5e16b8ec0a741b478c9d718ef`
-- run_id: `713194a0-4ff6-4f08-9e0e-5dce63ec0c07`
-- commit_sha (per `intake/run_summary.json`): `15d0e9fc3c00ac1e58de59a735d2cf3b0bf5f78e`
+- sha256: `04ba94c06da1d06fd130ea10c394cccce7f6cdd6553603cf082c39b0d84482fc`
+- run_id: `63404f8c-bb53-426a-b3af-aeafe4b394b1`
+- commit_sha (per `intake/manifest.json`): `1da550c164b6839493493cceca8047c382363745`
 
 Consumer (Whitepaper):
 - PDF: `/home/daimakaimura/fl-bsa-whitepaper/dist/whitepaper.pdf`
-- sha256: `1ff1b1526d9eb13e0f18c55360578db4537391029a6f8342a0169ce59bd5edf9`
+- sha256: `b35e370c20d8864bce87285d17fc3114ec5033858eec37a509e44bdf0d1559de`
 
 ## Bundle Contract (v4 SoT)
 
@@ -33,12 +33,12 @@ The consumer repo ingests:
 
 From `intake/fairness_slices.json` (reference=`male`, protected=`female`, threshold=0.80):
 - Historical AIR: `0.7706` (CI `0.7170–0.8282`) — baseline disparity
-- Amplification AIR: `0.7702` (CI `0.7403–0.8012`) — bias preservation (fidelity)
-- Intrinsic AIR: `0.9998` (CI `0.9744–1.0258`) — near-parity achievable
+- Amplification AIR: `0.7704` (CI `0.7405–0.8014`) — bias preservation (fidelity)
+- Intrinsic AIR: `0.9999` (CI `0.9746–1.0259`) — near-parity achievable
 
 Bias preservation and improvement summaries:
-- Amplification vs historical absolute AIR delta: `0.00040`
-- Intrinsic uplift vs historical relative: `29.7%`
+- Amplification vs historical absolute AIR delta: `0.00019`
+- Intrinsic uplift vs historical relative: `29.8%`
 
 ## Interpreting the Review Flags
 
@@ -90,4 +90,3 @@ Evidence / schema:
 
 Automation:
 - Keep the intake pull workflow pinned to schema versions (`wp-intake.v1`, `fairness_uncertainty.v1`) so producer changes fail loudly.
-

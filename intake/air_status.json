@@ -11,9 +11,9 @@
   ],
   "per_attribute": {
     "gender": {
-      "value": 0.770174,
-      "lower_ci": 0.740335,
-      "upper_ci": 0.801216,
+      "value": 0.770385,
+      "lower_ci": 0.740529,
+      "upper_ci": 0.801445,
       "status": "VIOLATES",
       "ci_degenerate": false,
       "ci_excludes_threshold": false,
@@ -21,21 +21,21 @@
       "protected_group": "female",
       "method": "wilson+delta",
       "p_value": 0.0,
-      "p_value_adjusted": null,
-      "p_value_adjustment": null
+      "p_value_adjusted": 0.0,
+      "p_value_adjustment": "none"
     },
     "race": {
-      "value": 0.916051,
-      "lower_ci": 0.836999,
-      "upper_ci": 1.00257,
+      "value": 0.9165,
+      "lower_ci": 0.837407,
+      "upper_ci": 1.003064,
       "status": "PASSES",
       "ci_degenerate": false,
       "ci_excludes_threshold": true,
       "reference_group": "white",
       "protected_group": "asian",
       "method": "wilson+delta",
-      "p_value": 0.04878767322464972,
-      "p_value_adjusted": 0.14636301967394916,
+      "p_value": 0.050118057453675924,
+      "p_value_adjusted": 0.15035417236102777,
       "p_value_adjustment": "holm_bonferroni",
       "display_in_main_pdf": false,
       "policy": {

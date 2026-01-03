@@ -1,8 +1,8 @@
 {
-  "run_id": "713194a0-4ff6-4f08-9e0e-5dce63ec0c07",
+  "run_id": "63404f8c-bb53-426a-b3af-aeafe4b394b1",
   "split": "wp_evidence",
   "model_id": "gate-wp-42",
-  "generated_at": "2026-01-03T13:05:51.755609+00:00",
+  "generated_at": "2026-01-03T14:37:59.096700+00:00",
   "violations": {
     "air": {
       "count": 1,
@@ -45,9 +45,9 @@
     ],
     "per_attribute": {
       "gender": {
-        "value": 0.770174,
-        "lower_ci": 0.740335,
-        "upper_ci": 0.801216,
+        "value": 0.770385,
+        "lower_ci": 0.740529,
+        "upper_ci": 0.801445,
         "status": "VIOLATES",
         "ci_degenerate": false,
         "ci_excludes_threshold": false,
@@ -55,21 +55,21 @@
         "protected_group": "female",
         "method": "wilson+delta",
         "p_value": 0.0,
-        "p_value_adjusted": null,
-        "p_value_adjustment": null
+        "p_value_adjusted": 0.0,
+        "p_value_adjustment": "none"
       },
       "race": {
-        "value": 0.916051,
-        "lower_ci": 0.836999,
-        "upper_ci": 1.00257,
+        "value": 0.9165,
+        "lower_ci": 0.837407,
+        "upper_ci": 1.003064,
         "status": "PASSES",
         "ci_degenerate": false,
         "ci_excludes_threshold": true,
         "reference_group": "white",
         "protected_group": "asian",
         "method": "wilson+delta",
-        "p_value": 0.04878767322464972,
-        "p_value_adjusted": 0.14636301967394916,
+        "p_value": 0.050118057453675924,
+        "p_value_adjusted": 0.15035417236102777,
         "p_value_adjustment": "holm_bonferroni",
         "display_in_main_pdf": false,
         "policy": {
@@ -140,7 +140,7 @@
     "ci_excludes_threshold": null,
     "ci_degenerate": null
   },
-  "commit_sha": "15d0e9fc3c00ac1e58de59a735d2cf3b0bf5f78e",
+  "commit_sha": "1da550c164b6839493493cceca8047c382363745",
   "dataset_hash": "sha256:7fbc4c8b4d24b2173d2c536e5d3f62c8fcc28cfdf3a165071c6ad04864721ba8",
   "fairness_reference_groups": {
     "gender": "male",
