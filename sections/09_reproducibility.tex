@@ -1,3 +1,5 @@
 
 \section{Reproducibility}
 Every table in this paper is tied to a run identifier and a manifest. The manifest records the dataset hash, code commit, container image digests, random number generator seed, hardware description, and start/end timestamps, as summarised in Appendix~E.
+
+In addition, the evidence bundle includes a certificate chain (JSON) for auditability and tamper-evidence. Each certificate is cryptographically signed (ECDSA P-256) and records its signature material in fields such as \texttt{certificate\_signature}, \texttt{signature\_algorithm}, and \texttt{public\_key\_fingerprint}.

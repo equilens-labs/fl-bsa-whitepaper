@@ -1,3 +1,9 @@
 
 \section{Limitations and Monitoring}
 We document known limitations (data coverage, label noise, covariate shift) and the monitoring plan (control limits, retraining triggers, alert thresholds).
+
+\paragraph{Synthetic quality is advisory in this run.}
+The synthetic-quality certificate reports a threshold of \SqThresholdUsed{} and an observed score of \SqScore{}. In this scenario the threshold is not met (\ifnum\SqThresholdMet>0 met\else not met\fi), and the results should be interpreted as an evidence-backed \emph{audit} rather than a blanket compliance claim.
+
+\paragraph{Small-group visibility for race.}
+Race uncertainty is displayed in the main text only when all race groups exceed minimum size and proportion thresholds. In this run, the observed minimum group size is \RaceObservedMinGroupN{} and minimum proportion is \RaceObservedMinGroupPct{}, so race is gated to the appendix/annex views when the display policy is not satisfied.

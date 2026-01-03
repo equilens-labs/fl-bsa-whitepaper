@@ -1,11 +1,11 @@
 {
   "certificate_chain_depth": 1,
-  "certificate_hash": "09db7e774fa4e88f0ec04a0d7d55c253bf82daaa7cd8148347f4ab157fbacdc0",
-  "certificate_signature": "c11d872007cdc98ee0b1f1f82268d98acffbe4a1c87abbf89b9d3e58c5f5a00e07838267358099db319253fcb37f4ff7c316108a1ca91680c937e1359f7796fb",
+  "certificate_hash": "a353e96749cfdcb17ee81de31ce86e48a67ac7b5edc4d1f857ca581e07d3ddbd",
+  "certificate_signature": "3ad0a17c3b6ec2fefb819427908b15e60b736bd5680baaa076c9512a3c22cade1eef43ad1f0cc5d68958a7544fdf99db47fa5fc6f6c58d5bacfc2bc92c570d9f",
   "certificate_type": "regulatory_alignment",
   "compliance_reference": {
     "compliance_path": "validation/compliance_decision.json",
-    "compliance_sha256": "76a9c6c97976d2a8f5e6cc4aa8a592a7ad67590f1432225bf937887c49d4518d",
+    "compliance_sha256": "5a7d3a7a74be5713e75d00d9253fcdf3979feeb9f795e65786720c3850ab8e32",
     "summary": {
       "compliant": false,
       "has_decision": true
@@ -13,17 +13,17 @@
   },
   "dataset_hash": "7fbc4c8b4d24b2173d2c536e5d3f62c8fcc28cfdf3a165071c6ad04864721ba8",
   "findings": {
-    "aod": 0.13170475734126402,
+    "aod": 0.13150635850822817,
     "basis": {
       "derived_from": "metrics.compliance_status",
-      "di": 0.7700717351608007,
+      "di": 0.7703850192252624,
       "metric": "disparate_impact",
       "source": "validation/compliance_decision.json",
       "threshold": 0.8
     },
-    "di": 0.7700717351608007,
+    "di": 0.7703850192252624,
     "ecoa_non_compliant": true,
-    "eod": 0.13170475734126402,
+    "eod": 0.13150635850822817,
     "four_fifths_flag": true,
     "protected_attributes": [
       "gender",
@@ -33,17 +33,17 @@
   },
   "metrics_reference": {
     "metrics_path": "metrics.json",
-    "metrics_sha256": "a437bcdcbbdba2325d84ab4f6b36e4a41137a1dd4f1178ab5d3600c5bb01b184"
+    "metrics_sha256": "7c99866b0cc4780c94f1bf8cba0004fef90605b48ef83ddfd85a3f9560461049"
   },
-  "pipeline_id": "7d94fa9a-1ef3-43d3-a095-58bc2ed78d70",
-  "previous_certificate_hash": "eec6e755ebf4160a4a5851d3973cd0942839cff40ba1c87bb460bd93652fd6d6",
-  "public_key_fingerprint": "b3cf460cad0c6c91",
+  "pipeline_id": "63404f8c-bb53-426a-b3af-aeafe4b394b1",
+  "previous_certificate_hash": "5a42b71b39bb656c52d2f45288b10cd5b0afc13492ef24a19081c85d6866b83b",
+  "public_key_fingerprint": "1f131ff193087446",
   "regulatory_scope": {
     "ecoa_cfpb": true,
     "eu_ai_act": true,
     "fca_consumer_duty": true
   },
   "signature_algorithm": "ECDSA-P256-SHA256",
-  "signed_at": "2026-01-02T12:20:34.478886",
-  "timestamp": "2026-01-02T12:20:34.478033+00:00"
+  "signed_at": "2026-01-03T14:37:50.774425",
+  "timestamp": "2026-01-03T14:37:50.773604+00:00"
 }

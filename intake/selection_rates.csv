@@ -1,8 +1,8 @@
 run_id,split,model_id,attribute,group,selected,n
-7d94fa9a-1ef3-43d3-a095-58bc2ed78d70,test,ctgan,gender,female,2127,4822
-7d94fa9a-1ef3-43d3-a095-58bc2ed78d70,test,ctgan,gender,male,2966,5178
-7d94fa9a-1ef3-43d3-a095-58bc2ed78d70,test,ctgan,race,asian,275,597
-7d94fa9a-1ef3-43d3-a095-58bc2ed78d70,test,ctgan,race,black,679,1302
-7d94fa9a-1ef3-43d3-a095-58bc2ed78d70,test,ctgan,race,hispanic,926,1726
-7d94fa9a-1ef3-43d3-a095-58bc2ed78d70,test,ctgan,race,other,145,283
-7d94fa9a-1ef3-43d3-a095-58bc2ed78d70,test,ctgan,race,white,3068,6092
+63404f8c-bb53-426a-b3af-aeafe4b394b1,test,ctgan,gender,female,2128,4823
+63404f8c-bb53-426a-b3af-aeafe4b394b1,test,ctgan,gender,male,2965,5177
+63404f8c-bb53-426a-b3af-aeafe4b394b1,test,ctgan,race,asian,275,596
+63404f8c-bb53-426a-b3af-aeafe4b394b1,test,ctgan,race,black,680,1303
+63404f8c-bb53-426a-b3af-aeafe4b394b1,test,ctgan,race,hispanic,926,1726
+63404f8c-bb53-426a-b3af-aeafe4b394b1,test,ctgan,race,other,145,283
+63404f8c-bb53-426a-b3af-aeafe4b394b1,test,ctgan,race,white,3067,6092
