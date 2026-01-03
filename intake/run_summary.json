@@ -1,0 +1,173 @@
+{
+  "run_id": "713194a0-4ff6-4f08-9e0e-5dce63ec0c07",
+  "split": "wp_evidence",
+  "model_id": "gate-wp-42",
+  "generated_at": "2026-01-03T13:05:51.755609+00:00",
+  "violations": {
+    "air": {
+      "count": 1,
+      "attributes": [
+        "gender"
+      ],
+      "available": true
+    },
+    "eo": {
+      "count": 0,
+      "attributes": [],
+      "available": true
+    },
+    "ece": {
+      "count": 0,
+      "available": false
+    }
+  },
+  "compliance": {
+    "air_status": "NON_COMPLIANT",
+    "eo_status": "COMPLIANT",
+    "ece_status": "NOT_EVALUATED"
+  },
+  "thresholds": {
+    "air_min": 0.8,
+    "tpr_gap_max": 0.05,
+    "fpr_gap_max": 0.05,
+    "ece_max": 0.02
+  },
+  "air_details": {
+    "available": true,
+    "threshold": 0.8,
+    "overall_pass": false,
+    "num_violations": 1,
+    "passing_attributes": [
+      "race"
+    ],
+    "violating_attributes": [
+      "gender"
+    ],
+    "per_attribute": {
+      "gender": {
+        "value": 0.770174,
+        "lower_ci": 0.740335,
+        "upper_ci": 0.801216,
+        "status": "VIOLATES",
+        "ci_degenerate": false,
+        "ci_excludes_threshold": false,
+        "reference_group": "male",
+        "protected_group": "female",
+        "method": "wilson+delta",
+        "p_value": 0.0,
+        "p_value_adjusted": null,
+        "p_value_adjustment": null
+      },
+      "race": {
+        "value": 0.916051,
+        "lower_ci": 0.836999,
+        "upper_ci": 1.00257,
+        "status": "PASSES",
+        "ci_degenerate": false,
+        "ci_excludes_threshold": true,
+        "reference_group": "white",
+        "protected_group": "asian",
+        "method": "wilson+delta",
+        "p_value": 0.04878767322464972,
+        "p_value_adjusted": 0.14636301967394916,
+        "p_value_adjustment": "holm_bonferroni",
+        "display_in_main_pdf": false,
+        "policy": {
+          "display_race_in_main_pdf": {
+            "min_group_n": 300,
+            "min_group_pct": 0.05
+          }
+        }
+      }
+    },
+    "definition": "pairwise_vs_reference",
+    "source": "validation/metrics_uncertainty.json"
+  },
+  "eo_details": {
+    "available": true,
+    "thresholds": {
+      "tpr_gap_max": 0.05,
+      "fpr_gap_max": 0.05
+    },
+    "overall_pass": true,
+    "num_violations": 0,
+    "passing_attributes": [
+      "gender",
+      "race"
+    ],
+    "violating_attributes": [],
+    "per_attribute": {
+      "gender": {
+        "tpr_gap": {
+          "value": 0.0,
+          "lower_ci": 0.0,
+          "upper_ci": 0.0,
+          "passes": true
+        },
+        "fpr_gap": {
+          "value": 0.0,
+          "lower_ci": 0.0,
+          "upper_ci": 0.0,
+          "passes": true
+        },
+        "status": "PASSES"
+      },
+      "race": {
+        "tpr_gap": {
+          "value": 0.0,
+          "lower_ci": 0.0,
+          "upper_ci": 0.0,
+          "passes": true
+        },
+        "fpr_gap": {
+          "value": 0.0,
+          "lower_ci": 0.0,
+          "upper_ci": 0.0,
+          "passes": true
+        },
+        "status": "PASSES"
+      }
+    }
+  },
+  "ece_details": {
+    "available": false,
+    "threshold": 0.02,
+    "value": null,
+    "lower_ci": null,
+    "upper_ci": null,
+    "method": null,
+    "passes_threshold": null,
+    "ci_excludes_threshold": null,
+    "ci_degenerate": null
+  },
+  "commit_sha": "15d0e9fc3c00ac1e58de59a735d2cf3b0bf5f78e",
+  "dataset_hash": "sha256:7fbc4c8b4d24b2173d2c536e5d3f62c8fcc28cfdf3a165071c6ad04864721ba8",
+  "fairness_reference_groups": {
+    "gender": "male",
+    "race": "white"
+  },
+  "fairness_protected_groups": {
+    "gender": [
+      "female"
+    ],
+    "race": [
+      "black",
+      "asian",
+      "hispanic",
+      "other"
+    ]
+  },
+  "fairness_policy": {
+    "display_race_in_main_pdf": {
+      "min_group_n": 300,
+      "min_group_pct": 0.05
+    }
+  },
+  "inference": {
+    "method": "bca",
+    "replicates": 2000,
+    "alpha": 0.05,
+    "seed": 42,
+    "smoothing": 1e-06
+  }
+}

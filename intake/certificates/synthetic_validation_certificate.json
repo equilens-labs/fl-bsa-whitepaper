@@ -1,35 +1,35 @@
 {
   "branch_mode": "intrinsic",
-  "certificate_hash": "a0c5c4d7753d3a4681b48f9e2546f90115862db1e599bde2a0cf1ab48f4ed051",
-  "certificate_id": "566c7fd1-fe6e-47f2-9f67-50a6c776557a",
-  "certificate_signature": "f4cae889e1ec0967881ab2440faabd82011e206a856e66b8a0754cb9311cc50d72568413585a8a42072c72ea45f8d728c34f67e70417190d6f4258ba9757f845",
+  "certificate_hash": "16c47687d0e466e979367b98631365c4455ed65c3561f98e8bf3240b2a62d689",
+  "certificate_id": "25efb8ab-943d-4c26-acf6-d2965db07bc9",
+  "certificate_signature": "d0aa326cdcb6e253f8a762b2d7614f6b9ae0619225eee59bf15f4582abe7d435576c8b4827fc287b8f916b60327edb1f103d6e79e830e4765912beec4f948bf3",
   "certificate_type": "synthetic_validation",
   "certificate_version": "1.0",
   "data_columns": 8,
   "data_rows": 10000,
   "data_schema_valid": true,
   "generation_successful": true,
-  "generation_time_seconds": 1.1121199131011963,
-  "generator_path": "/app/output/7d94fa9a-1ef3-43d3-a095-58bc2ed78d70/generator_7d94fa9a-1ef3-43d3-a095-58bc2ed78d70_both.pkl",
+  "generation_time_seconds": 0.9761021137237549,
+  "generator_path": "/app/output/713194a0-4ff6-4f08-9e0e-5dce63ec0c07/generator_713194a0-4ff6-4f08-9e0e-5dce63ec0c07_both.pkl",
   "generator_type": "CTGAN",
-  "issued_at": "2026-01-02T12:20:06Z",
+  "issued_at": "2026-01-03T13:05:16Z",
   "issued_by": "FL-BSA Synthetic Validation Service",
   "issues_found": [],
   "metrics_summary": {},
   "n_samples_generated": 10000,
   "n_samples_requested": 10000,
-  "pipeline_id": "7d94fa9a-1ef3-43d3-a095-58bc2ed78d70",
+  "pipeline_id": "713194a0-4ff6-4f08-9e0e-5dce63ec0c07",
   "post_processing_applied": [
     "type_conversion",
     "outlier_clipping",
     "category_standardization"
   ],
-  "previous_certificate_hash": "de8728d3dd6893b9a1ff20cd957f96770fbb57d8d2d4a6298c6b095b2fb1f307",
+  "previous_certificate_hash": "9ac8af43a6ad5247053a39c69e7487e1f183dae548f64348128b23dfd9f8d042",
   "protected_attributes": [
     "gender",
     "race"
   ],
-  "public_key_fingerprint": "b3cf460cad0c6c91",
+  "public_key_fingerprint": "f27e76b6b84d107f",
   "quality_metrics": {
     "basic_quality": {
       "error": null,
@@ -53,7 +53,7 @@
       "correlation_summary": {
         "high_correlation_pairs": 0,
         "max_correlation": 1.0,
-        "mean_abs_correlation": 0.3176253525080655,
+        "mean_abs_correlation": 0.27322660901577217,
         "note": "Feature correlations are not critical for FL-BSA bias detection"
       },
       "error": "Income-credit score correlation too weak",
@@ -66,22 +66,22 @@
     "demographics": {
       "distributions": {
         "age": {
-          "max": 68,
-          "mean": 45.1376,
-          "median": 47.0,
+          "max": 78,
+          "mean": 26.1404,
+          "median": 18.0,
           "min": 18,
-          "std": 16.587687644097286
+          "std": 11.92391319200962
         },
         "gender": {
-          "female": 0.5567,
-          "male": 0.4433
+          "female": 0.4957,
+          "male": 0.5043
         },
         "race": {
-          "asian": 0.1187,
-          "black": 0.1883,
-          "hispanic": 0.2137,
-          "other": 0.0634,
-          "white": 0.4159
+          "asian": 0.144,
+          "black": 0.1694,
+          "hispanic": 0.202,
+          "other": 0.0763,
+          "white": 0.4083
         }
       },
       "error": null,
@@ -94,25 +94,25 @@
       "errors": [],
       "statistics": {
         "credit_score": {
-          "mean": 740.013,
-          "median": 794.0,
-          "prime_pct": 0.6391,
-          "std": 116.80968659014597,
-          "subprime_pct": 0.2227
+          "mean": 732.342,
+          "median": 780.0,
+          "prime_pct": 0.6243,
+          "std": 120.40942520819496,
+          "subprime_pct": 0.2233
         },
         "income": {
           "max": 238000.0,
-          "mean": 101547.08525477155,
-          "median": 80000.0,
+          "mean": 38614.390694575326,
+          "median": 20000.0,
           "min": 20000.0,
-          "std": 78036.35572647807,
+          "std": 41394.8098839459,
           "zero_income_pct": 0.0
         },
         "loan_to_income": {
           "high_lti_pct": 0.0,
-          "max": 3.9521927527260607,
-          "mean": 0.7608169870320706,
-          "median": 0.5057413133182377
+          "max": 3.772555792918504,
+          "mean": 0.7752534491671967,
+          "median": 0.48823242216222257
         }
       },
       "valid": true,
@@ -121,11 +121,11 @@
   },
   "recommendations": [],
   "signature_algorithm": "ECDSA-P256-SHA256",
-  "signed_at": "2026-01-02T12:20:06.581750",
+  "signed_at": "2026-01-03T13:05:16.890216",
   "status": "valid",
-  "synthetic_data_hash": "b26058cc02f03e1bcc75a490a2f25402e99a0baedc07cd1bd85af91865ef0da5",
-  "synthetic_data_path": "/app/output/7d94fa9a-1ef3-43d3-a095-58bc2ed78d70/synthetic_data.csv",
-  "task_id": "9ed133dd-a083-4e33-9f02-29a4d2f52381",
+  "synthetic_data_hash": "c8c6ff3723e72809e50b6927b760d97f7451bd7867ab70750ed5c1149cc52ca1",
+  "synthetic_data_path": "/app/output/713194a0-4ff6-4f08-9e0e-5dce63ec0c07/synthetic_data.csv",
+  "task_id": "511305ba-b672-4d00-ba73-72eb69bdd46d",
   "validation_summary": {
     "columns": 7,
     "issues_count": 0,

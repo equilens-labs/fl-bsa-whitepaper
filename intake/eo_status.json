@@ -1,0 +1,46 @@
+{
+  "available": true,
+  "thresholds": {
+    "tpr_gap_max": 0.05,
+    "fpr_gap_max": 0.05
+  },
+  "overall_pass": true,
+  "num_violations": 0,
+  "passing_attributes": [
+    "gender",
+    "race"
+  ],
+  "violating_attributes": [],
+  "per_attribute": {
+    "gender": {
+      "tpr_gap": {
+        "value": 0.0,
+        "lower_ci": 0.0,
+        "upper_ci": 0.0,
+        "passes": true
+      },
+      "fpr_gap": {
+        "value": 0.0,
+        "lower_ci": 0.0,
+        "upper_ci": 0.0,
+        "passes": true
+      },
+      "status": "PASSES"
+    },
+    "race": {
+      "tpr_gap": {
+        "value": 0.0,
+        "lower_ci": 0.0,
+        "upper_ci": 0.0,
+        "passes": true
+      },
+      "fpr_gap": {
+        "value": 0.0,
+        "lower_ci": 0.0,
+        "upper_ci": 0.0,
+        "passes": true
+      },
+      "status": "PASSES"
+    }
+  }
+}

@@ -14,9 +14,9 @@
       "unique_count": 5
     }
   },
-  "certificate_hash": "f9494683b1efc03f9f26c33ad3b2415ebc6763223d83312994ec2019498040ae",
-  "certificate_id": "data_profiling_intrinsic_7d94fa9a-1ef3-43d3-a095-58bc2ed78d70",
-  "certificate_signature": "f8430a3bd957e917ca2cf796631fa19df3029411c0afaa8c165c81e9a53797e60288654efd743ee858b17b141fd039100c56f7c56ef1c930bd62305b0d9d14bf",
+  "certificate_hash": "249e671b8552159a5b32caf139432275a1dc30d6969043125b919127c5557668",
+  "certificate_id": "data_profiling_intrinsic_713194a0-4ff6-4f08-9e0e-5dce63ec0c07",
+  "certificate_signature": "61deac3f3c5331c3f60fc3ca01e342414c46a4c66a44bd4c7a3f2d14f975bcbd7fd9b385653ebeed2775b468ec74b86fb8eaace778ffb8c68700399c3a320939",
   "certificate_type": "data_profiling_certificate",
   "certificate_version": "1.0",
   "data_quality_score": 0.95,
@@ -114,15 +114,15 @@
       "std": 15688.543417942952
     }
   },
-  "pipeline_id": "7d94fa9a-1ef3-43d3-a095-58bc2ed78d70",
-  "previous_certificate_hash": "a4c60b67289dc9f066fc8d32e02260a3e01f9a25556c45b3f292661444958938",
+  "pipeline_id": "713194a0-4ff6-4f08-9e0e-5dce63ec0c07",
+  "previous_certificate_hash": "e6656100ef0d8994cc0b1de2d5f3753895e0a883d717590d52fe1e17fafa9b7b",
   "protected_attributes_found": [
     "age",
     "gender",
     "race"
   ],
-  "public_key_fingerprint": "b3cf460cad0c6c91",
+  "public_key_fingerprint": "f27e76b6b84d107f",
   "signature_algorithm": "ECDSA-P256-SHA256",
-  "signed_at": "2026-01-02T11:50:42.778149",
-  "timestamp": "2026-01-02T11:50:42.777385+00:00"
+  "signed_at": "2026-01-03T12:39:48.986024",
+  "timestamp": "2026-01-03T12:39:48.985280+00:00"
 }
