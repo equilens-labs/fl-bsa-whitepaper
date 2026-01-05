@@ -1,18 +1,18 @@
 {
   "schema_version": "wp-intake.v1",
-  "run_id": "63404f8c-bb53-426a-b3af-aeafe4b394b1",
-  "created": "2026-01-03T14:37:50.690846+00:00",
+  "run_id": "485998b9-162d-4a31-b2b9-15507ce4733c",
+  "created": "2026-01-05T12:40:42.597710+00:00",
   "dataset_hash": "sha256:7fbc4c8b4d24b2173d2c536e5d3f62c8fcc28cfdf3a165071c6ad04864721ba8",
   "dataset_hash_source": "metrics.dataset_hash",
-  "dataset_hash_path": "/app/output/63404f8c-bb53-426a-b3af-aeafe4b394b1/dataset_63404f8c-bb53-426a-b3af-aeafe4b394b1.csv",
-  "commit_sha": "1da550c164b6839493493cceca8047c382363745",
-  "code_commit": "1da550c164b6839493493cceca8047c382363745",
-  "software_commit": "1da550c164b6839493493cceca8047c382363745",
+  "dataset_hash_path": "/app/output/485998b9-162d-4a31-b2b9-15507ce4733c/dataset_485998b9-162d-4a31-b2b9-15507ce4733c.csv",
+  "commit_sha": "bbac3d71b30b82daef5fca2b055029c3b93aa77d",
+  "code_commit": "bbac3d71b30b82daef5fca2b055029c3b93aa77d",
+  "software_commit": "bbac3d71b30b82daef5fca2b055029c3b93aa77d",
   "container_digests": {
-    "api_image_digest": "sha256:4ecc10cb6570e89730d1cd1a6ae5c3ec01a2861b7811eea4b4320e3cbaa4dfe7",
-    "worker_image_digest": "sha256:932f9f290f68c3cf645603f30879a02290c7263244ff7c0714d03cce7af70714"
+    "api_image_digest": "sha256:0af0e55f22a9a4df9ebdaa0cb3105c798209a519d2f675b429289cd877f7e69c",
+    "worker_image_digest": "sha256:5adfa21d3deb469b560aa0d0a5461780ac8f64e3bc89c84e61df85b9ba10187e"
   },
-  "container_digest": "sha256:4ecc10cb6570e89730d1cd1a6ae5c3ec01a2861b7811eea4b4320e3cbaa4dfe7",
+  "container_digest": "sha256:0af0e55f22a9a4df9ebdaa0cb3105c798209a519d2f675b429289cd877f7e69c",
   "seeds": {
     "rng_seed": 42,
     "bootstrap_seed": 42
@@ -26,13 +26,13 @@
     "level": 0.95,
     "wilson_continuity_correction": false
   },
-  "start_ts": "2026-01-03T14:37:50.690860+00:00",
-  "end_ts": "2026-01-03T14:37:50.690866+00:00",
+  "start_ts": "2026-01-05T12:40:42.597723+00:00",
+  "end_ts": "2026-01-05T12:40:42.597730+00:00",
   "hardware": {
     "cpu_count": 48,
     "machine": "x86_64",
     "processor": "",
-    "ram_bytes": 135036325888
+    "ram_bytes": 135036321792
   },
   "inference": {
     "method": "bca",

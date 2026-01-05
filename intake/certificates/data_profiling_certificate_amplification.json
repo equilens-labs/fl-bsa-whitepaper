@@ -14,9 +14,9 @@
       "unique_count": 5
     }
   },
-  "certificate_hash": "1c0ab468fd8d067e82454332b1dfe5a724805d5595c9de37f7ad17396b890caa",
-  "certificate_id": "data_profiling_amplification_63404f8c-bb53-426a-b3af-aeafe4b394b1",
-  "certificate_signature": "862e68c00a83f3e145810f69f63fb14de305d038a87b47f1590416cbb4c0a75f674d92bb120504cf39ac4ff0ee1b8cdd4f4c8d9ba0f59629efa6f60c7c932776",
+  "certificate_hash": "7cf4438e0b3eae069b62afe0f371ced897c50015f587063e6dd10802f7f5055c",
+  "certificate_id": "data_profiling_amplification_485998b9-162d-4a31-b2b9-15507ce4733c",
+  "certificate_signature": "02801c35d78cf7bc4619af8366f230f4460b6b8df42e8b521ac375bf9b1b35986ff47c58339bbdb939067e25b257980ae4eb167c690aeaf794eca0c30214a3c1",
   "certificate_type": "data_profiling_certificate",
   "certificate_version": "1.0",
   "data_quality_score": 0.95,
@@ -131,15 +131,15 @@
       "std": 0.49998988541508976
     }
   },
-  "pipeline_id": "63404f8c-bb53-426a-b3af-aeafe4b394b1",
+  "pipeline_id": "485998b9-162d-4a31-b2b9-15507ce4733c",
   "previous_certificate_hash": "",
   "protected_attributes_found": [
     "age",
     "gender",
     "race"
   ],
-  "public_key_fingerprint": "1f131ff193087446",
+  "public_key_fingerprint": "69b10090cb1eeb37",
   "signature_algorithm": "ECDSA-P256-SHA256",
-  "signed_at": "2026-01-03T14:09:38.447164",
-  "timestamp": "2026-01-03T14:09:38.110842+00:00"
+  "signed_at": "2026-01-05T12:14:41.204239",
+  "timestamp": "2026-01-05T12:14:40.879995+00:00"
 }

@@ -1,8 +1,8 @@
 {
   "branch_mode": "intrinsic",
-  "certificate_hash": "f234ff0aba9115b6514ab665803b39f17967273e5a1f796d7138b272ceab4a6f",
-  "certificate_id": "model_cert_63404f8c-bb53-426a-b3af-aeafe4b394b1_intrinsic",
-  "certificate_signature": "4921b444e1655d8f8654d62328e037c71cf4f1d601c5e6504143e6c288eab20c779374094afa71a8a3eeab9d491f41539ae5216c7a839d197662a0ac3f6a9763",
+  "certificate_hash": "b07b9af70975877e0ac70784a9a4b581f03bd67e57dad1f895f60e5a73ba763e",
+  "certificate_id": "model_cert_485998b9-162d-4a31-b2b9-15507ce4733c_intrinsic",
+  "certificate_signature": "c6f80b64a547a732799b1ea1b72de88e39792d9abe51f05d6217e1f40d5c595d0a71f9dcc479d740ce7c6b697f41449348f0d27c8f86b2237b2e195eaaa22568",
   "config_version": "1.0.0",
   "data_fingerprint": "f5556ac8e05ac4c0",
   "hyperparameters": {
@@ -45,15 +45,15 @@
   "performance_metrics": {
     "final_discriminator_loss": -1.556569218635559,
     "final_generator_loss": 1.2119226455688477,
-    "training_time_minutes": 6.624077983697256
+    "training_time_minutes": 6.723626458644867
   },
-  "pipeline_id": "63404f8c-bb53-426a-b3af-aeafe4b394b1",
-  "previous_certificate_hash": "d644fa396022fcc9f6a95fdc8fd99dff6fb0afafdb4283d8d213bcad7dbac67c",
-  "public_key_fingerprint": "1f131ff193087446",
+  "pipeline_id": "485998b9-162d-4a31-b2b9-15507ce4733c",
+  "previous_certificate_hash": "29707e1e1b13257c654b4d5f69859f978aef33e8bfb84a35b12c17f28f94367d",
+  "public_key_fingerprint": "69b10090cb1eeb37",
   "signature_algorithm": "ECDSA-P256-SHA256",
-  "signed_at": "2026-01-03T14:37:16.153310",
-  "timestamp": "2026-01-03T14:37:16.152210+00:00",
-  "training_duration_minutes": 6.624077983697256,
+  "signed_at": "2026-01-05T12:40:07.632364",
+  "timestamp": "2026-01-05T12:40:07.631192+00:00",
+  "training_duration_minutes": 6.723626458644867,
   "training_metadata": {
     "branch_purpose": "intrinsic fairness test",
     "epochs": 220,
