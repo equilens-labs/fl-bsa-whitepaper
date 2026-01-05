@@ -7,13 +7,13 @@ in the latest clean rebuild, and the remaining work items to close before extern
 
 Producer (FL‑BSA):
 - Bundle: `/home/daimakaimura/fl-bsa/artifacts/WhitePaper_Reviewer_Pack_v4.zip`
-- sha256: `04ba94c06da1d06fd130ea10c394cccce7f6cdd6553603cf082c39b0d84482fc`
-- run_id: `63404f8c-bb53-426a-b3af-aeafe4b394b1`
-- commit_sha (per `intake/manifest.json`): `1da550c164b6839493493cceca8047c382363745`
+- sha256: `2fb146e6ac3d3d9a715375cc12ab42a965dd1128d6a5e15bb0cb1d960acf6845`
+- run_id: `485998b9-162d-4a31-b2b9-15507ce4733c`
+- commit_sha (per `intake/manifest.json`): `bbac3d71b30b82daef5fca2b055029c3b93aa77d`
 
 Consumer (Whitepaper):
 - PDF: `/home/daimakaimura/fl-bsa-whitepaper/dist/whitepaper.pdf`
-- sha256: `b35e370c20d8864bce87285d17fc3114ec5033858eec37a509e44bdf0d1559de`
+- sha256: `d30a346527469e655e5e764a07b741fc04498854d11509cc96aba48726581155`
 
 ## Bundle Contract (v4 SoT)
 
@@ -33,12 +33,12 @@ The consumer repo ingests:
 
 From `intake/fairness_slices.json` (reference=`male`, protected=`female`, threshold=0.80):
 - Historical AIR: `0.7706` (CI `0.7170–0.8282`) — baseline disparity
-- Amplification AIR: `0.7704` (CI `0.7405–0.8014`) — bias preservation (fidelity)
-- Intrinsic AIR: `0.9999` (CI `0.9746–1.0259`) — near-parity achievable
+- Amplification AIR: `0.7700` (CI `0.7402–0.8011`) — bias preservation (fidelity)
+- Intrinsic AIR: `1.0006` (CI `0.9752–1.0266`) — near-parity achievable
 
 Bias preservation and improvement summaries:
-- Amplification vs historical absolute AIR delta: `0.00019`
-- Intrinsic uplift vs historical relative: `29.8%`
+- Amplification vs historical absolute AIR delta: `0.00055`
+- Intrinsic uplift vs historical relative: `29.8%` (≈`0.2985`)
 
 ## Interpreting the Review Flags
 
@@ -64,11 +64,9 @@ policy changes are approved).
 
 ### `p_value_adjusted = null` (gender)
 Gender is a single binary comparison, so multiplicity adjustment is not required. If downstream
-consumers want a non-null field, the producer now supports emitting:
+consumers want a non-null field, the producer emits:
 - `p_value_adjustment="none"`
 - `p_value_adjusted = p_value`
-
-(See producer change `fix(metrics): default p-value adjustment fields`.)
 
 ### `race.display_in_main_pdf=false`
 Race is gated for main-text display based on `config/fairness_config.yaml` display policy:
