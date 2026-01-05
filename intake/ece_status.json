@@ -1,0 +1,11 @@
+{
+  "available": false,
+  "threshold": 0.02,
+  "value": null,
+  "lower_ci": null,
+  "upper_ci": null,
+  "method": null,
+  "passes_threshold": null,
+  "ci_excludes_threshold": null,
+  "ci_degenerate": null
+}

@@ -1,0 +1,51 @@
+{
+  "available": true,
+  "threshold": 0.8,
+  "overall_pass": false,
+  "num_violations": 1,
+  "passing_attributes": [
+    "race"
+  ],
+  "violating_attributes": [
+    "gender"
+  ],
+  "per_attribute": {
+    "gender": {
+      "value": 0.770385,
+      "lower_ci": 0.740529,
+      "upper_ci": 0.801445,
+      "status": "VIOLATES",
+      "ci_degenerate": false,
+      "ci_excludes_threshold": false,
+      "reference_group": "male",
+      "protected_group": "female",
+      "method": "wilson+delta",
+      "p_value": 0.0,
+      "p_value_adjusted": 0.0,
+      "p_value_adjustment": "none"
+    },
+    "race": {
+      "value": 0.9165,
+      "lower_ci": 0.837407,
+      "upper_ci": 1.003064,
+      "status": "PASSES",
+      "ci_degenerate": false,
+      "ci_excludes_threshold": true,
+      "reference_group": "white",
+      "protected_group": "asian",
+      "method": "wilson+delta",
+      "p_value": 0.050118057453675924,
+      "p_value_adjusted": 0.15035417236102777,
+      "p_value_adjustment": "holm_bonferroni",
+      "display_in_main_pdf": false,
+      "policy": {
+        "display_race_in_main_pdf": {
+          "min_group_n": 300,
+          "min_group_pct": 0.05
+        }
+      }
+    }
+  },
+  "definition": "pairwise_vs_reference",
+  "source": "validation/metrics_uncertainty.json"
+}
