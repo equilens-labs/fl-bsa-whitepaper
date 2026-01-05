@@ -165,6 +165,34 @@ def _emit_macros(
         if not has_ece:
             has_ece = bool(caps.get("calibration_enabled") or caps.get("ece_enabled"))
 
+    # Fairness uncertainty metadata (derived from intake/run_summary.json when present).
+    fairness_air_ci_method = ""
+    fairness_air_definition = ""
+    try:
+        intake_root = out_path.parent.parent / "intake"
+        if is_wp_intake:
+            # Prefer the directory containing the manifest when it looks like an intake root.
+            intake_root = Path(sap_path).parent.parent / "intake"
+        run_summary_path = intake_root / "run_summary.json"
+        rs = _load_json(run_summary_path) if run_summary_path.exists() else {}
+        air_details = rs.get("air_details") if isinstance(rs, dict) else None
+        if isinstance(air_details, dict):
+            fairness_air_definition = str(air_details.get("definition") or "")
+            per_attr = air_details.get("per_attribute")
+            if isinstance(per_attr, dict):
+                methods = {
+                    str(v.get("method"))
+                    for v in per_attr.values()
+                    if isinstance(v, dict) and v.get("method")
+                }
+                if len(methods) == 1:
+                    fairness_air_ci_method = next(iter(methods))
+                elif methods:
+                    fairness_air_ci_method = "mixed"
+    except Exception:
+        fairness_air_ci_method = ""
+        fairness_air_definition = ""
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding="utf-8") as f:
         f.write("% Auto-generated provenance/inference macros\n")
@@ -196,6 +224,10 @@ def _emit_macros(
         f.write("\\newcommand{\\EceEnabled}{%d}\n" % ece_enabled)
         f.write("\\newcommand{\\HasDegenerateCIs}{%d}\n" % (1 if has_degenerate else 0))
         f.write("\\newcommand{\\EceEvaluated}{%d}\n" % (1 if has_ece else 0))
+        f.write("\\newcommand{\\FairnessAirCiMethod}{%s}\n" % fairness_air_ci_method)
+        f.write(
+            "\\newcommand{\\FairnessAirDefinition}{%s}\n" % fairness_air_definition
+        )
 
     if not quiet:
         print(f"Wrote LaTeX provenance macros to {out_path}")

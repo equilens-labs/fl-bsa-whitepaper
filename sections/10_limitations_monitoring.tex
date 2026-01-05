@@ -7,3 +7,6 @@ The synthetic-quality certificate reports a threshold of \SqThresholdUsed{} and 
 
 \paragraph{Small-group visibility for race.}
 Race uncertainty is displayed in the main text only when all race groups exceed minimum size and proportion thresholds. In this run, the observed minimum group size is \RaceObservedMinGroupN{} and minimum proportion is \RaceObservedMinGroupPct{}, so race is gated to the appendix/annex views when the display policy is not satisfied.
+
+\paragraph{Model-certificate validation is advisory.}
+The evidence bundle includes model certificates with structured validation results. In this run, some model certificate sub-checks report \texttt{validation\_results.valid=false}; these flags are quality diagnostics and should not be conflated with cryptographic authenticity (the certificates are still signed).

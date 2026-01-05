@@ -24,8 +24,10 @@ inference\_method & \InferenceMethod \\
 inference\_replicates & \InferenceReplicates \\
 inference\_alpha & \InferenceAlpha \\
 inference\_smoothing & \ifx\InferenceSmoothing\empty (none)\else \num{\InferenceSmoothing}\fi \\
+air\_ci\_method (SoT) & \texttt{\FairnessAirCiMethod} \\
+air\_definition (SoT) & \texttt{\FairnessAirDefinition} \\
 \bottomrule
 \end{tabular}
-\caption{Key provenance fields for this synthetic audit run, including seeds, hashes, image digests, capabilities, and inference configuration.}
+\caption{Key provenance fields for this synthetic audit run, including seeds, hashes, image digests, capabilities, and inference configuration. The inference fields reflect the bootstrap configuration for legacy/annex metrics; the v4 fairness uncertainty SoT uses the deterministic AIR method shown as \texttt{air\_ci\_method (SoT)}.}
 \label{tab:manifest_summary}
 \end{table}
