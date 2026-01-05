@@ -57,6 +57,12 @@ def _truthy_int(val: Any) -> int:
     return 1 if s in {"1", "true", "yes", "on"} else 0
 
 
+def _latex_escape_text(value: str) -> str:
+    """Escape minimal TeX-sensitive characters for literal macro substitution."""
+    # Only escape what we currently emit into table cells. Expand as needed.
+    return value.replace("_", "\\_")
+
+
 def _emit_macros(
     manifest: Dict[str, Any],
     sap_path: Path,
@@ -224,9 +230,13 @@ def _emit_macros(
         f.write("\\newcommand{\\EceEnabled}{%d}\n" % ece_enabled)
         f.write("\\newcommand{\\HasDegenerateCIs}{%d}\n" % (1 if has_degenerate else 0))
         f.write("\\newcommand{\\EceEvaluated}{%d}\n" % (1 if has_ece else 0))
-        f.write("\\newcommand{\\FairnessAirCiMethod}{%s}\n" % fairness_air_ci_method)
         f.write(
-            "\\newcommand{\\FairnessAirDefinition}{%s}\n" % fairness_air_definition
+            "\\newcommand{\\FairnessAirCiMethod}{%s}\n"
+            % _latex_escape_text(fairness_air_ci_method)
+        )
+        f.write(
+            "\\newcommand{\\FairnessAirDefinition}{%s}\n"
+            % _latex_escape_text(fairness_air_definition)
         )
 
     if not quiet:
