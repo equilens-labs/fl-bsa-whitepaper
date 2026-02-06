@@ -10,9 +10,8 @@
     "demographic_parity_synthetic": {}
   },
   "branch_mode": "intrinsic",
-  "certificate_hash": "5a42b71b39bb656c52d2f45288b10cd5b0afc13492ef24a19081c85d6866b83b",
-  "certificate_id": "29c04c89-814c-4f8c-b38f-e1b904bc07f1",
-  "certificate_signature": "052b7e28339e360609298885fc34ef994a2e8557ee9ee3ab5310be19bc1d80ce7cf7a2e63f272aa6659485523b658abf875298d8b2a9666cbf75a0653f2518e4",
+  "certificate_hash": "08c12bda7a9e888310bf973116e43b034bdec9fa5fdeb6422e39da39ec346c9a",
+  "certificate_id": "acef2a9c-633f-411a-bdcd-78f7e18e459f",
   "certificate_type": "synthetic_quality_certificate",
   "certificate_version": "1.0",
   "correlation_analysis": {
@@ -20,206 +19,203 @@
     "correlation_differences": {
       "age": {
         "age": 0.0,
-        "credit_score": 0.06968382474863925,
-        "debt_to_income": 0.0676699789696065,
-        "income": 0.09151686627809225,
-        "loan_amount": 0.06370525836678495
+        "credit_score": 0.09607635689127139,
+        "debt_to_income": 0.02017633656760614,
+        "income": 0.03167796871758026,
+        "loan_amount": 0.012335925976692252
       },
       "credit_score": {
-        "age": 0.06968382474863925,
+        "age": 0.09607635689127139,
         "credit_score": 0.0,
-        "debt_to_income": 0.04314887411568085,
-        "income": 0.21941300606138275,
-        "loan_amount": 0.18029096336259065
+        "debt_to_income": 0.07903378955628645,
+        "income": 0.027361156362244177,
+        "loan_amount": 0.00563676311621672
       },
       "debt_to_income": {
-        "age": 0.0676699789696065,
-        "credit_score": 0.04314887411568085,
+        "age": 0.02017633656760614,
+        "credit_score": 0.07903378955628645,
         "debt_to_income": 0.0,
-        "income": 0.051907349830711116,
-        "loan_amount": 0.030931831585286923
+        "income": 0.029998557349828724,
+        "loan_amount": 0.035107103023165616
       },
       "income": {
-        "age": 0.09151686627809225,
-        "credit_score": 0.21941300606138275,
-        "debt_to_income": 0.051907349830711116,
+        "age": 0.03167796871758026,
+        "credit_score": 0.027361156362244177,
+        "debt_to_income": 0.029998557349828724,
         "income": 0.0,
-        "loan_amount": 0.22834084455612258
+        "loan_amount": 0.10182722476871942
       },
       "loan_amount": {
-        "age": 0.06370525836678495,
-        "credit_score": 0.18029096336259065,
-        "debt_to_income": 0.030931831585286923,
-        "income": 0.22834084455612258,
+        "age": 0.012335925976692252,
+        "credit_score": 0.00563676311621672,
+        "debt_to_income": 0.035107103023165616,
+        "income": 0.10182722476871942,
         "loan_amount": 0.0
       }
     },
-    "correlation_preservation_score": 0.8953391202125103,
-    "max_correlation_difference": 0.22834084455612258,
-    "mean_correlation_difference": 0.10466087978748977,
+    "correlation_preservation_score": 0.9560768817670389,
+    "max_correlation_difference": 0.10182722476871942,
+    "mean_correlation_difference": 0.04392311823296111,
     "real_correlation_matrix": {
       "age": {
         "age": 1.0,
         "credit_score": 0.016822185539389276,
-        "debt_to_income": 0.010304554522836039,
-        "income": -0.013018439354153564,
+        "debt_to_income": 0.010304554522836054,
+        "income": -0.01301843935415355,
         "loan_amount": -0.030776479816860658
       },
       "credit_score": {
         "age": 0.016822185539389276,
         "credit_score": 1.0,
-        "debt_to_income": 0.00932229143332476,
+        "debt_to_income": 0.009322291433324767,
         "income": 0.28415820143258697,
-        "loan_amount": 0.2448384848367677
+        "loan_amount": 0.24483848483676776
       },
       "debt_to_income": {
-        "age": 0.010304554522836039,
-        "credit_score": 0.00932229143332476,
+        "age": 0.010304554522836054,
+        "credit_score": 0.009322291433324767,
         "debt_to_income": 1.0,
-        "income": -0.0133333758011368,
-        "loan_amount": -0.005727320974461758
+        "income": -0.013333375801136785,
+        "loan_amount": -0.005727320974461774
       },
       "income": {
-        "age": -0.013018439354153564,
+        "age": -0.01301843935415355,
         "credit_score": 0.28415820143258697,
-        "debt_to_income": -0.0133333758011368,
+        "debt_to_income": -0.013333375801136785,
         "income": 1.0,
-        "loan_amount": 0.8808936584289794
+        "loan_amount": 0.8808936584289793
       },
       "loan_amount": {
         "age": -0.030776479816860658,
-        "credit_score": 0.2448384848367677,
-        "debt_to_income": -0.005727320974461758,
-        "income": 0.8808936584289794,
+        "credit_score": 0.24483848483676776,
+        "debt_to_income": -0.005727320974461774,
+        "income": 0.8808936584289793,
         "loan_amount": 1.0
       }
     },
     "synthetic_correlation_matrix": {
       "age": {
         "age": 1.0,
-        "credit_score": -0.05286163920924998,
-        "debt_to_income": 0.07797453349244253,
-        "income": 0.07849842692393869,
-        "loan_amount": 0.0329287785499243
+        "credit_score": -0.07925417135188212,
+        "debt_to_income": 0.030480891090442195,
+        "income": -0.04469640807173381,
+        "loan_amount": -0.04311240579355291
       },
       "credit_score": {
-        "age": -0.05286163920924998,
+        "age": -0.07925417135188212,
         "credit_score": 1.0,
-        "debt_to_income": -0.03382658268235609,
-        "income": 0.06474519537120421,
-        "loan_amount": 0.06454752147417707
+        "debt_to_income": -0.0697114981229617,
+        "income": 0.31151935779483114,
+        "loan_amount": 0.23920172172055104
       },
       "debt_to_income": {
-        "age": 0.07797453349244253,
-        "credit_score": -0.03382658268235609,
+        "age": 0.030480891090442195,
+        "credit_score": -0.0697114981229617,
         "debt_to_income": 1.0,
-        "income": 0.03857397402957432,
-        "loan_amount": 0.025204510610825164
+        "income": -0.04333193315096551,
+        "loan_amount": -0.04083442399762739
       },
       "income": {
-        "age": 0.07849842692393869,
-        "credit_score": 0.06474519537120421,
-        "debt_to_income": 0.03857397402957432,
+        "age": -0.04469640807173381,
+        "credit_score": 0.31151935779483114,
+        "debt_to_income": -0.04333193315096551,
         "income": 1.0,
-        "loan_amount": 0.6525528138728568
+        "loan_amount": 0.7790664336602598
       },
       "loan_amount": {
-        "age": 0.0329287785499243,
-        "credit_score": 0.06454752147417707,
-        "debt_to_income": 0.025204510610825164,
-        "income": 0.6525528138728568,
+        "age": -0.04311240579355291,
+        "credit_score": 0.23920172172055104,
+        "debt_to_income": -0.04083442399762739,
+        "income": 0.7790664336602598,
         "loan_amount": 1.0
       }
     }
   },
   "critical_issues": [],
-  "issued_at": "2026-01-03T14:37:23.265353+00:00",
+  "issued_at": "2026-02-06T12:49:27.529248+00:00",
   "issued_by": "FL-BSA Synthetic Quality Validation System",
-  "overall_quality_score": 0.6815332453286052,
-  "pipeline_id": "63404f8c-bb53-426a-b3af-aeafe4b394b1",
-  "previous_certificate_hash": "30c63e2764ec2c7923af572f2f4409e4347826618a9da793d5e42f0554441001",
+  "overall_quality_score": 0.6970826755576387,
+  "pipeline_id": "bbebd8f5-b0a0-49b9-9349-19216c646fa6",
+  "previous_certificate_hash": "becdf8af82eb2956be4ae280fb7bfef89208fa02eee76b2047ea74692dd27ae1",
   "privacy_metrics": {
     "duplicate_count": 0,
-    "mean_nearest_neighbor_distance": 0.9946580892739234,
-    "min_nearest_neighbor_distance": 0.024240895716758342,
+    "mean_nearest_neighbor_distance": 0.5369765176095795,
+    "min_nearest_neighbor_distance": 0.10478680704923449,
     "near_duplicate_count": 0,
-    "privacy_preservation_score": 0.8307938611019101,
-    "unique_combination_overlap": 0.0076184166942696255
+    "privacy_preservation_score": 0.8322538204635158,
+    "unique_combination_overlap": 0.0032385386094524846
   },
-  "public_key_fingerprint": "1f131ff193087446",
   "quality_ok": false,
   "quality_threshold_met": false,
   "quality_threshold_used": 0.8,
   "real_data_columns": 9,
   "real_data_hash": "7fbc4c8b4d24b2173d2c536e5d3f62c8fcc28cfdf3a165071c6ad04864721ba8",
-  "real_data_path": "/app/output/63404f8c-bb53-426a-b3af-aeafe4b394b1/dataset_63404f8c-bb53-426a-b3af-aeafe4b394b1.csv",
+  "real_data_path": "/app/output/bbebd8f5-b0a0-49b9-9349-19216c646fa6/dataset_bbebd8f5-b0a0-49b9-9349-19216c646fa6.csv",
   "real_data_rows": 3000,
   "recommendations": [
     "Consider retraining the model with different hyperparameters",
     "Review columns with significant distribution differences"
   ],
-  "signature_algorithm": "ECDSA-P256-SHA256",
-  "signed_at": "2026-01-03T14:37:23.785325",
   "statistical_comparison": {
     "chi_square_results": {
       "gender": {
-        "p_value": 0.03620289422203424,
+        "p_value": 1.5048582719882385e-48,
         "significant": true,
-        "statistic": 4.387522021937595
+        "statistic": 214.40211357201045
       },
       "race": {
         "p_value": 0.0,
         "significant": true,
-        "statistic": 2826.270391615387
+        "statistic": 2500.5598142091717
       }
     },
     "js_divergences": {
-      "gender": 0.007403408061094979,
-      "race": 0.16321370296086796
+      "gender": 0.051797020897242134,
+      "race": 0.16353182284406703
     },
     "ks_test_results": {
       "age": {
-        "p_value": 6.13e-321,
+        "p_value": 1.3917297523663198e-46,
         "significant": true,
-        "statistic": 0.49853333333333333
+        "statistic": 0.15136666666666668
       },
       "credit_score": {
-        "p_value": 3.8121816091589416e-297,
+        "p_value": 0.04829371947775441,
         "significant": true,
-        "statistic": 0.3794
+        "statistic": 0.028333333333333332
       },
       "debt_to_income": {
-        "p_value": 1.3644655015300215e-64,
+        "p_value": 5.566410689716326e-13,
         "significant": true,
-        "statistic": 0.17833333333333334
+        "statistic": 0.07903333333333333
       },
       "income": {
-        "p_value": 6.107e-321,
+        "p_value": 1.1323524096941536e-10,
         "significant": true,
-        "statistic": 0.4998
+        "statistic": 0.0714
       },
       "loan_amount": {
-        "p_value": 1.7875639984835028e-164,
+        "p_value": 2.21387838581859e-40,
         "significant": true,
-        "statistic": 0.28386666666666666
+        "statistic": 0.14086666666666667
       }
     },
     "kurtosis_differences": {
-      "age": 1.0918545840115441,
-      "credit_score": 0.44124758108175133,
-      "debt_to_income": 0.24364729504526794,
-      "income": 3.6115570965386024,
-      "loan_amount": 7.651676239930977
+      "age": 0.31932261025941466,
+      "credit_score": 0.320900292226896,
+      "debt_to_income": 0.1328546547530065,
+      "income": 2.1704588787514845,
+      "loan_amount": 6.250786251953475
     },
     "mean_differences": {
-      "age": 0.24567095374531547,
-      "credit_score": 0.07720977059146213,
-      "debt_to_income": 0.21799489712425285,
-      "income": 0.38991739194129804,
-      "loan_amount": 0.4529805256310443
+      "age": 0.0892500193690751,
+      "credit_score": 0.005082528782777029,
+      "debt_to_income": 0.050964698217706925,
+      "income": 0.05189212687174599,
+      "loan_amount": 0.3823692754538658
     },
-    "median_js_divergence": 0.08530855551098147,
-    "median_wasserstein_distance": 64.41553333333333,
+    "median_js_divergence": 0.10766442187065459,
+    "median_wasserstein_distance": 3.873533333333334,
     "n_significant_differences": 7,
     "overall_distribution_score": 0.0,
     "range_violations": {
@@ -230,7 +226,7 @@
         ],
         "synthetic_range": [
           18.0,
-          68.0
+          69.0
         ],
         "violation_type": "out_of_bounds"
       },
@@ -241,44 +237,43 @@
         ],
         "synthetic_range": [
           0.0,
-          0.494
+          0.425
         ],
         "violation_type": "out_of_bounds"
       }
     },
     "skewness_differences": {
-      "age": 1.079659003802136,
-      "credit_score": 0.69541786190263,
-      "debt_to_income": 0.19435544689293371,
-      "income": 0.931919646812752,
-      "loan_amount": 1.3615453693293584
+      "age": 0.2784192643023552,
+      "credit_score": 0.13776826357425115,
+      "debt_to_income": 0.09090688246116319,
+      "income": 0.21545581683603832,
+      "loan_amount": 0.9247580639620319
     },
     "std_differences": {
-      "age": 0.20666443807015838,
-      "credit_score": 0.480680137353257,
-      "debt_to_income": 0.6390719159817583,
-      "income": 0.12313804028750415,
-      "loan_amount": 0.8016455899506636
+      "age": 0.07109386035321927,
+      "credit_score": 0.016616328185872258,
+      "debt_to_income": 0.055958460849713426,
+      "income": 0.04269241092884267,
+      "loan_amount": 0.41449150469810225
     },
     "wasserstein_distances": {
-      "age": 8.555,
-      "credit_score": 64.41553333333333,
-      "debt_to_income": 0.043712299363285245,
-      "income": 24435.44961718902,
-      "loan_amount": 12525.075866666666
+      "age": 3.0750666666666673,
+      "credit_score": 3.873533333333334,
+      "debt_to_income": 0.008160848663616126,
+      "income": 3693.9058620128826,
+      "loan_amount": 7503.312399999999
     }
   },
   "status": "valid",
   "synthetic_data_columns": 7,
-  "synthetic_data_hash": "7556c89b5231fd83c827b3a5bb16748557d057249d56278b96189cb5e35ac5e8",
-  "synthetic_data_path": "/app/output/63404f8c-bb53-426a-b3af-aeafe4b394b1/synthetic_data.csv",
+  "synthetic_data_hash": "8ce5da89c027da79c3e8e5acdfda0b06aa85154a3d68b103c15c9cc65b8e1bc8",
+  "synthetic_data_path": "/app/output/bbebd8f5-b0a0-49b9-9349-19216c646fa6/synthetic_data.csv",
   "synthetic_data_rows": 10000,
   "utility_metrics": null,
-  "validation_completed_at": "2026-01-03T14:37:23.783866+00:00",
-  "validation_duration_seconds": 0.518508,
-  "validation_started_at": "2026-01-03T14:37:23.265358+00:00",
+  "validation_completed_at": "2026-02-06T12:49:27.799519+00:00",
+  "validation_duration_seconds": 0.270269,
+  "validation_started_at": "2026-02-06T12:49:27.529250+00:00",
   "warnings": [
-    "7 columns show significant distribution differences",
-    "Some synthetic records are very close to real records"
+    "7 columns show significant distribution differences"
   ]
 }

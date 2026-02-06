@@ -1,0 +1,11 @@
+{
+  "certificate_signing_expected": false,
+  "evidence_grade": false,
+  "notes": [
+    "This ZIP is a whitepaper intake bundle (inputs/diagnostics for review and templating).",
+    "Certificates are included for auditability (hyperparameters/training/validation metadata) but are unsigned by default.",
+    "For cryptographically verifiable artifacts, use the GOLD evidence bundles and certificate chain outputs."
+  ],
+  "purpose": "intake",
+  "schema_version": "wp.pack_intent.v1"
+}

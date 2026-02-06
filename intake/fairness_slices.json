@@ -36,8 +36,8 @@
           0.7169644921401894,
           0.8281898518241365
         ],
-        "p_value": 6.0929e-13,
-        "p_value_adjusted": 6.0929e-13,
+        "p_value": 6.094036551836003e-13,
+        "p_value_adjusted": 6.094036551836003e-13,
         "p_value_adjustment": "none",
         "method": "wilson+delta"
       },
@@ -47,131 +47,131 @@
           -0.181270224846095,
           -0.08102191598954744
         ],
-        "p_value": 6.0929e-13,
-        "p_value_adjusted": 6.0929e-13,
+        "p_value": 6.094036551836003e-13,
+        "p_value_adjusted": 6.094036551836003e-13,
         "p_value_adjustment": "none",
         "method": "newcombe_wilson"
       },
       "small_n_flag": false,
       "p_value_method": "two_proportion_z_test",
       "confidence_level": 0.95,
-      "seed_material": "sha256:5a4fb1dab9416ab47c27dd7d7a7f0b77e1bf2e49b4cb735f5b7d9e9a5f471b01"
+      "seed_material": "sha256:c6488c1bc10f5dfd36b05f757ee8cc2d77f124c624013723ab836a3b8903c5b0"
     },
     "amplification": {
       "reference_group": "male",
       "protected_group": "female",
       "counts": {
-        "ref_n": 5177,
-        "prot_n": 4823,
-        "ref_approved": 2965,
-        "prot_approved": 2128
+        "ref_n": 5176,
+        "prot_n": 4824,
+        "ref_approved": 2964,
+        "prot_approved": 2130
       },
       "selection_rates": {
         "ref": {
-          "p": 0.5727255167085185,
+          "p": 0.5726429675425039,
           "ci95": [
-            0.559201015493909,
-            0.5861421658147031
+            0.5591168868327379,
+            0.586061297766575
           ]
         },
         "prot": {
-          "p": 0.4412191582002903,
+          "p": 0.44154228855721395,
           "ci95": [
-            0.4272579804856935,
-            0.45527390123174255
+            0.42758121968128804,
+            0.45559638912841277
           ]
         }
       },
       "air": {
-        "point": 0.7703850192252624,
+        "point": 0.771060352757132,
         "ci95": [
-          0.740528884407576,
-          0.8014448731753427
+          0.7411896379568964,
+          0.8021348884919621
         ],
-        "p_value": 0.0,
-        "p_value_adjusted": 0.0,
+        "p_value": 3.112858768046164e-39,
+        "p_value_adjusted": 3.112858768046164e-39,
         "p_value_adjustment": "none",
         "method": "wilson+delta"
       },
       "srg": {
-        "point": -0.13150635850822817,
+        "point": -0.13110067898528993,
         "ci95": [
-          -0.1588841853290096,
-          -0.10392711426216644
+          -0.15848007808528697,
+          -0.10352049770432509
         ],
-        "p_value": 0.0,
-        "p_value_adjusted": 0.0,
+        "p_value": 3.112858768046164e-39,
+        "p_value_adjusted": 3.112858768046164e-39,
         "p_value_adjustment": "none",
         "method": "newcombe_wilson"
       },
       "small_n_flag": false,
       "p_value_method": "two_proportion_z_test",
       "confidence_level": 0.95,
-      "seed_material": "sha256:5a99d8cb2119892398b2759d3ff0476fa60c1c19e88dc378139f579f125caa90"
+      "seed_material": "sha256:38bc7d6004917341fc57e7106bd10b0c5c8758208012be140983d1bfcdc4a129"
     },
     "intrinsic": {
       "reference_group": "male",
       "protected_group": "female",
       "counts": {
-        "ref_n": 5072,
-        "prot_n": 4928,
-        "ref_approved": 3548,
-        "prot_approved": 3447
+        "ref_n": 4445,
+        "prot_n": 5555,
+        "ref_approved": 3109,
+        "prot_approved": 3886
       },
       "selection_rates": {
         "ref": {
-          "p": 0.6995268138801262,
+          "p": 0.699437570303712,
           "ci95": [
-            0.6867622285085391,
-            0.7119893795006629
+            0.6857909404539312,
+            0.7127397692031624
           ]
         },
         "prot": {
-          "p": 0.6994724025974026,
+          "p": 0.6995499549954995,
           "ci95": [
-            0.686519942610276,
-            0.7121141092213967
+            0.6873592528215855,
+            0.7114648475089582
           ]
         }
       },
       "air": {
-        "point": 0.9999222170163546,
+        "point": 1.0001606786603396,
         "ci95": [
-          0.9745562847771508,
-          1.025948378457724
+          0.9746348762131023,
+          1.0263550048865606
         ],
-        "p_value": 0.9952659226226344,
-        "p_value_adjusted": 0.9952659226226344,
+        "p_value": 0.9902815210574419,
+        "p_value_adjusted": 0.9902815210574419,
         "p_value_adjustment": "none",
         "method": "wilson+delta"
       },
       "srg": {
-        "point": -5.441128272354323e-05,
+        "point": 0.00011238469178753707,
         "ci95": [
-          -0.025469436890386832,
-          0.025351880712857655
+          -0.0253805163815769,
+          0.025673907055027034
         ],
-        "p_value": 0.9952659226226344,
-        "p_value_adjusted": 0.9952659226226344,
+        "p_value": 0.9902815210574419,
+        "p_value_adjusted": 0.9902815210574419,
         "p_value_adjustment": "none",
         "method": "newcombe_wilson"
       },
       "small_n_flag": false,
       "p_value_method": "two_proportion_z_test",
       "confidence_level": 0.95,
-      "seed_material": "sha256:033187e9ed14fc9bcb6e4181f676b004369bd8b470fde5284d09a49a330057d5"
+      "seed_material": "sha256:a5f1b52c4b585a633654af830301e6b142d060b7e4f8790e2ddef12e41885f12"
     }
   },
   "bias_preservation": {
-    "abs_delta_air": 0.00018796012760247116,
-    "rel_delta_air": 0.00024392255196947345
+    "abs_delta_air": 0.00048737340426718845,
+    "rel_delta_air": 0.0006324818249875433
   },
   "improvement": {
-    "abs_uplift_air": 0.2293492376634898,
-    "rel_uplift_air": 0.29763467420840484
+    "abs_uplift_air": 0.2295876993074748,
+    "rel_uplift_air": 0.29794413437684375
   },
   "sources": {
-    "historical": "dataset_63404f8c-bb53-426a-b3af-aeafe4b394b1.csv",
+    "historical": "dataset_bbebd8f5-b0a0-49b9-9349-19216c646fa6.csv",
     "amplification": "intake/selection_rates.csv",
     "intrinsic": "synthetic_data_postlabel.csv"
   }

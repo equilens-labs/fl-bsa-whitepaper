@@ -7,9 +7,8 @@
     "gender",
     "race"
   ],
-  "certificate_hash": "a6487eafa7175366883f275bba487c36efe55955e2606920299833fc1cd94b41",
-  "certificate_id": "73f2a8ad-da30-4d95-9e0f-980c69b66d40",
-  "certificate_signature": "a4dd0cd9978872ee83cb9ac6397c9a3e6e1091b8d579e9937b9cfbd751f4a8314c47705b8df8d4509f19be84e29c049defbf4f055dfae87289e252f423522dd7",
+  "certificate_hash": "89974b51e35658934cbabf6ca57bc46fed8e32281608bd6424865651972ccd15",
+  "certificate_id": "6fcff852-3913-4ba6-9eb9-9d942d1adb1a",
   "certificate_version": "1.0",
   "config_version": "1.0",
   "data_columns": 7,
@@ -17,29 +16,28 @@
   "data_rows": 3000,
   "fallback_used": false,
   "hyperparameter_validation_passed": true,
-  "issued_at": "2026-01-03T14:30:37Z",
+  "issued_at": "2026-02-06T12:44:35Z",
   "issued_by": "FL-BSA Hyperparameter Tuner",
   "n_trials": 0,
   "optimal_hyperparameters": {
     "batch_size": 32,
-    "discriminator_decay": 3.912141628549696e-06,
+    "discriminator_decay": 3.5213588054678678e-06,
     "discriminator_dim": [
       64,
       64
     ],
-    "discriminator_lr": 0.0001583703155911876,
+    "discriminator_lr": 0.0002049798052095018,
     "embedding_dim": 64,
-    "epochs": 220,
-    "generator_decay": 3.2676417657817645e-06,
+    "epochs": 120,
+    "generator_decay": 3.3118298880723843e-06,
     "generator_dim": [
       64,
-      128,
       64
     ],
-    "generator_lr": 0.0006097839109531517,
+    "generator_lr": 0.0004597505784732166,
     "guardrails": {
       "batch": {
-        "original": 1024,
+        "original": 512,
         "source": "realism_gates",
         "value": 32
       },
@@ -50,7 +48,7 @@
         "rho_s": 0.8652764874238226
       },
       "pac": {
-        "original": 1,
+        "original": 5,
         "source": "realism_gates",
         "value": 5
       }
@@ -59,10 +57,7 @@
   },
   "optimization_time_seconds": 0.0,
   "optimization_trials_completed": 0,
-  "previous_certificate_hash": "f6506c68e35b2629775e4c8e1310fff6fb1de9540912616eb0ea1c0b21d9658a",
-  "public_key_fingerprint": "1f131ff193087446",
-  "signature_algorithm": "ECDSA-P256-SHA256",
-  "signed_at": "2026-01-03T14:30:37.594325",
+  "previous_certificate_hash": "1a13f0f7958dd4bfbb966dacfd64a6d91ec68c9b8eee8afe96cea37500a51d57",
   "status": "valid",
   "timeout_seconds": 0,
   "tuner_version": "1.0.0",
