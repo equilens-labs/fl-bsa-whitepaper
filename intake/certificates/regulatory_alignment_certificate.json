@@ -1,11 +1,10 @@
 {
   "certificate_chain_depth": 1,
-  "certificate_hash": "a353e96749cfdcb17ee81de31ce86e48a67ac7b5edc4d1f857ca581e07d3ddbd",
-  "certificate_signature": "3ad0a17c3b6ec2fefb819427908b15e60b736bd5680baaa076c9512a3c22cade1eef43ad1f0cc5d68958a7544fdf99db47fa5fc6f6c58d5bacfc2bc92c570d9f",
+  "certificate_hash": "33fb3ebfda907a65ba082ee8ab7706533e904f211c5ca82b26e06e4614eafa87",
   "certificate_type": "regulatory_alignment",
   "compliance_reference": {
     "compliance_path": "validation/compliance_decision.json",
-    "compliance_sha256": "5a7d3a7a74be5713e75d00d9253fcdf3979feeb9f795e65786720c3850ab8e32",
+    "compliance_sha256": "930bb3ebc6124d50a46322957cf579a7db289657608dcfcd96cb93f92a76d6b6",
     "summary": {
       "compliant": false,
       "has_decision": true
@@ -13,17 +12,17 @@
   },
   "dataset_hash": "7fbc4c8b4d24b2173d2c536e5d3f62c8fcc28cfdf3a165071c6ad04864721ba8",
   "findings": {
-    "aod": 0.13150635850822817,
+    "aod": 0.13110067898528993,
     "basis": {
       "derived_from": "metrics.compliance_status",
-      "di": 0.7703850192252624,
+      "di": 0.771060352757132,
       "metric": "disparate_impact",
       "source": "validation/compliance_decision.json",
       "threshold": 0.8
     },
-    "di": 0.7703850192252624,
+    "di": 0.771060352757132,
     "ecoa_non_compliant": true,
-    "eod": 0.13150635850822817,
+    "eod": 0.13110067898528993,
     "four_fifths_flag": true,
     "protected_attributes": [
       "gender",
@@ -33,17 +32,14 @@
   },
   "metrics_reference": {
     "metrics_path": "metrics.json",
-    "metrics_sha256": "7c99866b0cc4780c94f1bf8cba0004fef90605b48ef83ddfd85a3f9560461049"
+    "metrics_sha256": "2297be5e898f7dd39921cbeacde492d6f05952a536e3e3e28845cf5d977bf0c0"
   },
-  "pipeline_id": "63404f8c-bb53-426a-b3af-aeafe4b394b1",
-  "previous_certificate_hash": "5a42b71b39bb656c52d2f45288b10cd5b0afc13492ef24a19081c85d6866b83b",
-  "public_key_fingerprint": "1f131ff193087446",
+  "pipeline_id": "bbebd8f5-b0a0-49b9-9349-19216c646fa6",
+  "previous_certificate_hash": "08c12bda7a9e888310bf973116e43b034bdec9fa5fdeb6422e39da39ec346c9a",
   "regulatory_scope": {
     "ecoa_cfpb": true,
     "eu_ai_act": true,
     "fca_consumer_duty": true
   },
-  "signature_algorithm": "ECDSA-P256-SHA256",
-  "signed_at": "2026-01-03T14:37:50.774425",
-  "timestamp": "2026-01-03T14:37:50.773604+00:00"
+  "timestamp": "2026-02-06T12:50:00.679682+00:00"
 }
