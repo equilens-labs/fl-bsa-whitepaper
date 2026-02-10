@@ -1,23 +1,23 @@
 {
   "schema_version": "wp-intake.v1",
-  "run_id": "3ced5eb2-8aee-4c52-a32e-f04cf98168d3",
-  "created": "2026-02-07T15:36:27.330910+00:00",
+  "run_id": "7d070549-dfdd-4b3e-af98-017b0ea13c60",
+  "created": "2026-02-10T06:57:56.541308+00:00",
   "dataset_hash": "sha256:7fbc4c8b4d24b2173d2c536e5d3f62c8fcc28cfdf3a165071c6ad04864721ba8",
   "dataset_hash_source": "metrics.dataset_hash",
-  "dataset_hash_path": "/app/output/3ced5eb2-8aee-4c52-a32e-f04cf98168d3/dataset_3ced5eb2-8aee-4c52-a32e-f04cf98168d3.csv",
-  "commit_sha": "316a46744a870f0b672adefd094d1c83b92fae2d",
-  "code_commit": "316a46744a870f0b672adefd094d1c83b92fae2d",
-  "software_commit": "316a46744a870f0b672adefd094d1c83b92fae2d",
+  "dataset_hash_path": "/app/output/7d070549-dfdd-4b3e-af98-017b0ea13c60/dataset_7d070549-dfdd-4b3e-af98-017b0ea13c60.csv",
+  "commit_sha": "6cab0e85f81166bed4b92cd854e498ddb9297070",
+  "code_commit": "6cab0e85f81166bed4b92cd854e498ddb9297070",
+  "software_commit": "6cab0e85f81166bed4b92cd854e498ddb9297070",
   "container_digests": {
-    "api_image_digest": "sha256:0e2a909b5e7d484dc2a18b137e3ccc5fe64af91f65b92356f99b0145e8b39192",
-    "worker_image_digest": "sha256:ea3d8dacc510dd96d9bb2b67df6d61dc6466f481e24ba599dc576ea04cc1eaef"
+    "api_image_digest": "sha256:d5f6b6ace4283c6b9c1f724d5c28fe8f81c2c6b8acc595da61c93549d9a9cb76",
+    "worker_image_digest": "sha256:c2ef944f317f8aa369d238acf8c2c9cb800a53cd3c4fdc5fcbb6d949c6dfd142"
   },
-  "container_digest": "sha256:0e2a909b5e7d484dc2a18b137e3ccc5fe64af91f65b92356f99b0145e8b39192",
+  "container_digest": "sha256:d5f6b6ace4283c6b9c1f724d5c28fe8f81c2c6b8acc595da61c93549d9a9cb76",
   "seeds": {
     "rng_seed": 42,
     "bootstrap_seed": 42
   },
-  "config_hash": "faa38b9ba2b7f472ac5db2f0af550a07c2bbc5c1a81e68ab93add34678d16dea",
+  "config_hash": "173e4d81cc7b25f4f841f9af6d838df7055c5bc1958936a2efd762e98c6e578b",
   "capabilities": {
     "eo_enabled": true,
     "ece_enabled": false,
@@ -28,8 +28,8 @@
     "level": 0.95,
     "wilson_continuity_correction": false
   },
-  "start_ts": "2026-02-07T15:36:27.330925+00:00",
-  "end_ts": "2026-02-07T15:36:27.330928+00:00",
+  "start_ts": "2026-02-10T06:57:56.541327+00:00",
+  "end_ts": "2026-02-10T06:57:56.541330+00:00",
   "hardware": {
     "cpu_count": 128,
     "machine": "x86_64",
