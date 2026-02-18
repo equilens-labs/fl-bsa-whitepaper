@@ -23,9 +23,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pandas pyyaml
-      - name: Generate TeX macros from metrics (tolerate missing intake/)
+      - name: Generate TeX macros (tolerate missing intake/)
         run: |
-          python3 scripts/gen_tex_macros_from_metrics.py --metrics intake/metrics_long.csv --sap config/sap.yaml --outdir includes || true
+          make macros
       - name: Compile LaTeX
         uses: xu-cheng/latex-action@v3
         with:
