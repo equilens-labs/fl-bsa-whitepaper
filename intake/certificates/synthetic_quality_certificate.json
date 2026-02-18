@@ -10,8 +10,8 @@
     "demographic_parity_synthetic": {}
   },
   "branch_mode": "intrinsic",
-  "certificate_hash": "4305b3e7f2e8d8fd7e4fdb477214a05a2fe68fe71958bb312da2eed2dbe1d462",
-  "certificate_id": "0d0b7c85-1e76-4ce1-8180-922c744d5836",
+  "certificate_hash": "9a1b70a8002a6ea180c932d5303a293cb124e04e9a535ef6815983a33fe5602d",
+  "certificate_id": "4000d2dd-4a8d-4c3c-bec3-a798db8e2b5b",
   "certificate_type": "synthetic_quality_certificate",
   "certificate_version": "1.1",
   "correlation_analysis": {
@@ -140,11 +140,11 @@
     "undefined_correlation_pair_mismatch_count": 0
   },
   "critical_issues": [],
-  "issued_at": "2026-02-10T06:57:24.556837+00:00",
+  "issued_at": "2026-02-17T21:50:54.721868+00:00",
   "issued_by": "FL-BSA Synthetic Quality Validation System",
   "overall_quality_score": 0.9210242362906472,
-  "pipeline_id": "7d070549-dfdd-4b3e-af98-017b0ea13c60",
-  "previous_certificate_hash": "7894eab841faed77a468ebb6202d9e1dfd53872778e8c884073b6c78140952a3",
+  "pipeline_id": "2339046f-0730-4cbb-adf0-2412707ca10e",
+  "previous_certificate_hash": "6c85b422db1f0f5eb5f0d2fe52ef3b3d35a158262e8f103836f10314346b2b7e",
   "privacy_metrics": {
     "duplicate_count": 0,
     "mean_nearest_neighbor_distance": 0.5369765176095795,
@@ -158,7 +158,7 @@
   "quality_threshold_used": 0.8,
   "real_data_columns": 9,
   "real_data_hash": "7fbc4c8b4d24b2173d2c536e5d3f62c8fcc28cfdf3a165071c6ad04864721ba8",
-  "real_data_path": "/app/output/7d070549-dfdd-4b3e-af98-017b0ea13c60/dataset_7d070549-dfdd-4b3e-af98-017b0ea13c60.csv",
+  "real_data_path": "/app/output/2339046f-0730-4cbb-adf0-2412707ca10e/dataset_2339046f-0730-4cbb-adf0-2412707ca10e.csv",
   "real_data_rows": 3000,
   "recommendations": [
     "Synthetic data shows excellent quality across all metrics"
@@ -294,11 +294,11 @@
   "status": "valid",
   "synthetic_data_columns": 7,
   "synthetic_data_hash": "8ce5da89c027da79c3e8e5acdfda0b06aa85154a3d68b103c15c9cc65b8e1bc8",
-  "synthetic_data_path": "/app/output/7d070549-dfdd-4b3e-af98-017b0ea13c60/synthetic_data.csv",
+  "synthetic_data_path": "/app/output/2339046f-0730-4cbb-adf0-2412707ca10e/synthetic_data.csv",
   "synthetic_data_rows": 10000,
   "utility_metrics": null,
-  "validation_completed_at": "2026-02-10T06:57:24.814264+00:00",
-  "validation_duration_seconds": 0.2574,
-  "validation_started_at": "2026-02-10T06:57:24.556864+00:00",
+  "validation_completed_at": "2026-02-17T21:50:54.998323+00:00",
+  "validation_duration_seconds": 0.276453,
+  "validation_started_at": "2026-02-17T21:50:54.721870+00:00",
   "warnings": []
 }

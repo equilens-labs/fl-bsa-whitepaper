@@ -1,8 +1,8 @@
 run_id,split,model_id,attribute,group,TP,FP,TN,FN
-7d070549-dfdd-4b3e-af98-017b0ea13c60,test,ctgan,gender,female,639,0,808,0
-7d070549-dfdd-4b3e-af98-017b0ea13c60,test,ctgan,gender,male,890,0,663,0
-7d070549-dfdd-4b3e-af98-017b0ea13c60,test,ctgan,race,asian,83,0,96,0
-7d070549-dfdd-4b3e-af98-017b0ea13c60,test,ctgan,race,black,204,0,187,0
-7d070549-dfdd-4b3e-af98-017b0ea13c60,test,ctgan,race,hispanic,278,0,240,0
-7d070549-dfdd-4b3e-af98-017b0ea13c60,test,ctgan,race,other,44,0,41,0
-7d070549-dfdd-4b3e-af98-017b0ea13c60,test,ctgan,race,white,920,0,907,0
+2339046f-0730-4cbb-adf0-2412707ca10e,test,ctgan,gender,female,639,0,808,0
+2339046f-0730-4cbb-adf0-2412707ca10e,test,ctgan,gender,male,890,0,663,0
+2339046f-0730-4cbb-adf0-2412707ca10e,test,ctgan,race,asian,83,0,96,0
+2339046f-0730-4cbb-adf0-2412707ca10e,test,ctgan,race,black,204,0,187,0
+2339046f-0730-4cbb-adf0-2412707ca10e,test,ctgan,race,hispanic,278,0,240,0
+2339046f-0730-4cbb-adf0-2412707ca10e,test,ctgan,race,other,44,0,41,0
+2339046f-0730-4cbb-adf0-2412707ca10e,test,ctgan,race,white,920,0,907,0

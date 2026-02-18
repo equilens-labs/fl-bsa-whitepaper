@@ -55,7 +55,7 @@
       "small_n_flag": false,
       "p_value_method": "two_proportion_z_test",
       "confidence_level": 0.95,
-      "seed_material": "sha256:317f9973e81c9f38b28ef48763e489881dd1618d5aa90d6bdfe0e48e9940a470"
+      "seed_material": "sha256:64806f053de5a072bdbc1d13574afa6434b46ee570796c7f11b9d99c6703d694"
     },
     "amplification": {
       "reference_group": "male",
@@ -107,7 +107,7 @@
       "small_n_flag": false,
       "p_value_method": "two_proportion_z_test",
       "confidence_level": 0.95,
-      "seed_material": "sha256:b7174cabb4d6dd91a95e7c1ca69ce83eabb57b4d68b44ad23e667ea325324c5c"
+      "seed_material": "sha256:4a7789372200dc57a192648fc7eb139bee3c6e6822646cf17c37ae444417fde4"
     },
     "intrinsic": {
       "reference_group": "male",
@@ -159,7 +159,7 @@
       "small_n_flag": false,
       "p_value_method": "two_proportion_z_test",
       "confidence_level": 0.95,
-      "seed_material": "sha256:af78709506f19f920adaf9a70b4b5783c29b690ab896406d31abf371401fa3d4"
+      "seed_material": "sha256:25fac39373f5f737b18861edcbe861cbc934dde3d528db239ca48267a768c270"
     }
   },
   "bias_preservation": {
@@ -171,7 +171,7 @@
     "rel_uplift_air": 0.29794413437684375
   },
   "sources": {
-    "historical": "dataset_7d070549-dfdd-4b3e-af98-017b0ea13c60.csv",
+    "historical": "dataset_2339046f-0730-4cbb-adf0-2412707ca10e.csv",
     "amplification": "intake/selection_rates.csv",
     "intrinsic": "synthetic_data_postlabel.csv"
   }

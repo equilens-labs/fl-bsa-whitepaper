@@ -7,8 +7,8 @@
     "gender",
     "race"
   ],
-  "certificate_hash": "2caae9e9f539b8f56d74e9521550fc4a9b728ad36d42c5f89d547e25c078e624",
-  "certificate_id": "2b8f855e-735e-491f-b77d-d20e6ff738e8",
+  "certificate_hash": "5b9be819818ea7a56e78947b41df103fbedf80f4193ce4ddfe2aa17a33e4946b",
+  "certificate_id": "9765b086-9323-40aa-b2ce-1fbe32dc3a8c",
   "certificate_version": "1.0",
   "config_version": "1.0",
   "data_columns": 7,
@@ -16,7 +16,7 @@
   "data_rows": 3000,
   "fallback_used": false,
   "hyperparameter_validation_passed": true,
-  "issued_at": "2026-02-10T06:52:24Z",
+  "issued_at": "2026-02-17T21:45:42Z",
   "issued_by": "FL-BSA Hyperparameter Tuner",
   "n_trials": 0,
   "optimal_hyperparameters": {
@@ -57,7 +57,7 @@
   },
   "optimization_time_seconds": 0.0,
   "optimization_trials_completed": 0,
-  "previous_certificate_hash": "3c6732e45abc9f4dae816ee27fb1c5db10b3cc54df558eb0c01118eae0c72e27",
+  "previous_certificate_hash": "dfb479ed619f69224c1baab878d9c1ed9d4884f622b524125e32e9a701f940c5",
   "status": "valid",
   "timeout_seconds": 0,
   "tuner_version": "1.0.0",
