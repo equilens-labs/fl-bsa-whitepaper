@@ -1,18 +1,18 @@
 {
   "schema_version": "wp-intake.v1",
-  "run_id": "2339046f-0730-4cbb-adf0-2412707ca10e",
-  "created": "2026-02-17T21:51:27.663098+00:00",
+  "run_id": "dedb8b86-dba9-4447-8972-fc4a5838baf0",
+  "created": "2026-02-20T23:19:11.221276+00:00",
   "dataset_hash": "sha256:7fbc4c8b4d24b2173d2c536e5d3f62c8fcc28cfdf3a165071c6ad04864721ba8",
   "dataset_hash_source": "metrics.dataset_hash",
-  "dataset_hash_path": "/app/output/2339046f-0730-4cbb-adf0-2412707ca10e/dataset_2339046f-0730-4cbb-adf0-2412707ca10e.csv",
-  "commit_sha": "418c059938f4ab40b1bda49bf5ea7a170734f301",
-  "code_commit": "418c059938f4ab40b1bda49bf5ea7a170734f301",
-  "software_commit": "418c059938f4ab40b1bda49bf5ea7a170734f301",
+  "dataset_hash_path": "/app/output/dedb8b86-dba9-4447-8972-fc4a5838baf0/dataset_dedb8b86-dba9-4447-8972-fc4a5838baf0.csv",
+  "commit_sha": "cc8551a453ec19a3de26edcd73444f0f7bc2571c",
+  "code_commit": "cc8551a453ec19a3de26edcd73444f0f7bc2571c",
+  "software_commit": "cc8551a453ec19a3de26edcd73444f0f7bc2571c",
   "container_digests": {
-    "api_image_digest": "sha256:c8ff037f81fec5eb290eeed7df528f128e1f6e72aba9c806a043bb303ed5e73a",
-    "worker_image_digest": "sha256:cc186e6ce20191f97c65bbcd2d3951b6d9a526ab3376d0001c23cdd39fcabad7"
+    "api_image_digest": "sha256:a99905a03fb03e30bef77ea6f154b2c0087fcb7f75066d57e741b9d1129e366d",
+    "worker_image_digest": "sha256:b65460ba42b543c4d5502d805b57f33f26f0343c88376c7ba42ca486a41b88ee"
   },
-  "container_digest": "sha256:c8ff037f81fec5eb290eeed7df528f128e1f6e72aba9c806a043bb303ed5e73a",
+  "container_digest": "sha256:a99905a03fb03e30bef77ea6f154b2c0087fcb7f75066d57e741b9d1129e366d",
   "seeds": {
     "rng_seed": 42,
     "bootstrap_seed": 42
@@ -28,8 +28,8 @@
     "level": 0.95,
     "wilson_continuity_correction": false
   },
-  "start_ts": "2026-02-17T21:51:27.663114+00:00",
-  "end_ts": "2026-02-17T21:51:27.663117+00:00",
+  "start_ts": "2026-02-20T23:19:11.221292+00:00",
+  "end_ts": "2026-02-20T23:19:11.221295+00:00",
   "hardware": {
     "cpu_count": 128,
     "machine": "x86_64",
