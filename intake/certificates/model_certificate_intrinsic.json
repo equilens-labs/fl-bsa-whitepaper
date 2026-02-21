@@ -1,7 +1,7 @@
 {
   "branch_mode": "intrinsic",
-  "certificate_hash": "4ac5d65e74893ee0061af7de43f57c4bc15157c14df479b364b1b5ebdeb0545a",
-  "certificate_id": "model_cert_2339046f-0730-4cbb-adf0-2412707ca10e_intrinsic",
+  "certificate_hash": "808bdedd93ed03c982845ee28fc71e151f44ee699607af1f707b396bf60bc80e",
+  "certificate_id": "model_cert_dedb8b86-dba9-4447-8972-fc4a5838baf0_intrinsic",
   "config_version": "1.0.0",
   "data_fingerprint": "f5556ac8e05ac4c0",
   "hyperparameters": {
@@ -43,12 +43,12 @@
   "performance_metrics": {
     "final_discriminator_loss": 0.15460646152496338,
     "final_generator_loss": -1.2568668127059937,
-    "training_time_minutes": 5.060072783629099
+    "training_time_minutes": 5.034878389040629
   },
-  "pipeline_id": "2339046f-0730-4cbb-adf0-2412707ca10e",
-  "previous_certificate_hash": "477219bdf227e9002e02be9b63444ec4e6a9b2437afc51317a27f352c0d949dd",
-  "timestamp": "2026-02-17T21:50:46.958028+00:00",
-  "training_duration_minutes": 5.060072783629099,
+  "pipeline_id": "dedb8b86-dba9-4447-8972-fc4a5838baf0",
+  "previous_certificate_hash": "8e709e1f5d255ff5a0eeb5bf9633d83de483ade6ecb0f291ed665a3f9760c8db",
+  "timestamp": "2026-02-20T23:18:29.656282+00:00",
+  "training_duration_minutes": 5.034878389040629,
   "training_metadata": {
     "branch_purpose": "intrinsic fairness test",
     "epochs": 120,

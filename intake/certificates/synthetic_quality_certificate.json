@@ -10,8 +10,8 @@
     "demographic_parity_synthetic": {}
   },
   "branch_mode": "intrinsic",
-  "certificate_hash": "9a1b70a8002a6ea180c932d5303a293cb124e04e9a535ef6815983a33fe5602d",
-  "certificate_id": "4000d2dd-4a8d-4c3c-bec3-a798db8e2b5b",
+  "certificate_hash": "ff4a468b502508c26a7ac1370bb8a9b7f2fb52354ea74787e757c436188967f3",
+  "certificate_id": "e5d6cedd-8c08-4511-97a4-d949ec410973",
   "certificate_type": "synthetic_quality_certificate",
   "certificate_version": "1.1",
   "correlation_analysis": {
@@ -140,11 +140,11 @@
     "undefined_correlation_pair_mismatch_count": 0
   },
   "critical_issues": [],
-  "issued_at": "2026-02-17T21:50:54.721868+00:00",
+  "issued_at": "2026-02-20T23:18:37.531874+00:00",
   "issued_by": "FL-BSA Synthetic Quality Validation System",
   "overall_quality_score": 0.9210242362906472,
-  "pipeline_id": "2339046f-0730-4cbb-adf0-2412707ca10e",
-  "previous_certificate_hash": "6c85b422db1f0f5eb5f0d2fe52ef3b3d35a158262e8f103836f10314346b2b7e",
+  "pipeline_id": "dedb8b86-dba9-4447-8972-fc4a5838baf0",
+  "previous_certificate_hash": "58e02a14266e4071e34b996699a8fbea83d75c56ae51fc4449ef779fd2748fd0",
   "privacy_metrics": {
     "duplicate_count": 0,
     "mean_nearest_neighbor_distance": 0.5369765176095795,
@@ -153,12 +153,12 @@
     "privacy_preservation_score": 0.8322538204635158,
     "unique_combination_overlap": 0.0032385386094524846
   },
-  "quality_ok": false,
+  "quality_ok": null,
   "quality_threshold_met": true,
   "quality_threshold_used": 0.8,
   "real_data_columns": 9,
   "real_data_hash": "7fbc4c8b4d24b2173d2c536e5d3f62c8fcc28cfdf3a165071c6ad04864721ba8",
-  "real_data_path": "/app/output/2339046f-0730-4cbb-adf0-2412707ca10e/dataset_2339046f-0730-4cbb-adf0-2412707ca10e.csv",
+  "real_data_path": "/app/output/dedb8b86-dba9-4447-8972-fc4a5838baf0/dataset_dedb8b86-dba9-4447-8972-fc4a5838baf0.csv",
   "real_data_rows": 3000,
   "recommendations": [
     "Synthetic data shows excellent quality across all metrics"
@@ -294,11 +294,11 @@
   "status": "valid",
   "synthetic_data_columns": 7,
   "synthetic_data_hash": "8ce5da89c027da79c3e8e5acdfda0b06aa85154a3d68b103c15c9cc65b8e1bc8",
-  "synthetic_data_path": "/app/output/2339046f-0730-4cbb-adf0-2412707ca10e/synthetic_data.csv",
+  "synthetic_data_path": "/app/output/dedb8b86-dba9-4447-8972-fc4a5838baf0/synthetic_data.csv",
   "synthetic_data_rows": 10000,
   "utility_metrics": null,
-  "validation_completed_at": "2026-02-17T21:50:54.998323+00:00",
-  "validation_duration_seconds": 0.276453,
-  "validation_started_at": "2026-02-17T21:50:54.721870+00:00",
+  "validation_completed_at": "2026-02-20T23:18:37.801930+00:00",
+  "validation_duration_seconds": 0.270053,
+  "validation_started_at": "2026-02-20T23:18:37.531877+00:00",
   "warnings": []
 }
