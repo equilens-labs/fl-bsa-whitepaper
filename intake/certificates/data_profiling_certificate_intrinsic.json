@@ -14,8 +14,8 @@
       "unique_count": 5
     }
   },
-  "certificate_hash": "9c62b6079dcbbf8e7487f1fb56d27bf17719c22df6511fb69257bb6801e0317d",
-  "certificate_id": "data_profiling_intrinsic_dedb8b86-dba9-4447-8972-fc4a5838baf0",
+  "certificate_hash": "76e1ac15ef483c474b15a81c85fc0080abd1a0332130ef6598e864d3646df015",
+  "certificate_id": "data_profiling_intrinsic_88325003-be12-4262-a7c4-ca8c8874c47e",
   "certificate_type": "data_profiling_certificate",
   "certificate_version": "1.0",
   "data_quality_score": 0.95,
@@ -113,12 +113,12 @@
       "std": 15688.543417942952
     }
   },
-  "pipeline_id": "dedb8b86-dba9-4447-8972-fc4a5838baf0",
-  "previous_certificate_hash": "332d7dd071fac2b55b7ae18c9095815a304e08f60a4702484077c5151964065b",
+  "pipeline_id": "88325003-be12-4262-a7c4-ca8c8874c47e",
+  "previous_certificate_hash": "70c939b6ac755e08cd50b6e9b491466fa54bfca6ff3b1eb77fdfa5290a99bfa6",
   "protected_attributes_found": [
     "age",
     "gender",
     "race"
   ],
-  "timestamp": "2026-02-20T22:54:47.648871+00:00"
+  "timestamp": "2026-02-22T10:07:32.275732+00:00"
 }
