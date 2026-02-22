@@ -1,7 +1,7 @@
 {
   "categorical_value_issues": {},
-  "certificate_hash": "f434563f3bc941b9322dc6b5be398311511bf26b8f80fe5eeda6bef1a0c6efde",
-  "certificate_id": "ca2dfe46-31eb-42a4-bc63-a4c5f95ed2cb",
+  "certificate_hash": "58ce257bff0d05aec80132b7abd4688baa5b116d91234fa77b020d1f2ab7eb8b",
+  "certificate_id": "2c31dae6-bb08-432b-a699-41d4da153c23",
   "certificate_version": "1.0",
   "column_type_issues": {},
   "corrections_applied": [
@@ -14,13 +14,13 @@
     "ground_truth"
   ],
   "file_size_bytes": 162655,
-  "issued_at": "2026-02-20T22:54:47Z",
+  "issued_at": "2026-02-22T10:07:32Z",
   "issued_by": "FL-BSA EquiLens Data Validator",
   "meets_minimum_size": true,
   "minimum_size_required": 1000,
   "missing_columns": [],
   "null_counts": {},
-  "previous_certificate_hash": "9c62b6079dcbbf8e7487f1fb56d27bf17719c22df6511fb69257bb6801e0317d",
+  "previous_certificate_hash": "76e1ac15ef483c474b15a81c85fc0080abd1a0332130ef6598e864d3646df015",
   "protected_attribute_coverage": {
     "age": 1.0,
     "gender": 1.0,
@@ -34,7 +34,7 @@
   "required_columns_present": true,
   "schema_version": "1.0",
   "source_data_hash": "ef7e9abfbbd53c07d941bbbedf49c6a71186f52b87f753b6c101d4582f1fe3d9",
-  "source_file_path": "/app/output/dedb8b86-dba9-4447-8972-fc4a5838baf0/dataset_dedb8b86-dba9-4447-8972-fc4a5838baf0.csv",
+  "source_file_path": "dataset_88325003-be12-4262-a7c4-ca8c8874c47e.csv",
   "status": "valid",
   "validation_errors": [],
   "validation_passed": false,
