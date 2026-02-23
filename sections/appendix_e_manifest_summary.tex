@@ -9,21 +9,21 @@
 \toprule
 Field & Value \\
 \midrule
-rng\_seed & \RngSeed \\
-bootstrap\_seed & \BootstrapSeed \\
-code\_commit & \CodeCommitDisplay \\
-dataset\_hash & \DatasetHashDisplay \\
-api\_image\_digest & \ApiImageDigestDisplay \\
-worker\_image\_digest & \WorkerImageDigestDisplay \\
-schema\_version & \texttt{\SchemaVersion} \\
-run\_id & \RunIdDisplay \\
-config\_hash & \ConfigHashDisplay \\
+\texttt{rng\_seed} & \RngSeed \\
+\texttt{bootstrap\_seed} & \BootstrapSeed \\
+\texttt{code\_commit} & \CodeCommitDisplay \\
+\texttt{dataset\_hash} & \DatasetHashDisplay \\
+\texttt{api\_image\_digest} & \ApiImageDigestDisplay \\
+\texttt{worker\_image\_digest} & \WorkerImageDigestDisplay \\
+\texttt{schema\_version} & \texttt{\SchemaVersion} \\
+\texttt{run\_id} & \RunIdDisplay \\
+\texttt{config\_hash} & \ConfigHashDisplay \\
 \texttt{eo\_enabled} & \ifnum\EoEnabled>0 true\else false\fi \\
 \texttt{ece\_enabled} & \ifnum\EceEnabled>0 true\else false\fi \\
-inference\_method & \InferenceMethod \\
-inference\_replicates & \InferenceReplicates \\
-inference\_alpha & \InferenceAlpha \\
-inference\_smoothing & \ifx\InferenceSmoothing\empty (none)\else \texttt{\InferenceSmoothing}\fi \\
+\texttt{inference\_method} & \InferenceMethod \\
+\texttt{inference\_replicates} & \InferenceReplicates \\
+\texttt{inference\_alpha} & \InferenceAlpha \\
+\texttt{inference\_smoothing} & \ifx\InferenceSmoothing\empty (none)\else \texttt{\InferenceSmoothing}\fi \\
 \bottomrule
 \end{tabular}
 \caption{Key provenance fields for this synthetic audit run, including seeds, hashes, image digests, capabilities, and inference configuration.}
