@@ -21,6 +21,8 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
+import re
 from pathlib import Path
 from typing import Any, Dict
 
@@ -55,6 +57,73 @@ def _truthy_int(val: Any) -> int:
         return 0
     s = str(val).strip().lower()
     return 1 if s in {"1", "true", "yes", "on"} else 0
+
+
+_LATEX_ESCAPE_MAP: dict[str, str] = {
+    "\\": r"\textbackslash{}",
+    "&": r"\&",
+    "%": r"\%",
+    "$": r"\$",
+    "#": r"\#",
+    "_": r"\_",
+    "{": r"\{",
+    "}": r"\}",
+    "~": r"\textasciitilde{}",
+    "^": r"\textasciicircum{}",
+}
+_LATEX_ESCAPE_RE = re.compile(r"[\\&%$#_{}~^]")
+
+
+def _latex_escape(value: Any) -> str:
+    text = str(value or "")
+    return _LATEX_ESCAPE_RE.sub(lambda m: _LATEX_ESCAPE_MAP[m.group(0)], text)
+
+
+_DIGEST_PREFIX_RE = re.compile(r"^(?P<prefix>[A-Za-z0-9_+-]+:)(?P<body>[0-9a-fA-F]{16,})$")
+_SCI_EXP_NORMALIZE_RE = re.compile(r"e([+-])0+(\d+)$", re.IGNORECASE)
+_UUID_RE = re.compile(
+    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+)
+
+
+def _chunk_for_display(value: str, *, chunk_size: int = 8, separator: str = " ") -> str:
+    cleaned = value.strip()
+    if not cleaned:
+        return cleaned
+    if len(cleaned) <= chunk_size:
+        return cleaned
+    return separator.join(cleaned[i : i + chunk_size] for i in range(0, len(cleaned), chunk_size))
+
+
+def _chunk_digest_for_display(value: str, *, chunk_size: int = 8, separator: str = " ") -> str:
+    cleaned = value.strip()
+    match = _DIGEST_PREFIX_RE.match(cleaned)
+    if match:
+        return f"{match.group('prefix')}{_chunk_for_display(match.group('body'), chunk_size=chunk_size, separator=separator)}"
+    return _chunk_for_display(cleaned, chunk_size=chunk_size, separator=separator)
+
+
+def _tex_texttt_breakable(value: str) -> str:
+    cleaned = str(value or "").strip()
+    if not cleaned:
+        return ""
+    if _UUID_RE.match(cleaned):
+        return f"\\texttt{{{_latex_escape(cleaned)}}}"
+    chunked = _chunk_digest_for_display(cleaned)
+    return f"\\texttt{{{_latex_escape(chunked)}}}"
+
+
+def _fmt_float_for_siunitx(val: float, *, decimals: int = 6, sci_threshold: float = 1e-4) -> str:
+    """Format a float as a siunitx-friendly token without collapsing small values to 0."""
+    if not math.isfinite(val):
+        return ""
+    if val == 0.0:
+        return "0"
+    if abs(val) < sci_threshold:
+        token = f"{val:g}"
+        return _SCI_EXP_NORMALIZE_RE.sub(r"e\1\2", token)
+    token = f"{val:.{decimals}f}"
+    return token.rstrip("0").rstrip(".")
 
 
 def _emit_macros(
@@ -168,25 +237,43 @@ def _emit_macros(
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding="utf-8") as f:
         f.write("% Auto-generated provenance/inference macros\n")
-        f.write("\\newcommand{\\InferenceMethod}{%s}\n" % method)
+        f.write("\\newcommand{\\InferenceMethod}{%s}\n" % _latex_escape(method))
         f.write("\\newcommand{\\InferenceReplicates}{%d}\n" % replicates)
         f.write("\\newcommand{\\InferenceAlpha}{%.2f}\n" % alpha)
         if smoothing_val > 0.0:
-            f.write("\\newcommand{\\InferenceSmoothing}{%.6f}\n" % smoothing_val)
+            f.write(
+                "\\newcommand{\\InferenceSmoothing}{%s}\n"
+                % _fmt_float_for_siunitx(smoothing_val, decimals=6)
+            )
         else:
             f.write("\\newcommand{\\InferenceSmoothing}{}\n")
-        f.write("\\newcommand{\\ScenarioType}{%s}\n" % scenario_type)
-        f.write("\\newcommand{\\ScenarioLabel}{%s}\n" % scenario_label)
+        f.write("\\newcommand{\\ScenarioType}{%s}\n" % _latex_escape(scenario_type))
+        f.write("\\newcommand{\\ScenarioLabel}{%s}\n" % _latex_escape(scenario_label))
         f.write("\\newcommand{\\AirMin}{%.3f}\n" % float(thresholds["air_min"]))
         f.write("\\newcommand{\\EoGapMax}{%.3f}\n" % float(thresholds["eo_gap_max"]))
         f.write("\\newcommand{\\EceMax}{%.3f}\n" % float(thresholds["ece_max"]))
-        f.write("\\newcommand{\\CodeCommit}{%s}\n" % code_commit)
-        f.write("\\newcommand{\\RunId}{%s}\n" % run_id)
-        f.write("\\newcommand{\\SchemaVersion}{%s}\n" % schema_version)
-        f.write("\\newcommand{\\DatasetHash}{%s}\n" % dataset_hash)
-        f.write("\\newcommand{\\ConfigHash}{%s}\n" % config_hash)
-        f.write("\\newcommand{\\ApiImageDigest}{%s}\n" % api_image_digest)
-        f.write("\\newcommand{\\WorkerImageDigest}{%s}\n" % worker_image_digest)
+        f.write("\\newcommand{\\CodeCommit}{%s}\n" % _latex_escape(code_commit))
+        f.write("\\newcommand{\\RunId}{%s}\n" % _latex_escape(run_id))
+        f.write("\\newcommand{\\SchemaVersion}{%s}\n" % _latex_escape(schema_version))
+        f.write("\\newcommand{\\DatasetHash}{%s}\n" % _latex_escape(dataset_hash))
+        f.write("\\newcommand{\\ConfigHash}{%s}\n" % _latex_escape(config_hash))
+        f.write("\\newcommand{\\ApiImageDigest}{%s}\n" % _latex_escape(api_image_digest))
+        f.write("\\newcommand{\\WorkerImageDigest}{%s}\n" % _latex_escape(worker_image_digest))
+        f.write("\\newcommand{\\CodeCommitDisplay}{%s}\n" % _tex_texttt_breakable(code_commit))
+        f.write("\\newcommand{\\RunIdDisplay}{%s}\n" % _tex_texttt_breakable(run_id))
+        f.write(
+            "\\newcommand{\\DatasetHashDisplay}{%s}\n"
+            % _tex_texttt_breakable(dataset_hash)
+        )
+        f.write("\\newcommand{\\ConfigHashDisplay}{%s}\n" % _tex_texttt_breakable(config_hash))
+        f.write(
+            "\\newcommand{\\ApiImageDigestDisplay}{%s}\n"
+            % _tex_texttt_breakable(api_image_digest)
+        )
+        f.write(
+            "\\newcommand{\\WorkerImageDigestDisplay}{%s}\n"
+            % _tex_texttt_breakable(worker_image_digest)
+        )
         f.write("\\newcommand{\\RngSeed}{%s}\n" % (rng_seed if rng_seed is not None else ""))
         f.write(
             "\\newcommand{\\BootstrapSeed}{%s}\n"

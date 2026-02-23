@@ -59,9 +59,36 @@ def _latex_escape(text: str) -> str:
 
 def _fmt_num(x: Any, *, decimals: int = 3) -> str:
     try:
-        return f"\\num{{{float(x):.{decimals}f}}}"
+        val = float(x)
     except Exception:
         return "TBD"
+    if not math.isfinite(val):
+        return "TBD"
+    if float(val).is_integer():
+        return f"\\num{{{int(val)}}}"
+    formatted = f"{val:.{decimals}f}".rstrip("0").rstrip(".")
+    if formatted in {"-0", "-0.0"}:
+        formatted = "0"
+    return f"\\num{{{formatted}}}"
+
+
+_P_VALUE_SMALL_SI_OPTS = "round-mode=figures,round-precision=3"
+_P_VALUE_MEDIUM_SI_OPTS = "round-mode=places,round-precision=4"
+
+
+def _fmt_p_value(x: Any) -> str:
+    try:
+        val = float(x)
+    except Exception:
+        return "TBD"
+    if not math.isfinite(val):
+        return "TBD"
+    if val == 0:
+        # Avoid siunitx underflow-to-zero display; keep numeric for S columns.
+        return f"\\num[{_P_VALUE_SMALL_SI_OPTS}]{{1e-308}}"
+    if val < 1e-4:
+        return f"\\num[{_P_VALUE_SMALL_SI_OPTS}]{{{val:.3e}}}"
+    return f"\\num[{_P_VALUE_MEDIUM_SI_OPTS}]{{{val:.4f}}}"
 
 
 def _truthy_int(val: Any) -> int:
@@ -95,7 +122,7 @@ def _write_table(
             f.write(" & ".join(r) + "\\\\\n")
         if not rows:
             f.write(
-                f"\\multicolumn{{{int(empty_span_cols)}}}{{c}}{{\\emph{{No rows found in intake}}}}\\\\\n"
+                f"\\multicolumn{{{int(empty_span_cols)}}}{{c}}{{\\emph{{Not evaluated in this scenario}}}}\\\\\n"
             )
         f.write("\\bottomrule\n\\end{tabular}\n")
 
@@ -275,7 +302,7 @@ def main() -> int:
                 _fmt_num(gender_air_point),
                 _fmt_num(g_lo),
                 _fmt_num(g_hi),
-                _fmt_num(gender_air_p, decimals=6),
+                _fmt_p_value(gender_air_p),
             ]
         )
         gs_lo, gs_hi = _ci_parts(gender_srg_ci)
@@ -287,7 +314,7 @@ def main() -> int:
                 _fmt_num(gender_srg_point),
                 _fmt_num(gs_lo),
                 _fmt_num(gs_hi),
-                _fmt_num(gender_air_p, decimals=6),
+                _fmt_p_value(gender_air_p),
             ]
         )
 
@@ -335,10 +362,7 @@ def main() -> int:
                     _fmt_num(race_air_point),
                     _fmt_num(r_lo),
                     _fmt_num(r_hi),
-                    _fmt_num(
-                        race_air_p_adj if race_air_p_adj is not None else race_air_p,
-                        decimals=6,
-                    ),
+                    _fmt_p_value(race_air_p_adj if race_air_p_adj is not None else race_air_p),
                 ]
             )
             rs_lo, rs_hi = _ci_parts(race_srg_ci)
@@ -350,10 +374,7 @@ def main() -> int:
                     _fmt_num(race_srg_point),
                     _fmt_num(rs_lo),
                     _fmt_num(rs_hi),
-                    _fmt_num(
-                        race_air_p_adj if race_air_p_adj is not None else race_air_p,
-                        decimals=6,
-                    ),
+                    _fmt_p_value(race_air_p_adj if race_air_p_adj is not None else race_air_p),
                 ]
             )
 
@@ -433,7 +454,7 @@ def main() -> int:
             f.write(f"\\renewcommand{{\\GenderAIRLCI}}{{{_fmt_num(gender_air_ci[0])}}}\n")
             f.write(f"\\renewcommand{{\\GenderAIRUCI}}{{{_fmt_num(gender_air_ci[1])}}}\n")
         f.write(
-            f"\\renewcommand{{\\GenderAIRPValue}}{{{_fmt_num(gender_air_p, decimals=6)}}}\n"
+            f"\\renewcommand{{\\GenderAIRPValue}}{{{_fmt_p_value(gender_air_p)}}}\n"
         )
         f.write(f"\\renewcommand{{\\GenderSRG}}{{{_fmt_num(gender_srg_point)}}}\n")
         if isinstance(gender_srg_ci, (list, tuple)) and len(gender_srg_ci) == 2:
@@ -482,7 +503,7 @@ def main() -> int:
         f.write(f"\\renewcommand{{\\GenderAIRUpliftAbs}}{{{_fmt_num(gender_uplift_abs)}}}\n")
         try:
             f.write(
-                f"\\renewcommand{{\\GenderAIRUpliftRelPct}}{{\\num{{{float(gender_uplift_rel) * 100.0:.1f}}}}}\n"
+                f"\\renewcommand{{\\GenderAIRUpliftRelPct}}{{\\num{{{float(gender_uplift_rel) * 100.0:.3f}}}}}\n"
             )
         except Exception:
             f.write("\\renewcommand{\\GenderAIRUpliftRelPct}{TBD}\n")
@@ -503,10 +524,10 @@ def main() -> int:
             f.write(f"\\renewcommand{{\\RaceWorstAIRLCI}}{{{_fmt_num(race_air_ci[0])}}}\n")
             f.write(f"\\renewcommand{{\\RaceWorstAIRUCI}}{{{_fmt_num(race_air_ci[1])}}}\n")
         f.write(
-            f"\\renewcommand{{\\RaceWorstAIRPValue}}{{{_fmt_num(race_air_p, decimals=6)}}}\n"
+            f"\\renewcommand{{\\RaceWorstAIRPValue}}{{{_fmt_p_value(race_air_p)}}}\n"
         )
         f.write(
-            f"\\renewcommand{{\\RaceWorstAIRPValueAdj}}{{{_fmt_num(race_air_p_adj, decimals=6)}}}\n"
+            f"\\renewcommand{{\\RaceWorstAIRPValueAdj}}{{{_fmt_p_value(race_air_p_adj)}}}\n"
         )
         f.write(f"\\renewcommand{{\\RaceObservedMinGroupN}}{{{int(race_min_group_n)}}}\n")
         f.write(f"\\renewcommand{{\\RaceObservedMinGroupPct}}{{{race_min_group_pct:.4f}}}\n")
@@ -526,14 +547,14 @@ def main() -> int:
     # Deterministic SoT tables
     _write_table(
         outdir / "table_air_summary.tex",
-        column_spec="lllSSSS",
+        column_spec="lllSSSr",
         empty_span_cols=7,
         header="attribute & protected & reference & {AIR} & {LCI} & {UCI} & {p}\\\\",
         rows=air_rows,
     )
     _write_table(
         outdir / "table_srg_summary.tex",
-        column_spec="lllSSSS",
+        column_spec="lllSSSr",
         empty_span_cols=7,
         header="attribute & protected & reference & {SRG} & {LCI} & {UCI} & {p}\\\\",
         rows=srg_rows,

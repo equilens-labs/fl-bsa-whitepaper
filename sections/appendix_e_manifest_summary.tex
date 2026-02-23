@@ -5,19 +5,19 @@
 \begin{table}[h]
 \centering
 \small
-\begin{tabular}{ll}
+\begin{tabular}{p{0.30\linewidth}p{0.65\linewidth}}
 \toprule
 Field & Value \\
 \midrule
 rng\_seed & \RngSeed \\
 bootstrap\_seed & \BootstrapSeed \\
-code\_commit & \CodeCommit \\
-dataset\_hash & \DatasetHash \\
-api\_image\_digest & \ApiImageDigest \\
-worker\_image\_digest & \WorkerImageDigest \\
-schema\_version & \SchemaVersion \\
-run\_id & \RunId \\
-config\_hash & \ConfigHash \\
+code\_commit & \CodeCommitDisplay \\
+dataset\_hash & \DatasetHashDisplay \\
+api\_image\_digest & \ApiImageDigestDisplay \\
+worker\_image\_digest & \WorkerImageDigestDisplay \\
+schema\_version & \texttt{\SchemaVersion} \\
+run\_id & \RunIdDisplay \\
+config\_hash & \ConfigHashDisplay \\
 \texttt{eo\_enabled} & \ifnum\EoEnabled>0 true\else false\fi \\
 \texttt{ece\_enabled} & \ifnum\EceEnabled>0 true\else false\fi \\
 inference\_method & \InferenceMethod \\

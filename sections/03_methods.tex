@@ -5,7 +5,7 @@
 We work with aggregated data only. For each split we use selection counts and rates, per-group confusion counts, and calibration-bin summaries. No row-level data is required for the analyses in this whitepaper.
 
 \subsection{Estimators and Uncertainty}
-Selection-rate proportions use Wilson 95\% confidence intervals \citep{brown2001interval}. For the disparity ratio (\cref{eq:air}), we use a deterministic delta-method confidence interval on $\log(\mathrm{AIR})$; approval-rate gaps (\cref{eq:srg}) use a Newcombe/Wilson construction derived from Wilson endpoints. Two-sided p-values use a two-proportion z-test by default, switching to Fisher's exact test under a small-sample policy (small group size or sparse $2\\times 2$ cells).
+Selection-rate proportions use Wilson 95\% confidence intervals \citep{brown2001interval}. For the disparity ratio (\cref{eq:air}), we use a deterministic delta-method confidence interval on $\log(\mathrm{AIR})$; approval-rate gaps (\cref{eq:srg}) use a Newcombe/Wilson construction derived from Wilson endpoints. Two-sided p-values use a two-proportion z-test by default, switching to Fisher's exact test under a small-sample policy (small group size or sparse $2\times 2$ cells).
 
 \subsection{Multiplicity Adjustment}
 For multi-class race, we perform pairwise comparisons against a fixed reference group. P-values across the race-pair family are adjusted using the Holm--Bonferroni step-down procedure at level $\\alpha=0.05$. Confidence intervals are reported per pair and are not multiplicity-adjusted.
