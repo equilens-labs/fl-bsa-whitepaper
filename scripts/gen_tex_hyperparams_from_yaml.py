@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -46,9 +47,14 @@ def _fmt_layers(dims: Any) -> str:
 
 def _fmt_num(x: Any) -> str:
     try:
-        return f"\\num{{{float(x):.3g}}}"
+        val = float(x)
     except Exception:
         return ""
+    if not math.isfinite(val):
+        return ""
+    # Use significant-figure rounding locally so small learning rates don't
+    # collapse to 0.000 under the paper's global siunitx round-mode=places.
+    return f"\\num[round-mode=figures,round-precision=3]{{{val:.3e}}}"
 
 
 def _render_chosen_table(rows: List[List[str]], out_path: Path) -> None:
