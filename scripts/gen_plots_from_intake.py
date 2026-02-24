@@ -28,6 +28,18 @@ def _maybe_set_style() -> None:
     except Exception:
         return
 
+    # Avoid Type 3 fonts in PDF output (reviewers often flag them as
+    # "non-standard" / less searchable). Type 42 embeds TrueType fonts.
+    try:
+        import matplotlib as mpl  # type: ignore[import]
+
+        mpl.rcParams["pdf.fonttype"] = 42
+        mpl.rcParams["ps.fonttype"] = 42
+        mpl.rcParams["font.family"] = "DejaVu Sans"
+        mpl.rcParams["mathtext.fontset"] = "dejavusans"
+    except Exception:
+        pass
+
     try:
         plt.style.use("seaborn-v0_8-paper")
     except Exception:
