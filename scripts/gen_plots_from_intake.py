@@ -37,6 +37,21 @@ def _maybe_set_style() -> None:
             # Fall back to defaults
             pass
 
+    # Avoid Type 3 fonts in PDF output (reviewers often flag them as
+    # "non-standard" / less searchable). Type 42 embeds TrueType fonts.
+    #
+    # Apply these *after* style selection so style sheets can't silently
+    # override the embedding settings.
+    try:
+        import matplotlib as mpl  # type: ignore[import]
+
+        mpl.rcParams["pdf.fonttype"] = 42
+        mpl.rcParams["ps.fonttype"] = 42
+        mpl.rcParams["font.family"] = "DejaVu Sans"
+        mpl.rcParams["mathtext.fontset"] = "dejavusans"
+    except Exception:
+        pass
+
 
 def _generate_selection_rates_fig(
     selection_rates: pd.DataFrame, metrics_long: pd.DataFrame, out_path: Path
