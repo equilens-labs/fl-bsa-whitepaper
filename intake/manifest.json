@@ -1,23 +1,26 @@
 {
   "schema_version": "wp-intake.v1",
-  "run_id": "88325003-be12-4262-a7c4-ca8c8874c47e",
-  "created": "2026-02-22T10:31:28.930186+00:00",
-  "dataset_hash": "sha256:7fbc4c8b4d24b2173d2c536e5d3f62c8fcc28cfdf3a165071c6ad04864721ba8",
+  "run_id": "1c227681-f910-4e9f-b36d-433927ae772e",
+  "created": "2026-04-14T20:13:58.166645+00:00",
+  "dataset_hash": "sha256:ebceb84310e0702075e0fd6fc31bacfe6046faef2316fd890a208a3b620ae9b0",
   "dataset_hash_source": "metrics.dataset_hash",
-  "dataset_hash_path": "dataset_88325003-be12-4262-a7c4-ca8c8874c47e.csv",
-  "commit_sha": "2079f858579327f807b405ecd8600981ae11ffa4",
-  "code_commit": "2079f858579327f807b405ecd8600981ae11ffa4",
-  "software_commit": "2079f858579327f807b405ecd8600981ae11ffa4",
+  "dataset_hash_path": "dataset_1c227681-f910-4e9f-b36d-433927ae772e.csv",
+  "software_version": "0.1.0",
+  "build_ref": "0.1.0",
+  "commit_sha": "8a2f5f0706c31df32fb78964f98a1196e33f5c26",
+  "code_commit": "8a2f5f0706c31df32fb78964f98a1196e33f5c26",
+  "source_commit": "8a2f5f0706c31df32fb78964f98a1196e33f5c26",
+  "software_commit": "8a2f5f0706c31df32fb78964f98a1196e33f5c26",
   "container_digests": {
-    "api_image_digest": "sha256:33985a7951b6c9a71313e17d5a77021c118b8c2db0f88ecab9d629d82a4afdca",
-    "worker_image_digest": "sha256:d731e3e2a3b38eb66420300d1a4764a06b7bf80fbb9989d142ea428dd6b5d452"
+    "api_image_digest": "sha256:a15bfefce7ca6aac67dbc743e62f3caa5f703893d63ff7bfe5ce5bd3137b4c20",
+    "worker_image_digest": "sha256:e99f2c847ecf57cce1c8f67bed1cf9b96416f157304e4fc3e3d8c976ec5dedbd"
   },
-  "container_digest": "sha256:33985a7951b6c9a71313e17d5a77021c118b8c2db0f88ecab9d629d82a4afdca",
+  "container_digest": "sha256:a15bfefce7ca6aac67dbc743e62f3caa5f703893d63ff7bfe5ce5bd3137b4c20",
   "seeds": {
     "rng_seed": 42,
     "bootstrap_seed": 42
   },
-  "config_hash": "173e4d81cc7b25f4f841f9af6d838df7055c5bc1958936a2efd762e98c6e578b",
+  "config_hash": "efdad417dcb0c1a5aaa40cddfd31b3e26a6009098239cdcf74bcde9fffd08015",
   "capabilities": {
     "eo_enabled": true,
     "ece_enabled": false,
@@ -28,13 +31,13 @@
     "level": 0.95,
     "wilson_continuity_correction": false
   },
-  "start_ts": "2026-02-22T10:31:28.930201+00:00",
-  "end_ts": "2026-02-22T10:31:28.930204+00:00",
+  "start_ts": "2026-04-14T19:47:45.269964+00:00",
+  "end_ts": "2026-04-14T20:13:58.166645+00:00",
   "hardware": {
     "cpu_count": 128,
     "machine": "x86_64",
     "processor": "",
-    "ram_bytes": 236380934144
+    "ram_bytes": 236380872704
   },
   "inference": {
     "method": "bca",
