@@ -1,8 +1,8 @@
 {
-  "run_id": "88325003-be12-4262-a7c4-ca8c8874c47e",
+  "run_id": "1c227681-f910-4e9f-b36d-433927ae772e",
   "split": "wp_evidence",
   "model_id": "gate-wp-42",
-  "generated_at": "2026-02-22T10:31:36.869879+00:00",
+  "generated_at": "2026-04-14T20:14:02.516360+00:00",
   "violations": {
     "air": {
       "count": 1,
@@ -45,31 +45,31 @@
     ],
     "per_attribute": {
       "gender": {
-        "value": 0.77106,
-        "lower_ci": 0.74119,
-        "upper_ci": 0.802135,
+        "value": 0.758952,
+        "lower_ci": 0.729775,
+        "upper_ci": 0.789296,
         "status": "VIOLATES",
         "ci_degenerate": false,
-        "ci_excludes_threshold": false,
+        "ci_excludes_threshold": true,
         "reference_group": "male",
         "protected_group": "female",
         "method": "wilson+delta",
-        "p_value": 3.112858768046164e-39,
-        "p_value_adjusted": 3.112858768046164e-39,
+        "p_value": 6.104443058877863e-44,
+        "p_value_adjusted": 6.104443058877863e-44,
         "p_value_adjustment": "none"
       },
       "race": {
-        "value": 0.916051,
-        "lower_ci": 0.836999,
-        "upper_ci": 1.00257,
+        "value": 0.942263,
+        "lower_ci": 0.857442,
+        "upper_ci": 1.035474,
         "status": "PASSES",
         "ci_degenerate": false,
         "ci_excludes_threshold": true,
         "reference_group": "white",
-        "protected_group": "asian",
+        "protected_group": "other",
         "method": "wilson+delta",
-        "p_value": 0.04878767322464978,
-        "p_value_adjusted": 0.14636301967394935,
+        "p_value": 0.20496783345237163,
+        "p_value_adjusted": 0.6149035003571148,
         "p_value_adjustment": "holm_bonferroni",
         "display_in_main_pdf": false,
         "policy": {
@@ -140,8 +140,8 @@
     "ci_excludes_threshold": null,
     "ci_degenerate": null
   },
-  "commit_sha": "2079f858579327f807b405ecd8600981ae11ffa4",
-  "dataset_hash": "sha256:7fbc4c8b4d24b2173d2c536e5d3f62c8fcc28cfdf3a165071c6ad04864721ba8",
+  "commit_sha": "8a2f5f0706c31df32fb78964f98a1196e33f5c26",
+  "dataset_hash": "sha256:ebceb84310e0702075e0fd6fc31bacfe6046faef2316fd890a208a3b620ae9b0",
   "fairness_reference_groups": {
     "gender": "male",
     "race": "white"
