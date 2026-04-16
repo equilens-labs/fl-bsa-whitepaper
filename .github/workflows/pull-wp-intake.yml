@@ -23,10 +23,18 @@ on:
         description: "producer artifact name to download"
         required: false
         default: "wp-reviewer-pack-v4"
+      producer_run_id:
+        description: "optional exact producer workflow run id"
+        required: false
+        default: ""
       branch:
         description: "producer branch (manual fetch)"
         required: false
         default: "main"
+
+permissions:
+  contents: read
+  actions: read
 
 jobs:
   fetch-build:
@@ -45,16 +53,49 @@ jobs:
           pip install pandas pyyaml matplotlib
 
       - name: Download reviewer bundle from producer
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          repo: ${{ github.event_name == 'workflow_dispatch' && inputs.producer_repo || github.event_name == 'repository_dispatch' && github.event.client_payload.producer_repo || 'equilens-labs/fl-bsa' }}
-          workflow: ${{ github.event_name == 'workflow_dispatch' && inputs.workflow_file || github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'wp-evidence-nightly.yml' }}
-          workflow_conclusion: success
-          branch: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.event_name == 'repository_dispatch' && github.event.client_payload.branch || 'main' }}
-          name: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_name || github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_name || 'wp-reviewer-pack-v4' }}
-          path: wp-bundle
-          if_no_artifact_found: fail
-          github_token: ${{ secrets.PRODUCER_TOKEN || github.token }}
+        env:
+          PRODUCER_REPO: ${{ github.event_name == 'workflow_dispatch' && inputs.producer_repo || github.event_name == 'repository_dispatch' && github.event.client_payload.producer_repo || 'equilens-labs/fl-bsa' }}
+          PRODUCER_WORKFLOW: ${{ github.event_name == 'workflow_dispatch' && inputs.workflow_file || github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'wp-evidence-nightly.yml' }}
+          PRODUCER_ARTIFACT: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_name || github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_name || 'wp-reviewer-pack-v4' }}
+          PRODUCER_BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.event_name == 'repository_dispatch' && github.event.client_payload.branch || 'main' }}
+          PRODUCER_RUN_ID: ${{ github.event_name == 'workflow_dispatch' && inputs.producer_run_id || github.event_name == 'repository_dispatch' && github.event.client_payload.producer_run_id || '' }}
+          PRODUCER_TOKEN: ${{ secrets.PRODUCER_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p wp-bundle
+
+          token="${PRODUCER_TOKEN:-}"
+          if [ -z "$token" ] && [ "$PRODUCER_REPO" != "$GITHUB_REPOSITORY" ]; then
+            echo "PRODUCER_TOKEN is required to read artifacts from ${PRODUCER_REPO}." >&2
+            echo "Configure a token with Actions read access to ${PRODUCER_REPO}, or dispatch with artifacts from this repository." >&2
+            exit 1
+          fi
+          if [ -n "$token" ]; then
+            export GH_TOKEN="$token"
+          fi
+
+          run_id="$PRODUCER_RUN_ID"
+          if [ -z "$run_id" ]; then
+            run_id="$(gh run list \
+              -R "$PRODUCER_REPO" \
+              --workflow "$PRODUCER_WORKFLOW" \
+              --branch "$PRODUCER_BRANCH" \
+              --status success \
+              --limit 1 \
+              --json databaseId \
+              --jq '.[0].databaseId // empty')"
+          fi
+          if [ -z "$run_id" ]; then
+            echo "No successful ${PRODUCER_REPO}/${PRODUCER_WORKFLOW}@${PRODUCER_BRANCH} run found." >&2
+            exit 1
+          fi
+
+          echo "Downloading ${PRODUCER_ARTIFACT} from ${PRODUCER_REPO} run ${run_id}"
+          gh run download "$run_id" \
+            -R "$PRODUCER_REPO" \
+            -n "$PRODUCER_ARTIFACT" \
+            -D wp-bundle
 
       - name: Unpack reviewer bundle
         run: |
