@@ -18,7 +18,8 @@ curl -X POST \
           "producer_repo":"equilens-labs/fl-bsa",
           "workflow_file":"wp-evidence-nightly.yml",
           "branch":"main",
-          "artifact_name":"wp-reviewer-pack-v4"
+          "artifact_name":"wp-reviewer-pack-v4",
+          "producer_run_id":""
         }
       }'
 ```
@@ -29,16 +30,18 @@ curl -X POST \
 
 3. Manual pull
 - Use the GitHub UI to run the `pull-wp-intake` workflow with custom inputs for producer repo/workflow/branch/artifact.
+- For tagged releases and other audit-sensitive rebuilds, set `producer_run_id` to the exact successful producer run. This avoids branch-head drift and makes the whitepaper artifact replayable.
 
 ## Authentication (private producers)
 
-If `fl-bsa` is private, add a secret `PRODUCER_TOKEN` in this repo with `repo:read` scope. The workflow uses:
+If `fl-bsa` is private, add a secret `PRODUCER_TOKEN` in this repo. Prefer a GitHub App installation token, or a fine-grained PAT scoped only to `equilens-labs/fl-bsa` with:
 
-```
-github_token: ${{ secrets.PRODUCER_TOKEN || github.token }}
-```
+- Actions: read
+- Contents: read
 
-so it falls back to the default GITHUB_TOKEN for public repos but uses the secret for private ones.
+The workflow fails fast when `PRODUCER_TOKEN` is missing for a cross-repo private producer. It does not silently fall back to this repo's `GITHUB_TOKEN`, because GitHub masks private cross-repo authorization failures as `404 Not Found`.
+
+Rotate the token on the same cadence as other CI cross-repo credentials, and remove it when the producer repository is no longer private or when this intake path is retired.
 
 ## What happens after pull
 
@@ -53,6 +56,8 @@ The workflow downloads `WhitePaper_Reviewer_Pack_v4.zip`, unpacks it, and syncs 
 - `config/sap.yaml` (copied from the bundle)
 
 Then it regenerates LaTeX macros and builds the PDF and arXiv source, uploading both as workflow artifacts.
+
+The workflow also stamps `intake/manifest.json` with `whitepaper_consumer`, recording the consumer repository, run ID, run attempt, commit SHA, workflow, event, ingestion timestamp, and producer artifact selectors used for the rebuild.
 
 ## Notes
 
