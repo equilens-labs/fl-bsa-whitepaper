@@ -140,12 +140,45 @@ jobs:
           PY
 
       - name: Sync bundle contents into repo (intake/ + config/)
+        env:
+          PRODUCER_REPO: ${{ github.event_name == 'workflow_dispatch' && inputs.producer_repo || github.event_name == 'repository_dispatch' && github.event.client_payload.producer_repo || 'equilens-labs/fl-bsa' }}
+          PRODUCER_WORKFLOW: ${{ github.event_name == 'workflow_dispatch' && inputs.workflow_file || github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'wp-evidence-nightly.yml' }}
+          PRODUCER_ARTIFACT: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_name || github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_name || 'wp-reviewer-pack-v4' }}
+          PRODUCER_BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.event_name == 'repository_dispatch' && github.event.client_payload.branch || 'main' }}
+          PRODUCER_RUN_ID: ${{ github.event_name == 'workflow_dispatch' && inputs.producer_run_id || github.event_name == 'repository_dispatch' && github.event.client_payload.producer_run_id || '' }}
         run: |
           set -euo pipefail
           mkdir -p intake
           cp bundle/intake/*.csv intake/ || true
           cp bundle/intake/*.json intake/ || true
           cp bundle/provenance/manifest.json intake/manifest.json
+          python - <<'PY'
+          import json
+          import os
+          from datetime import UTC, datetime
+          from pathlib import Path
+
+          manifest_path = Path("intake/manifest.json")
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          manifest["whitepaper_consumer"] = {
+              "repo": os.environ["GITHUB_REPOSITORY"],
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT", ""),
+              "sha": os.environ["GITHUB_SHA"],
+              "ref": os.environ["GITHUB_REF"],
+              "workflow": os.environ["GITHUB_WORKFLOW"],
+              "event_name": os.environ["GITHUB_EVENT_NAME"],
+              "ingested_at": datetime.now(tz=UTC).isoformat(),
+              "producer": {
+                  "repo": os.environ.get("PRODUCER_REPO", ""),
+                  "workflow": os.environ.get("PRODUCER_WORKFLOW", ""),
+                  "artifact": os.environ.get("PRODUCER_ARTIFACT", ""),
+                  "branch": os.environ.get("PRODUCER_BRANCH", ""),
+                  "run_id": os.environ.get("PRODUCER_RUN_ID", ""),
+              },
+          }
+          manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          PY
           mkdir -p intake/certificates
           cp bundle/certificates/*.json intake/certificates/
           mkdir -p config
