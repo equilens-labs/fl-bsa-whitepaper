@@ -5,7 +5,7 @@
 This whitepaper documents a \textit{synthetic audit scenario} (\ScenarioLabel{}) and the evidence artefacts generated (report, metrics manifest, certificate links). It provides metrics and documentation building blocks aligned with the Equal Credit Opportunity Act (\ECOA) and Regulation B (\RegB) \citep{ecoa_regb}, the \EUAIAct{} Article 10 data-governance requirements \citep{eu_ai_act}, and related frameworks. It is not a legal opinion and does not constitute a complete compliance submission for any specific deployment.
 
 \subsection{Purpose}
-This whitepaper documents a synthetic audit scenario (\ScenarioLabel{}) and the evidence artefacts generated (metrics intake, provenance manifest, and certificates). We evaluate selection-rate fairness and quantify uncertainty, surfacing violations when present. We report a disparity ratio (AIR-equivalent) and approval-rate gaps against pre-specified thresholds.\footnote{Thresholds are specified in the SAP for this scenario; see Appendix~A.}
+This paper is intended to help technical and governance reviewers interpret the synthetic audit evidence generated for \ScenarioLabel{}. We evaluate selection-rate fairness and quantify uncertainty, surfacing violations when present. We report a disparity ratio (AIR-equivalent) and approval-rate gaps against pre-specified thresholds.\footnote{Thresholds are specified in the SAP for this scenario; see Appendix~A.}
 
 \subsection{Run Status}
 Under the SAP for this run, the minimum disparity ratio threshold is AIR $\ge \AirMin$. For gender (\GenderProtectedGroup{} vs \GenderReferenceGroup{}) on the amplification (bias-preserving) slice, the estimated disparity ratio is \GenderAIR{} with 95\% CI [\GenderAIRLCI{}, \GenderAIRUCI{}], which falls below the \AirMin{} threshold and therefore constitutes a potential disparate-impact finding under the four-fifths rule.
@@ -16,7 +16,7 @@ Under the SAP for this run, the minimum disparity ratio threshold is AIR $\ge \A
 
 \noindent Race comparisons are \ifnum\ShowRaceMain>0 included (worst-case pair vs \RaceReferenceGroup{})\else reported in the annex only due to small-n policy\fi. Calibration (ECE) is not evaluated in this scenario; calibration compliance is therefore unknown.
 
-\noindent Synthetic quality is advisory in v4: the threshold used is \SqThresholdUsed{}, and this run \ifnum\SqThresholdMet>0 meets\else does not meet\fi\ the threshold.
+\noindent Synthetic quality is a separate data-generation quality check for this release. The synthetic-quality threshold used is \SqThresholdUsed{}, and this run \ifnum\SqThresholdMet>0 meets\else does not meet\fi\ that quality threshold; this does not override the fairness finding above.
 
 \subsection{Snapshot}
 Key tables in \Cref{tab:air_summary,tab:srg_summary} are generated directly from the evidence bundle for this run. If a value is unavailable, the corresponding metric was not evaluated in this bundle.

@@ -38,7 +38,8 @@
 \FloatBarrier
 
 \subsection{Approval-Rate Gaps}
-\begin{table}[t]
+\noindent \Cref{tab:srg_summary} reports the protected-minus-reference approval-rate gap for the evaluated groups.
+\begin{table}[htbp]
 \centering
 \input{includes/table_srg_summary}
 \caption{Approval-rate gaps (SRG) by protected attribute on the synthetic audit test split. SRG is defined in \cref{eq:srg} as the protected group selection rate minus the reference group selection rate, with deterministic confidence intervals and two-sided p-values.}
@@ -48,15 +49,13 @@
 \FloatBarrier
 
 \subsection{Calibration}
-\begin{table}[t]
+\ifnum\EceEvaluated>0\relax
+\begin{table}[htbp]
 \centering
 \input{includes/table_ece_summary}
 \caption{ECE summary for this run. ECE is defined in \cref{eq:ece}. In this synthetic audit scenario, ECE is not evaluated because no probability scores are available in the intake bundle; calibration compliance is therefore unknown.}
 \label{tab:ece_summary}
 \end{table}
-
-\ifnum\EceEvaluated>0\relax
-% Calibration evaluated; no additional note.
 \else
 \noindent\emph{Note.} Calibration (ECE) was not evaluated in this scenario; calibration compliance is therefore unknown in this whitepaper.
 \fi
