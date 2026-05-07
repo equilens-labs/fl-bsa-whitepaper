@@ -4,18 +4,11 @@ on:
   # Cross-repo automation strategies:
   # 1) repository_dispatch from fl-bsa (preferred) — see docs/ci_intake.md
   # 2) scheduled pull (daily)
-  # 3) manual dispatch with inputs
+  # 3) on-demand repository_dispatch with explicit payload
   repository_dispatch:
     types: [wp-intake-ready]
   schedule:
     - cron: '0 6 * * *'
-  workflow_dispatch:
-    inputs:
-      persist_intake_pr:
-        description: "open/update a PR containing the synced intake snapshot"
-        required: false
-        type: boolean
-        default: true
 
 permissions:
   contents: write
@@ -233,7 +226,7 @@ jobs:
       - name: Open intake snapshot PR
         env:
           GH_TOKEN: ${{ github.token }}
-          PERSIST_INTAKE_PR: ${{ github.event_name == 'workflow_dispatch' && format('{0}', inputs.persist_intake_pr) || github.event_name == 'repository_dispatch' && format('{0}', github.event.client_payload.persist_intake_pr) || 'true' }}
+          PERSIST_INTAKE_PR: ${{ github.event_name == 'repository_dispatch' && format('{0}', github.event.client_payload.persist_intake_pr) || 'true' }}
           PRODUCER_REPO: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.producer_repo || 'equilens-labs/fl-bsa' }}
           PRODUCER_WORKFLOW: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'wp-evidence-nightly.yml' }}
           PRODUCER_BRANCH: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.branch || 'main' }}

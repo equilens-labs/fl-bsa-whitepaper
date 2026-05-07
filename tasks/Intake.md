@@ -69,10 +69,10 @@ make pdf
 
 ### CI Pull
 The `.github/workflows/pull-wp-intake.yml` workflow can be configured to:
-- Trigger on producer CI completion or on demand
+- Trigger on producer CI completion, schedule, or trusted on-demand `repository_dispatch`
 - Download the intake bundle artifact from the producer repo, falling back to the legacy reviewer bundle name for archive replay
 - Copy files to `intake/`, regenerate macros/figures/PDF, and open a PR preserving the exact intake snapshot by default
-- Use trusted default selectors for manual runs; exact-run selectors should come from trusted `wp-intake-ready` repository dispatch payloads, not ad-hoc manual artifact inputs.
+- Use trusted default selectors for scheduled runs; exact-run selectors should come from trusted `wp-intake-ready` repository dispatch payloads, not ad-hoc manual artifact inputs.
 
 ---
 
