@@ -25,6 +25,8 @@ curl -X POST \
       }'
 ```
 - This repo listens for `repository_dispatch` with type `wp-intake-ready` and downloads the bundle artifact.
+- The workflow only accepts `equilens-labs/fl-bsa` as the producer repository, and only
+  `release-evidence.yml` / `wp-evidence-nightly.yml` as producer workflows.
 
 2. Scheduled pull
 - A daily cron (`0 6 * * *`) attempts to pull the latest intake bundle from `equilens-labs/fl-bsa` (default workflow/file/branch).
@@ -48,7 +50,11 @@ Rotate the token on the same cadence as other CI cross-repo credentials, and rem
 
 ## What happens after pull
 
-The workflow downloads `WhitePaper_Intake_Bundle_v4.zip`, unpacks it, and syncs the relevant contents into this repo. For pre-rename producer runs, it falls back to `WhitePaper_Reviewer_Pack_v4.zip` / `wp-reviewer-pack-v4` so older evidence can still be replayed.
+The workflow downloads `WhitePaper_Intake_Bundle_v4.zip`, verifies its GitHub artifact
+attestation against `equilens-labs/fl-bsa`, unpacks it, and syncs the relevant contents into
+this repo. For pre-rename producer runs, it falls back to `WhitePaper_Reviewer_Pack_v4.zip` /
+`wp-reviewer-pack-v4` so older evidence can still be replayed; the legacy fallback emits a
+workflow warning because those archive bundles predate the intake attestation contract.
 - `intake/selection_rates.csv`
 - `intake/fairness_slices.json` (gender AIR by slice: historical/amplification/intrinsic)
 - `intake/metrics_uncertainty.json` (v4 SoT for the PDF)
@@ -58,11 +64,22 @@ The workflow downloads `WhitePaper_Intake_Bundle_v4.zip`, unpacks it, and syncs 
 - `intake/manifest.json` (from `provenance/manifest.json` in the bundle)
 - `config/sap.yaml` (copied from the bundle)
 
-Then it regenerates LaTeX macros and figures, builds the PDF and arXiv source, and uploads them as workflow artifacts.
+Then it regenerates LaTeX macros and figures through the strict generator scripts, builds the
+PDF and arXiv source, and uploads them as workflow artifacts. The workflow intentionally does
+not call the tolerant Makefile targets because those targets preserve local development
+convenience by swallowing generator failures.
 
-The workflow also stamps `intake/manifest.json` with `whitepaper_consumer`, recording the consumer repository, run ID, run attempt, commit SHA, workflow, event, ingestion timestamp, and producer artifact selectors used for the rebuild.
+The workflow also stamps `intake/manifest.json` with `whitepaper_consumer`, recording the
+consumer repository, run ID, run attempt, commit SHA, workflow, event, ingestion timestamp,
+producer artifact selectors, `bundle_filename`, and `bundle_sha256` used for the rebuild. If
+the incoming bundle SHA-256 matches the already committed snapshot, the workflow preserves the
+existing consumer stamp so daily cron runs do not open timestamp-only PR churn.
 
 When `persist_intake_pr=true`, the workflow opens or updates a branch named `chore/wp-intake-<producer-sha>-<producer-run-id>` with the synced `intake/`, `config/`, generated `includes/`, and generated `figures/` changes. This PR is the reproducibility anchor for the PDF source snapshot; the transient `whitepaper-pdf-from-intake` artifact is not the only copy of the evidence state.
+
+This snapshot PR is the audit anchor for FL-BSA `reports/wp-audit.md` CR-9: the whitepaper
+source repo must preserve the exact intake/config/macro/figure state that produced the PDF,
+instead of relying only on expiring transient workflow artifacts.
 
 ## Notes
 

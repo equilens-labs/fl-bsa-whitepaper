@@ -13,7 +13,12 @@ on:
 permissions:
   contents: write
   actions: read
+  attestations: read
   pull-requests: write
+
+concurrency:
+  group: pull-wp-intake-${{ github.event_name == 'repository_dispatch' && github.event.client_payload.producer_run_id || github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   fetch-build:
@@ -44,6 +49,28 @@ jobs:
           set -euo pipefail
           mkdir -p wp-bundle
 
+          case "$PRODUCER_REPO" in
+            equilens-labs/fl-bsa) ;;
+            *)
+              echo "Unsupported producer_repo=${PRODUCER_REPO}; expected equilens-labs/fl-bsa." >&2
+              exit 1
+              ;;
+          esac
+          case "$PRODUCER_WORKFLOW" in
+            release-evidence.yml|wp-evidence-nightly.yml) ;;
+            *)
+              echo "Unsupported workflow_file=${PRODUCER_WORKFLOW}; expected release-evidence.yml or wp-evidence-nightly.yml." >&2
+              exit 1
+              ;;
+          esac
+          case "$PRODUCER_ARTIFACT" in
+            wp-intake-bundle-v4|wp-reviewer-pack-v4) ;;
+            *)
+              echo "Unsupported artifact_name=${PRODUCER_ARTIFACT}; expected wp-intake-bundle-v4 or wp-reviewer-pack-v4." >&2
+              exit 1
+              ;;
+          esac
+
           token="${PRODUCER_TOKEN:-}"
           if [ -z "$token" ] && [ "$PRODUCER_REPO" != "$GITHUB_REPOSITORY" ]; then
             echo "PRODUCER_TOKEN is required to read artifacts from ${PRODUCER_REPO}." >&2
@@ -70,6 +97,13 @@ jobs:
             exit 1
           fi
 
+          if ! artifact_rows="$(gh api --paginate \
+            "repos/${PRODUCER_REPO}/actions/runs/${run_id}/artifacts" \
+            --jq '.artifacts[] | [.name, (.expired | tostring)] | @tsv')"; then
+            echo "Unable to list artifacts for ${PRODUCER_REPO} run ${run_id}; check token scopes and producer run visibility." >&2
+            exit 1
+          fi
+
           artifact_candidates=("$PRODUCER_ARTIFACT")
           if [ "$PRODUCER_ARTIFACT" = "wp-intake-bundle-v4" ]; then
             artifact_candidates+=("wp-reviewer-pack-v4")
@@ -77,25 +111,38 @@ jobs:
 
           selected_artifact=""
           for artifact in "${artifact_candidates[@]}"; do
+            artifact_row="$(awk -v name="$artifact" 'BEGIN { FS = "\t" } $1 == name { print; exit }' <<<"$artifact_rows" || true)"
+            if [ -z "$artifact_row" ]; then
+              echo "::warning title=Producer artifact missing::${artifact} is not present in ${PRODUCER_REPO} run ${run_id}; trying next candidate."
+              continue
+            fi
+            artifact_expired="$(cut -f2 <<<"$artifact_row")"
+            if [ "$artifact_expired" = "true" ]; then
+              echo "::warning title=Producer artifact expired::${artifact} in ${PRODUCER_REPO} run ${run_id} is expired; trying next candidate."
+              continue
+            fi
+
             echo "Downloading ${artifact} from ${PRODUCER_REPO} run ${run_id}"
-            if gh run download "$run_id" \
+            gh run download "$run_id" \
               -R "$PRODUCER_REPO" \
               -n "$artifact" \
-              -D wp-bundle; then
-              selected_artifact="$artifact"
-              break
-            fi
-            echo "Artifact ${artifact} not available in run ${run_id}; trying next candidate." >&2
+              -D wp-bundle
+            selected_artifact="$artifact"
+            break
           done
 
           if [ -z "$selected_artifact" ]; then
             echo "None of the candidate intake artifacts were downloadable: ${artifact_candidates[*]}" >&2
             exit 1
           fi
+          echo "SELECTED_PRODUCER_REPO=${PRODUCER_REPO}" >> "$GITHUB_ENV"
           echo "SELECTED_PRODUCER_ARTIFACT=${selected_artifact}" >> "$GITHUB_ENV"
           echo "SELECTED_PRODUCER_RUN_ID=${run_id}" >> "$GITHUB_ENV"
 
       - name: Unpack intake bundle
+        env:
+          PRODUCER_TOKEN: ${{ secrets.PRODUCER_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           bundle_path="$(find wp-bundle -maxdepth 5 \( -name 'WhitePaper_Intake_Bundle_v4.zip' -o -name 'WhitePaper_Reviewer_Pack_v4.zip' \) -print -quit || true)"
@@ -104,6 +151,20 @@ jobs:
             find wp-bundle -maxdepth 5 -type f -print >&2 || true
             exit 1
           fi
+          bundle_filename="$(basename "$bundle_path")"
+          bundle_sha="$(sha256sum "$bundle_path" | cut -d' ' -f1)"
+          echo "SELECTED_BUNDLE_FILENAME=${bundle_filename}" >> "$GITHUB_ENV"
+          echo "SELECTED_BUNDLE_SHA256=${bundle_sha}" >> "$GITHUB_ENV"
+
+          if [ -n "${PRODUCER_TOKEN:-}" ]; then
+            export GH_TOKEN="$PRODUCER_TOKEN"
+          fi
+          if [ "${SELECTED_PRODUCER_ARTIFACT:-}" = "wp-intake-bundle-v4" ]; then
+            gh attestation verify "$bundle_path" --repo "${SELECTED_PRODUCER_REPO:-equilens-labs/fl-bsa}"
+          else
+            echo "::warning title=Legacy intake bundle::${bundle_filename} predates WP intake attestations; replaying for archive compatibility only."
+          fi
+
           rm -rf bundle && mkdir -p bundle
           unzip -q "$bundle_path" -d bundle
           test -f bundle/intake/metrics_uncertainty.json
@@ -146,10 +207,15 @@ jobs:
           PRODUCER_RUN_ID: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.producer_run_id || '' }}
         run: |
           set -euo pipefail
+          previous_manifest="$(mktemp)"
+          if [ -f intake/manifest.json ]; then
+            cp intake/manifest.json "$previous_manifest"
+          fi
           mkdir -p intake
           cp bundle/intake/*.csv intake/ || true
           cp bundle/intake/*.json intake/ || true
           cp bundle/provenance/manifest.json intake/manifest.json
+          export PREVIOUS_MANIFEST_PATH="$previous_manifest"
           python - <<'PY'
           import json
           import os
@@ -158,7 +224,23 @@ jobs:
 
           manifest_path = Path("intake/manifest.json")
           manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-          manifest["whitepaper_consumer"] = {
+          previous_consumer = None
+          previous_path = Path(os.environ["PREVIOUS_MANIFEST_PATH"])
+          if previous_path.exists() and previous_path.stat().st_size:
+              try:
+                  previous = json.loads(previous_path.read_text(encoding="utf-8"))
+                  previous_consumer = previous.get("whitepaper_consumer")
+              except json.JSONDecodeError:
+                  previous_consumer = None
+
+          bundle_sha = os.environ.get("SELECTED_BUNDLE_SHA256", "")
+          previous_bundle_sha = ""
+          if isinstance(previous_consumer, dict):
+              previous_bundle_sha = (
+                  previous_consumer.get("producer", {}).get("bundle_sha256") or ""
+              )
+
+          consumer = {
               "repo": os.environ["GITHUB_REPOSITORY"],
               "run_id": os.environ["GITHUB_RUN_ID"],
               "run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT", ""),
@@ -171,10 +253,15 @@ jobs:
                   "repo": os.environ.get("PRODUCER_REPO", ""),
                   "workflow": os.environ.get("PRODUCER_WORKFLOW", ""),
                   "artifact": os.environ.get("SELECTED_PRODUCER_ARTIFACT") or os.environ.get("PRODUCER_ARTIFACT", ""),
+                  "bundle_filename": os.environ.get("SELECTED_BUNDLE_FILENAME", ""),
+                  "bundle_sha256": bundle_sha,
                   "branch": os.environ.get("PRODUCER_BRANCH", ""),
                   "run_id": os.environ.get("SELECTED_PRODUCER_RUN_ID") or os.environ.get("PRODUCER_RUN_ID", ""),
               },
           }
+          if bundle_sha and previous_bundle_sha == bundle_sha and previous_consumer:
+              consumer = previous_consumer
+          manifest["whitepaper_consumer"] = consumer
           manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
           PY
           mkdir -p intake/certificates
@@ -185,13 +272,17 @@ jobs:
             cp bundle/config/fairness_config.yaml config/fairness_config.yaml
           fi
 
-      - name: Generate TeX macros from metrics (tolerant)
+      - name: Generate TeX macros from metrics
         run: |
-          make macros
+          set -euo pipefail
+          python scripts/gen_tex_macros_from_metrics.py --metrics intake/metrics_long.csv --sap config/sap.yaml --outdir includes
+          python scripts/gen_tex_preamble_from_manifest.py --manifest intake/manifest.json --sap config/sap.yaml --out includes/provenance_macros.tex
+          python scripts/gen_tex_hyperparams_from_yaml.py --config intake/model_hyperparams.yaml --outdir includes
 
-      - name: Generate figures from intake (tolerant)
+      - name: Generate figures from intake
         run: |
-          make plots
+          set -euo pipefail
+          python scripts/gen_plots_from_intake.py --selection intake/selection_rates.csv --metrics intake/metrics_long.csv --outdir figures
 
       - name: Compile LaTeX
         uses: xu-cheng/latex-action@v3
@@ -282,8 +373,8 @@ jobs:
 
           ## Validation
           - bundle schema versions checked by pull-wp-intake
-          - make macros
-          - make plots
+          - strict macro generation scripts
+          - strict plot generation script
           - LaTeX compile via xu-cheng/latex-action
           EOF
 
