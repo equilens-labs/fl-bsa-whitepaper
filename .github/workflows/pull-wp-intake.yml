@@ -11,26 +11,6 @@ on:
     - cron: '0 6 * * *'
   workflow_dispatch:
     inputs:
-      producer_repo:
-        description: "owner/repo of producer (fl-bsa)"
-        required: false
-        default: "equilens-labs/fl-bsa"
-      workflow_file:
-        description: "producer workflow file"
-        required: false
-        default: "wp-evidence-nightly.yml"
-      artifact_name:
-        description: "producer artifact name to download"
-        required: false
-        default: "wp-intake-bundle-v4"
-      producer_run_id:
-        description: "optional exact producer workflow run id"
-        required: false
-        default: ""
-      branch:
-        description: "producer branch (manual fetch)"
-        required: false
-        default: "main"
       persist_intake_pr:
         description: "open/update a PR containing the synced intake snapshot"
         required: false
@@ -60,11 +40,11 @@ jobs:
 
       - name: Download intake bundle from producer
         env:
-          PRODUCER_REPO: ${{ github.event_name == 'workflow_dispatch' && inputs.producer_repo || github.event_name == 'repository_dispatch' && github.event.client_payload.producer_repo || 'equilens-labs/fl-bsa' }}
-          PRODUCER_WORKFLOW: ${{ github.event_name == 'workflow_dispatch' && inputs.workflow_file || github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'wp-evidence-nightly.yml' }}
-          PRODUCER_ARTIFACT: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_name || github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_name || 'wp-intake-bundle-v4' }}
-          PRODUCER_BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.event_name == 'repository_dispatch' && github.event.client_payload.branch || 'main' }}
-          PRODUCER_RUN_ID: ${{ github.event_name == 'workflow_dispatch' && inputs.producer_run_id || github.event_name == 'repository_dispatch' && github.event.client_payload.producer_run_id || '' }}
+          PRODUCER_REPO: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.producer_repo || 'equilens-labs/fl-bsa' }}
+          PRODUCER_WORKFLOW: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'wp-evidence-nightly.yml' }}
+          PRODUCER_ARTIFACT: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_name || 'wp-intake-bundle-v4' }}
+          PRODUCER_BRANCH: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.branch || 'main' }}
+          PRODUCER_RUN_ID: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.producer_run_id || '' }}
           PRODUCER_TOKEN: ${{ secrets.PRODUCER_TOKEN }}
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -166,11 +146,11 @@ jobs:
 
       - name: Sync bundle contents into repo (intake/ + config/)
         env:
-          PRODUCER_REPO: ${{ github.event_name == 'workflow_dispatch' && inputs.producer_repo || github.event_name == 'repository_dispatch' && github.event.client_payload.producer_repo || 'equilens-labs/fl-bsa' }}
-          PRODUCER_WORKFLOW: ${{ github.event_name == 'workflow_dispatch' && inputs.workflow_file || github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'wp-evidence-nightly.yml' }}
-          PRODUCER_ARTIFACT: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_name || github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_name || 'wp-intake-bundle-v4' }}
-          PRODUCER_BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.event_name == 'repository_dispatch' && github.event.client_payload.branch || 'main' }}
-          PRODUCER_RUN_ID: ${{ github.event_name == 'workflow_dispatch' && inputs.producer_run_id || github.event_name == 'repository_dispatch' && github.event.client_payload.producer_run_id || '' }}
+          PRODUCER_REPO: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.producer_repo || 'equilens-labs/fl-bsa' }}
+          PRODUCER_WORKFLOW: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'wp-evidence-nightly.yml' }}
+          PRODUCER_ARTIFACT: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_name || 'wp-intake-bundle-v4' }}
+          PRODUCER_BRANCH: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.branch || 'main' }}
+          PRODUCER_RUN_ID: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.producer_run_id || '' }}
         run: |
           set -euo pipefail
           mkdir -p intake
@@ -254,9 +234,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PERSIST_INTAKE_PR: ${{ github.event_name == 'workflow_dispatch' && format('{0}', inputs.persist_intake_pr) || github.event_name == 'repository_dispatch' && format('{0}', github.event.client_payload.persist_intake_pr) || 'true' }}
-          PRODUCER_REPO: ${{ github.event_name == 'workflow_dispatch' && inputs.producer_repo || github.event_name == 'repository_dispatch' && github.event.client_payload.producer_repo || 'equilens-labs/fl-bsa' }}
-          PRODUCER_WORKFLOW: ${{ github.event_name == 'workflow_dispatch' && inputs.workflow_file || github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'wp-evidence-nightly.yml' }}
-          PRODUCER_BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.event_name == 'repository_dispatch' && github.event.client_payload.branch || 'main' }}
+          PRODUCER_REPO: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.producer_repo || 'equilens-labs/fl-bsa' }}
+          PRODUCER_WORKFLOW: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'wp-evidence-nightly.yml' }}
+          PRODUCER_BRANCH: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.branch || 'main' }}
         run: |
           set -euo pipefail
 

@@ -30,9 +30,10 @@ curl -X POST \
 - A daily cron (`0 6 * * *`) attempts to pull the latest intake bundle from `equilens-labs/fl-bsa` (default workflow/file/branch).
 
 3. Manual pull
-- Use the GitHub UI to run the `pull-wp-intake` workflow with custom inputs for producer repo/workflow/branch/artifact.
-- For tagged releases and other audit-sensitive rebuilds, set `producer_run_id` to the exact successful producer run. This avoids branch-head drift and makes the whitepaper artifact replayable.
+- Use the GitHub UI to run the `pull-wp-intake` workflow against the trusted default producer selectors (`equilens-labs/fl-bsa`, `wp-evidence-nightly.yml`, `main`, `wp-intake-bundle-v4` with legacy fallback).
+- The manual trigger intentionally does not expose repo/workflow/artifact/run selectors. That prevents a manually supplied artifact from being unpacked into the repository and avoids GitHub Advanced Security artifact-poisoning findings.
 - Leave `persist_intake_pr=true` for release evidence. Set it to `false` only for local/debug rebuilds where a transient PDF artifact is intentionally enough.
+- For tagged releases and other audit-sensitive exact-run rebuilds, dispatch `wp-intake-ready` from trusted producer automation with `producer_run_id` set to the exact successful producer run. This avoids branch-head drift while keeping artifact selectors out of ad-hoc manual inputs.
 
 ## Authentication (private producers)
 
