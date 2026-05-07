@@ -22,7 +22,7 @@ on:
       artifact_name:
         description: "producer artifact name to download"
         required: false
-        default: "wp-reviewer-pack-v4"
+        default: "wp-intake-bundle-v4"
       producer_run_id:
         description: "optional exact producer workflow run id"
         required: false
@@ -31,10 +31,16 @@ on:
         description: "producer branch (manual fetch)"
         required: false
         default: "main"
+      persist_intake_pr:
+        description: "open/update a PR containing the synced intake snapshot"
+        required: false
+        type: boolean
+        default: true
 
 permissions:
-  contents: read
+  contents: write
   actions: read
+  pull-requests: write
 
 jobs:
   fetch-build:
@@ -52,11 +58,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install pandas pyyaml matplotlib
 
-      - name: Download reviewer bundle from producer
+      - name: Download intake bundle from producer
         env:
           PRODUCER_REPO: ${{ github.event_name == 'workflow_dispatch' && inputs.producer_repo || github.event_name == 'repository_dispatch' && github.event.client_payload.producer_repo || 'equilens-labs/fl-bsa' }}
           PRODUCER_WORKFLOW: ${{ github.event_name == 'workflow_dispatch' && inputs.workflow_file || github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'wp-evidence-nightly.yml' }}
-          PRODUCER_ARTIFACT: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_name || github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_name || 'wp-reviewer-pack-v4' }}
+          PRODUCER_ARTIFACT: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_name || github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_name || 'wp-intake-bundle-v4' }}
           PRODUCER_BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.event_name == 'repository_dispatch' && github.event.client_payload.branch || 'main' }}
           PRODUCER_RUN_ID: ${{ github.event_name == 'workflow_dispatch' && inputs.producer_run_id || github.event_name == 'repository_dispatch' && github.event.client_payload.producer_run_id || '' }}
           PRODUCER_TOKEN: ${{ secrets.PRODUCER_TOKEN }}
@@ -91,16 +97,35 @@ jobs:
             exit 1
           fi
 
-          echo "Downloading ${PRODUCER_ARTIFACT} from ${PRODUCER_REPO} run ${run_id}"
-          gh run download "$run_id" \
-            -R "$PRODUCER_REPO" \
-            -n "$PRODUCER_ARTIFACT" \
-            -D wp-bundle
+          artifact_candidates=("$PRODUCER_ARTIFACT")
+          if [ "$PRODUCER_ARTIFACT" = "wp-intake-bundle-v4" ]; then
+            artifact_candidates+=("wp-reviewer-pack-v4")
+          fi
 
-      - name: Unpack reviewer bundle
+          selected_artifact=""
+          for artifact in "${artifact_candidates[@]}"; do
+            echo "Downloading ${artifact} from ${PRODUCER_REPO} run ${run_id}"
+            if gh run download "$run_id" \
+              -R "$PRODUCER_REPO" \
+              -n "$artifact" \
+              -D wp-bundle; then
+              selected_artifact="$artifact"
+              break
+            fi
+            echo "Artifact ${artifact} not available in run ${run_id}; trying next candidate." >&2
+          done
+
+          if [ -z "$selected_artifact" ]; then
+            echo "None of the candidate intake artifacts were downloadable: ${artifact_candidates[*]}" >&2
+            exit 1
+          fi
+          echo "SELECTED_PRODUCER_ARTIFACT=${selected_artifact}" >> "$GITHUB_ENV"
+          echo "SELECTED_PRODUCER_RUN_ID=${run_id}" >> "$GITHUB_ENV"
+
+      - name: Unpack intake bundle
         run: |
           set -euo pipefail
-          bundle_path="$(find wp-bundle -maxdepth 5 -name 'WhitePaper_Reviewer_Pack_v4.zip' -print -quit || true)"
+          bundle_path="$(find wp-bundle -maxdepth 5 \( -name 'WhitePaper_Intake_Bundle_v4.zip' -o -name 'WhitePaper_Reviewer_Pack_v4.zip' \) -print -quit || true)"
           if [ -z "$bundle_path" ]; then
             echo "Bundle zip not found under wp-bundle/" >&2
             find wp-bundle -maxdepth 5 -type f -print >&2 || true
@@ -143,7 +168,7 @@ jobs:
         env:
           PRODUCER_REPO: ${{ github.event_name == 'workflow_dispatch' && inputs.producer_repo || github.event_name == 'repository_dispatch' && github.event.client_payload.producer_repo || 'equilens-labs/fl-bsa' }}
           PRODUCER_WORKFLOW: ${{ github.event_name == 'workflow_dispatch' && inputs.workflow_file || github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'wp-evidence-nightly.yml' }}
-          PRODUCER_ARTIFACT: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_name || github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_name || 'wp-reviewer-pack-v4' }}
+          PRODUCER_ARTIFACT: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_name || github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_name || 'wp-intake-bundle-v4' }}
           PRODUCER_BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.event_name == 'repository_dispatch' && github.event.client_payload.branch || 'main' }}
           PRODUCER_RUN_ID: ${{ github.event_name == 'workflow_dispatch' && inputs.producer_run_id || github.event_name == 'repository_dispatch' && github.event.client_payload.producer_run_id || '' }}
         run: |
@@ -172,9 +197,9 @@ jobs:
               "producer": {
                   "repo": os.environ.get("PRODUCER_REPO", ""),
                   "workflow": os.environ.get("PRODUCER_WORKFLOW", ""),
-                  "artifact": os.environ.get("PRODUCER_ARTIFACT", ""),
+                  "artifact": os.environ.get("SELECTED_PRODUCER_ARTIFACT") or os.environ.get("PRODUCER_ARTIFACT", ""),
                   "branch": os.environ.get("PRODUCER_BRANCH", ""),
-                  "run_id": os.environ.get("PRODUCER_RUN_ID", ""),
+                  "run_id": os.environ.get("SELECTED_PRODUCER_RUN_ID") or os.environ.get("PRODUCER_RUN_ID", ""),
               },
           }
           manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -207,11 +232,13 @@ jobs:
           name: whitepaper-pdf-from-intake
           path: main.pdf
 
-      - name: Upload reviewer bundle used
+      - name: Upload intake bundle used
         uses: actions/upload-artifact@v4
         with:
-          name: reviewer-bundle-used
-          path: wp-bundle/**/WhitePaper_Reviewer_Pack_v4.zip
+          name: intake-bundle-used
+          path: |
+            wp-bundle/**/WhitePaper_Intake_Bundle_v4.zip
+            wp-bundle/**/WhitePaper_Reviewer_Pack_v4.zip
 
       - name: Package arXiv source
         run: |
@@ -222,3 +249,85 @@ jobs:
         with:
           name: arxiv-source-from-intake
           path: dist/whitepaper_arxiv_source.zip
+
+      - name: Open intake snapshot PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PERSIST_INTAKE_PR: ${{ github.event_name == 'workflow_dispatch' && format('{0}', inputs.persist_intake_pr) || github.event_name == 'repository_dispatch' && format('{0}', github.event.client_payload.persist_intake_pr) || 'true' }}
+          PRODUCER_REPO: ${{ github.event_name == 'workflow_dispatch' && inputs.producer_repo || github.event_name == 'repository_dispatch' && github.event.client_payload.producer_repo || 'equilens-labs/fl-bsa' }}
+          PRODUCER_WORKFLOW: ${{ github.event_name == 'workflow_dispatch' && inputs.workflow_file || github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'wp-evidence-nightly.yml' }}
+          PRODUCER_BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.event_name == 'repository_dispatch' && github.event.client_payload.branch || 'main' }}
+        run: |
+          set -euo pipefail
+
+          persist="$(printf '%s' "$PERSIST_INTAKE_PR" | tr '[:upper:]' '[:lower:]')"
+          if [ "$persist" = "false" ] || [ "$persist" = "0" ] || [ "$persist" = "no" ]; then
+            echo "Skipping intake PR persistence because persist_intake_pr=${PERSIST_INTAKE_PR}."
+            exit 0
+          fi
+
+          if [ -z "$(git status --short -- intake config includes figures)" ]; then
+            echo "No intake, config, macro, or figure changes to persist."
+            exit 0
+          fi
+
+          producer_sha="$(python - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(Path("intake/manifest.json").read_text(encoding="utf-8"))
+          print(
+              manifest.get("commit_sha")
+              or manifest.get("code_commit")
+              or manifest.get("source_commit")
+              or manifest.get("software_commit")
+              or "unknown"
+          )
+          PY
+          )"
+          short_sha="$(printf '%s' "$producer_sha" | tr -cd '[:alnum:]' | cut -c1-12)"
+          if [ -z "$short_sha" ]; then
+            short_sha="unknown"
+          fi
+
+          branch="chore/wp-intake-${short_sha}-${SELECTED_PRODUCER_RUN_ID:-${GITHUB_RUN_ID}}"
+          title="chore(intake): sync FL-BSA evidence ${short_sha}"
+          body_file="$(mktemp)"
+          cat > "$body_file" <<EOF
+          ## Summary
+          - sync intake/config artifacts from ${PRODUCER_REPO} ${PRODUCER_WORKFLOW}
+          - regenerate committed TeX macros and figures from the synced intake
+          - preserve the exact whitepaper source snapshot used by pull-wp-intake run ${GITHUB_RUN_ID}
+
+          ## Provenance
+          - producer repo: ${PRODUCER_REPO}
+          - producer workflow: ${PRODUCER_WORKFLOW}
+          - producer branch: ${PRODUCER_BRANCH}
+          - producer run id: ${SELECTED_PRODUCER_RUN_ID:-${PRODUCER_RUN_ID:-not_available}}
+          - producer artifact: ${SELECTED_PRODUCER_ARTIFACT:-not_available}
+          - producer commit: ${producer_sha}
+
+          ## Validation
+          - bundle schema versions checked by pull-wp-intake
+          - make macros
+          - make plots
+          - LaTeX compile via xu-cheng/latex-action
+          EOF
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -C "$branch"
+          git add intake config includes figures
+          git commit -m "$title"
+          git push --force-with-lease origin "$branch"
+
+          if gh pr view "$branch" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh pr edit "$branch" --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$body_file"
+          else
+            gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base "${GITHUB_REF_NAME:-main}" \
+              --head "$branch" \
+              --title "$title" \
+              --body-file "$body_file"
+          fi

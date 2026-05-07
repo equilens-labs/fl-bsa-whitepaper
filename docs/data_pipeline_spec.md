@@ -17,7 +17,7 @@ This document describes how evidence artifacts flow from the FL-BSA runtime (`fl
 │    ├─ Computes fairness metrics (AIR, EO, ECE)              │
 │    ├─ Captures provenance (hashes, digests, seeds)          │
 │    ├─ Validates intake artifacts                            │
-│    └─ Packages: WhitePaper_Reviewer_Pack_v4.zip             │
+│    └─ Packages: WhitePaper_Intake_Bundle_v4.zip             │
 │                                                             │
 │  Key tools:                                                 │
 │    - tools/wp/run_wp_evidence.py (orchestrator)             │
@@ -25,7 +25,7 @@ This document describes how evidence artifacts flow from the FL-BSA runtime (`fl
 │    - flbsa/metrics/wp_intake.py (metrics computation)       │
 └─────────────────────────────────────────────────────────────┘
                               │
-                              │ WhitePaper_Reviewer_Pack_v4.zip
+                              │ WhitePaper_Intake_Bundle_v4.zip
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  fl-bsa-whitepaper (Consumer / This Repo)                   │
@@ -60,7 +60,7 @@ The `make gate-wp` target orchestrates deterministic evidence generation:
 5. **Artifact Harvesting**: Collects intake CSVs from `output/<pipeline_id>/intake/`
 6. **Validation**: Runs strict schema and bounds checking
 7. **Provenance Repair**: Fills in real dataset hashes and container digests
-8. **Bundling**: Packages everything into `WhitePaper_Reviewer_Pack_v4.zip`
+8. **Bundling**: Packages everything into `WhitePaper_Intake_Bundle_v4.zip`
 
 ### Key Parameters
 
@@ -131,7 +131,7 @@ Defined in `config/sap.yaml`:
 # (either download from CI or copy from local run)
 
 # 2. Extract to intake/
-unzip WhitePaper_Reviewer_Pack_v4.zip -d /tmp/bundle
+unzip WhitePaper_Intake_Bundle_v4.zip -d /tmp/bundle
 cp /tmp/bundle/intake/*.csv intake/
 cp /tmp/bundle/intake/*.json intake/
 cp /tmp/bundle/provenance/manifest.json intake/manifest.json
@@ -232,12 +232,13 @@ run_id,split,model_id,attribute,group,selected,n
 
 The `.github/workflows/pull-wp-intake.yml` workflow can:
 1. Trigger on producer CI completion (`repository_dispatch`)
-2. Download the reviewer bundle artifact from producer (`wp-reviewer-pack-v4` from `wp-evidence-nightly.yml`)
+2. Download the intake bundle artifact from producer (`wp-intake-bundle-v4` from `wp-evidence-nightly.yml`, with legacy fallback to `wp-reviewer-pack-v4`)
 3. Copy to `intake/`
-4. Regenerate macros and build PDF
+4. Regenerate macros, figures, and PDF
 5. Upload PDF artifact
+6. Open or update an intake snapshot PR containing `intake/`, `config/`, generated `includes/`, and generated `figures/`
 
-This workflow is intended to keep the PDF build reproducible and up to date with the producer’s latest evidence run.
+This workflow is intended to keep the PDF build reproducible and up to date with the producer's latest evidence run. The PR is the durable source snapshot; the workflow PDF artifact is only a convenience output.
 
 ---
 

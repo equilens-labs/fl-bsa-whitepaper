@@ -21,8 +21,9 @@ The producer repo (`fl-bsa`) exports a compact bundle via `make gate-wp` with al
 - `group_confusion.csv` (label-based diagnostics; presence depends on scenario/config)
 
 **Bundle locations:**
-- Local (after a run): `artifacts/WhitePaper_Reviewer_Pack_v4.zip` or `output/<pipeline_id>/intake/`
-- CI artifact: downloadable from fl-bsa CI runs
+- Local (after a run): `artifacts/WhitePaper_Intake_Bundle_v4.zip` or `output/<pipeline_id>/intake/`
+- Legacy local path: `artifacts/WhitePaper_Reviewer_Pack_v4.zip`
+- CI artifact: downloadable from fl-bsa CI runs as `wp-intake-bundle-v4` (legacy: `wp-reviewer-pack-v4`)
 
 ---
 
@@ -34,7 +35,7 @@ cd /path/to/fl-bsa
 # Full evidence generation (starts services, runs pipeline, validates, packages)
 make gate-wp
 
-# Outputs: artifacts/WhitePaper_Reviewer_Pack_v4.zip
+# Outputs: artifacts/WhitePaper_Intake_Bundle_v4.zip
 ```
 
 The gate-wp target:
@@ -43,7 +44,7 @@ The gate-wp target:
 3. Submits to pipeline for full bias analysis
 4. Validates intake artifacts with strict schema checking
 5. Repairs provenance with real hashes/digests
-6. Packages everything into `WhitePaper_Reviewer_Pack_v4.zip`
+6. Packages everything into `WhitePaper_Intake_Bundle_v4.zip`
 
 ---
 
@@ -52,7 +53,7 @@ The gate-wp target:
 ### Manual Copy
 ```bash
 # Unzip bundle
-unzip artifacts/WhitePaper_Reviewer_Pack_v4.zip -d /tmp/bundle
+unzip artifacts/WhitePaper_Intake_Bundle_v4.zip -d /tmp/bundle
 
 # Copy intake files
 cp /tmp/bundle/intake/*.csv intake/
@@ -69,8 +70,8 @@ make pdf
 ### CI Pull
 The `.github/workflows/pull-wp-intake.yml` workflow can be configured to:
 - Trigger on producer CI completion or on demand
-- Download the reviewer bundle artifact from the producer repo
-- Copy files to `intake/` and regenerate PDF
+- Download the intake bundle artifact from the producer repo, falling back to the legacy reviewer bundle name for archive replay
+- Copy files to `intake/`, regenerate macros/figures/PDF, and open a PR preserving the exact intake snapshot by default
 
 ---
 
@@ -78,7 +79,7 @@ The `.github/workflows/pull-wp-intake.yml` workflow can be configured to:
 
 ### Produced by gate-wp:
 ```
-WhitePaper_Reviewer_Pack_v4.zip
+WhitePaper_Intake_Bundle_v4.zip
 ├── intake/
 │   ├── selection_rates.csv
 │   ├── metrics_long.csv
