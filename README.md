@@ -25,10 +25,10 @@ make arxiv
 # 1. In fl-bsa repo, generate fresh evidence bundle
 cd /path/to/fl-bsa
 make gate-wp
-# Produces: artifacts/WhitePaper_Reviewer_Pack_v4.zip
+# Produces: artifacts/WhitePaper_Intake_Bundle_v4.zip
 
 # 2. In this repo, import the bundle
-unzip /path/to/WhitePaper_Reviewer_Pack_v4.zip -d /tmp/bundle
+unzip /path/to/WhitePaper_Intake_Bundle_v4.zip -d /tmp/bundle
 cp /tmp/bundle/intake/*.csv intake/
 cp /tmp/bundle/provenance/manifest.json intake/manifest.json
 
@@ -76,11 +76,11 @@ This:
 3. Runs full bias analysis pipeline
 4. Computes fairness metrics (AIR, EO, ECE) with 95% CIs
 5. Captures provenance (dataset hash, container digests, seeds)
-6. Validates and packages: `WhitePaper_Reviewer_Pack_v4.zip`
+6. Validates and packages: `WhitePaper_Intake_Bundle_v4.zip`
 
 ### Publication (This Repo)
 
-1. Import bundle to `intake/`
+1. Import bundle to `intake/`, or run `pull-wp-intake.yml` so CI opens an intake snapshot PR
 2. Run `make pdf` to compile LaTeX with updated metrics
 3. CI automatically builds on push/PR
 
@@ -115,7 +115,7 @@ Defined in `config/sap.yaml`:
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
 | `latex.yml` | push, PR, release | Build PDF and arXiv bundle |
-| `pull-wp-intake.yml` | dispatch, schedule | (Future) Pull intake from producer |
+| `pull-wp-intake.yml` | dispatch, schedule | Pull intake from producer, rebuild, and open/update an intake snapshot PR |
 
 On release, the CI attaches `whitepaper.pdf` and `whitepaper_arxiv_source.zip` to the GitHub release.
 
