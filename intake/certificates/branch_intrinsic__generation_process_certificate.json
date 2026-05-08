@@ -1,0 +1,89 @@
+{
+  "branch_mode": "intrinsic",
+  "certificate_hash": "32ae316156711255f2828de5084e63fff7bf198882a749763bd188827a85b462",
+  "certificate_id": "259d9e5b-5c8b-464c-9824-ba255d4f67b1",
+  "certificate_type": "generation_process_certificate",
+  "certificate_version": "1.0",
+  "generation_completed_at": "2026-05-08T12:40:46.605638+00:00",
+  "generation_environment": {
+    "cpu_count": 128,
+    "ctgan_version": "0.7.5",
+    "cuda_available": false,
+    "cuda_version": null,
+    "memory_available_gb": 194.75,
+    "numpy_version": "1.26.4",
+    "pandas_version": "2.3.3",
+    "python_version": "3.11.2",
+    "system": "Linux",
+    "torch_version": "2.8.0+cpu"
+  },
+  "generation_parameters": {
+    "batch_size": 500,
+    "condition_column": null,
+    "condition_value": null,
+    "include_metadata": true,
+    "n_samples": 10000,
+    "output_format": "csv",
+    "random_seed": 42,
+    "sampling_strategy": "random",
+    "stratification_column": null,
+    "temperature": 1.0
+  },
+  "generation_started_at": "2026-05-08T12:40:46.052718+00:00",
+  "issued_at": "2026-05-08T12:40:46.605374+00:00",
+  "issued_by": "FL-BSA Generation Process Validation System",
+  "model_certificate_hash": "93b9b820c03aed7e69988d46192b4621b25a164709c6d8f8dc5945c6fcf988d2",
+  "model_path": "generator_5b8a2f4d-ab4c-42ca-814c-d4f007983892_both.pkl",
+  "model_type": "CTGAN",
+  "output_file_hash": "bc45aa6c1e24b56d4759f6693f19060c920b2b778a2c51611fc06aef6635fd66",
+  "output_file_path": "synthetic_data.csv",
+  "output_file_size_mb": 0.39667320251464844,
+  "pipeline_id": "5b8a2f4d-ab4c-42ca-814c-d4f007983892",
+  "post_processing": {},
+  "previous_certificate_hash": "93b9b820c03aed7e69988d46192b4621b25a164709c6d8f8dc5945c6fcf988d2",
+  "recommendations": [
+    "Successfully generated 10000 samples for intrinsic branch"
+  ],
+  "status": "valid",
+  "total_generation_time": 0.5529201030731201,
+  "validation_results": {
+    "actual_model_hash": "",
+    "available_memory_gb": 194.75,
+    "error_message": null,
+    "error_occurred": false,
+    "estimated_memory_gb": 0.009313225746154785,
+    "expected_columns": [
+      "age",
+      "income",
+      "credit_score",
+      "loan_amount",
+      "debt_to_income",
+      "gender",
+      "race"
+    ],
+    "expected_model_hash": "",
+    "generated_columns": [
+      "age",
+      "income",
+      "credit_score",
+      "loan_amount",
+      "debt_to_income",
+      "gender",
+      "race"
+    ],
+    "generation_completed": true,
+    "generation_time_seconds": 0.5529201030731201,
+    "memory_sufficient": true,
+    "model_hash_verified": true,
+    "model_loaded_successfully": true,
+    "output_schema_matches": true,
+    "parameter_validation_errors": [],
+    "parameters_valid": true,
+    "samples_generated": 10000,
+    "samples_requested": 10000,
+    "warnings": []
+  },
+  "warnings": [
+    "CUDA not available - generation may be slower without GPU"
+  ]
+}
