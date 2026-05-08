@@ -1,24 +1,23 @@
 {
   "branch_mode": "intrinsic",
-  "cache_confidence": 1.0,
-  "cache_hit": true,
-  "cache_source": "exact",
+  "cache_confidence": 0.0,
+  "cache_hit": false,
   "categorical_columns": [
     "gender",
     "race"
   ],
-  "certificate_hash": "3b79db60c64122e598d0ea23e887ca2c82a911d7142dfea0e06dd7a05d5914b5",
-  "certificate_id": "4bbde61c-3e4a-4865-b692-67c7c0a05f0a",
+  "certificate_hash": "66a4b44e9e47e5143bdeec747c0331a81e709ecc57830c129ba3dc956dde2aad",
+  "certificate_id": "458937ec-db3d-41ae-b173-79549bb291b9",
   "certificate_version": "1.0",
   "config_version": "1.0",
   "data_columns": 7,
-  "data_profile_fingerprint": "f5556ac8e05ac4c0",
+  "data_profile_fingerprint": "0433ccff42dae050",
   "data_rows": 3000,
   "fallback_used": false,
   "hyperparameter_validation_passed": true,
-  "issued_at": "2026-02-22T10:25:42Z",
+  "issued_at": "2026-04-27T06:41:51Z",
   "issued_by": "FL-BSA Hyperparameter Tuner",
-  "n_trials": 0,
+  "n_trials": 20,
   "optimal_hyperparameters": {
     "batch_size": 32,
     "discriminator_decay": 3.5213588054678678e-06,
@@ -28,7 +27,7 @@
     ],
     "discriminator_lr": 0.0002049798052095018,
     "embedding_dim": 64,
-    "epochs": 120,
+    "epochs": 180,
     "generator_decay": 3.3118298880723843e-06,
     "generator_dim": [
       64,
@@ -48,22 +47,25 @@
         "rho_s": 0.8652764874238226
       },
       "pac": {
+        "effective_source": "Intrinsic profile pac_override",
+        "effective_value": 1,
         "original": 5,
         "source": "realism_gates",
-        "value": 5
+        "target": 5,
+        "value": 1
       }
     },
-    "pac": 5
+    "pac": 1
   },
   "optimization_time_seconds": 0.0,
-  "optimization_trials_completed": 0,
-  "previous_certificate_hash": "188c3f0d609288c905c6a5d1909da576a5eb8d5d84a193b3e5f3eb024eadec98",
+  "optimization_trials_completed": 3,
+  "previous_certificate_hash": "a93e6a2e72a067b806f1a0462db44e6236b84a69b6e2fa0449e58d06a2afa203",
   "status": "valid",
-  "timeout_seconds": 0,
+  "timeout_seconds": 300,
   "tuner_version": "1.0.0",
   "tuning_enabled": true,
   "tuning_environment": "production",
-  "tuning_method": "cache_lookup",
+  "tuning_method": "bayesian_optimization",
   "tuning_successful": true,
   "validation_warnings": []
 }

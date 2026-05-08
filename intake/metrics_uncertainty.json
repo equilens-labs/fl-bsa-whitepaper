@@ -6,120 +6,120 @@
       "reference_group": "male",
       "protected_group": "female",
       "counts": {
-        "ref_n": 4835,
-        "prot_n": 5165,
-        "ref_approved": 2790,
-        "prot_approved": 2262
+        "ref_n": 4836,
+        "prot_n": 5164,
+        "ref_approved": 2792,
+        "prot_approved": 2263
       },
       "selection_rates": {
         "ref": {
-          "p": 0.5770423991726991,
+          "p": 0.5773366418527709,
           "ci95": [
-            0.5630611510159549,
-            0.5909013180179561
+            0.5633579052198828,
+            0.5911926073423465
           ]
         },
         "prot": {
-          "p": 0.43794772507260404,
+          "p": 0.4382261812548412,
           "ci95": [
-            0.4244680899703014,
-            0.4515195974836922
+            0.4247440928097226,
+            0.45180011086710836
           ]
         }
       },
       "air": {
-        "point": 0.7589524196150683,
+        "point": 0.75904792713052,
         "ci95": [
-          0.729774954839436,
-          0.7892964418959806
+          0.7298827736525747,
+          0.7893784816949103
         ],
-        "p_value": 6.104443058877863e-44,
-        "p_value_adjusted": 6.104443058877863e-44,
+        "p_value": 5.956237349127732e-44,
+        "p_value_adjusted": 5.956237349127732e-44,
         "p_value_adjustment": "none",
         "method": "wilson+delta"
       },
       "srg": {
-        "point": -0.13909467410009502,
+        "point": -0.1391104605979297,
         "ci95": [
-          -0.1664332280476547,
-          -0.1115415535322627
+          -0.16644851453262388,
+          -0.11155779435277446
         ],
-        "p_value": 6.104443058877863e-44,
-        "p_value_adjusted": 6.104443058877863e-44,
+        "p_value": 5.956237349127732e-44,
+        "p_value_adjusted": 5.956237349127732e-44,
         "p_value_adjustment": "none",
         "method": "newcombe_wilson"
       },
       "small_n_flag": false,
       "p_value_method": "two_proportion_z_test",
       "confidence_level": 0.95,
-      "seed_material": "sha256:a690699a4a0efceb4e7cdabad86bf940051620cf5cfcde1c8a0103acc66537e5"
+      "seed_material": "sha256:6271ad6c02481019944e9a2406266b34f346158de3817651dba3fa222dc54113"
     },
     "race": {
       "reference_group": "white",
       "pairs": {
         "black": {
           "counts": {
-            "ref_n": 7877,
-            "prot_n": 522,
-            "ref_approved": 3980,
-            "prot_approved": 282
+            "ref_n": 7876,
+            "prot_n": 523,
+            "ref_approved": 3982,
+            "prot_approved": 283
           },
           "selection_rates": {
             "ref": {
-              "p": 0.5052685032372731,
+              "p": 0.505586592178771,
               "ci95": [
-                0.49422729232338874,
-                0.516304577775358
+                0.4945446016568017,
+                0.5166231355220776
               ]
             },
             "prot": {
-              "p": 0.5402298850574713,
+              "p": 0.5411089866156787,
               "ci95": [
-                0.49733705866430983,
-                0.5825349027780713
+                0.4982568390342248,
+                0.5833616208596029
               ]
             }
           },
           "air": {
-            "point": 1.0691936694969097,
+            "point": 1.070259763582392,
             "ci95": [
-              0.9849185809211408,
-              1.1606798013934485
+              0.9861087427178393,
+              1.161591933954888
             ],
-            "p_value": 0.12179603492015206,
-            "p_value_adjusted": 0.48718413968060825,
+            "p_value": 0.11559619780648023,
+            "p_value_adjusted": 0.4623847912259209,
             "p_value_adjustment": "holm_bonferroni",
             "method": "wilson+delta"
           },
           "srg": {
-            "point": 0.034961381820198145,
+            "point": 0.035522394436907745,
             "ci95": [
-              -0.01896751911104816,
-              0.08830761045468255
+              -0.018366296487852818,
+              0.08881701920280116
             ],
-            "p_value": 0.12179603492015206,
-            "p_value_adjusted": 0.12179603492015206,
+            "p_value": 0.11559619780648023,
+            "p_value_adjusted": 0.11559619780648023,
             "p_value_adjustment": "none",
             "method": "newcombe_wilson"
           },
           "small_n_flag": false,
           "p_value_method": "two_proportion_z_test",
           "confidence_level": 0.95,
-          "seed_material": "sha256:f39c4464be7c188207cd7c18bd4a8ceaa3b663458e399058e58d3e60ce93ba36"
+          "seed_material": "sha256:0d1370b051073a42521a37b0a45490a3d23ddba059ec69ea0c7b0363a616c47c"
         },
         "asian": {
           "counts": {
-            "ref_n": 7877,
+            "ref_n": 7876,
             "prot_n": 826,
-            "ref_approved": 3980,
+            "ref_approved": 3982,
             "prot_approved": 415
           },
           "selection_rates": {
             "ref": {
-              "p": 0.5052685032372731,
+              "p": 0.505586592178771,
               "ci95": [
-                0.49422729232338874,
-                0.516304577775358
+                0.4945446016568017,
+                0.5166231355220776
               ]
             },
             "prot": {
@@ -131,45 +131,45 @@
             }
           },
           "air": {
-            "point": 0.9943649847299451,
+            "point": 0.9937393816970556,
             "ci95": [
-              0.9259374044643622,
-              1.067849422746848
+              0.9253584003481955,
+              1.0671734955494665
             ],
-            "p_value": 0.8762648729767283,
+            "p_value": 0.8625717869979987,
             "p_value_adjusted": 1.0,
             "p_value_adjustment": "holm_bonferroni",
             "method": "wilson+delta"
           },
           "srg": {
-            "point": -0.0028471957312198315,
+            "point": -0.0031652846727177053,
             "ci95": [
-              -0.04791362516690745,
-              0.04220195207925298
+              -0.048232182913627075,
+              0.04188464274584003
             ],
-            "p_value": 0.8762648729767283,
-            "p_value_adjusted": 0.8762648729767283,
+            "p_value": 0.8625717869979987,
+            "p_value_adjusted": 0.8625717869979987,
             "p_value_adjustment": "none",
             "method": "newcombe_wilson"
           },
           "small_n_flag": false,
           "p_value_method": "two_proportion_z_test",
           "confidence_level": 0.95,
-          "seed_material": "sha256:798043d68600888bbbf363e809665c69e4889eebd99dbc4f2fa1443cafe77b5a"
+          "seed_material": "sha256:6efb2b55165a6acc51103bdf63111ea29780e132f2cca688be8dc8ee0f2ded94"
         },
         "hispanic": {
           "counts": {
-            "ref_n": 7877,
+            "ref_n": 7876,
             "prot_n": 273,
-            "ref_approved": 3980,
+            "ref_approved": 3982,
             "prot_approved": 136
           },
           "selection_rates": {
             "ref": {
-              "p": 0.5052685032372731,
+              "p": 0.505586592178771,
               "ci95": [
-                0.49422729232338874,
-                0.516304577775358
+                0.4945446016568017,
+                0.5166231355220776
               ]
             },
             "prot": {
@@ -181,45 +181,45 @@
             }
           },
           "air": {
-            "point": 0.9859480552947889,
+            "point": 0.9853277477586869,
             "ci95": [
-              0.8735428456785068,
-              1.1128172734155035
+              0.8729952291103147,
+              1.112114634913456
             ],
-            "p_value": 0.8175701648538751,
+            "p_value": 0.8095499311680412,
             "p_value_adjusted": 1.0,
             "p_value_adjustment": "holm_bonferroni",
             "method": "wilson+delta"
           },
           "srg": {
-            "point": -0.0071000050687749505,
+            "point": -0.007418094010272824,
             "ci95": [
-              -0.07700961127682537,
-              0.06286556728513765
+              -0.077328169023545,
+              0.0625482579517247
             ],
-            "p_value": 0.8175701648538751,
-            "p_value_adjusted": 0.8175701648538751,
+            "p_value": 0.8095499311680412,
+            "p_value_adjusted": 0.8095499311680412,
             "p_value_adjustment": "none",
             "method": "newcombe_wilson"
           },
           "small_n_flag": false,
           "p_value_method": "two_proportion_z_test",
           "confidence_level": 0.95,
-          "seed_material": "sha256:5a0635da2e9b91e9cc3bd14b68e9925e2c0a5a5bdff9b21f50357921217482b9"
+          "seed_material": "sha256:37452414eb7cbd6f75076575561aab8f7db6582169900e6afa6c269e5cb22030"
         },
         "other": {
           "counts": {
-            "ref_n": 7877,
+            "ref_n": 7876,
             "prot_n": 502,
-            "ref_approved": 3980,
+            "ref_approved": 3982,
             "prot_approved": 239
           },
           "selection_rates": {
             "ref": {
-              "p": 0.5052685032372731,
+              "p": 0.505586592178771,
               "ci95": [
-                0.49422729232338874,
-                0.516304577775358
+                0.4945446016568017,
+                0.5166231355220776
               ]
             },
             "prot": {
@@ -231,31 +231,31 @@
             }
           },
           "air": {
-            "point": 0.9422626078600171,
+            "point": 0.9416697849486033,
             "ci95": [
-              0.8574419414895625,
-              1.0354739827967328
+              0.8569049665045921,
+              1.0348195173874006
             ],
-            "p_value": 0.20496783345237163,
-            "p_value_adjusted": 0.6149035003571148,
+            "p_value": 0.20007225523028152,
+            "p_value_adjusted": 0.6002167656908446,
             "p_value_adjustment": "holm_bonferroni",
             "method": "wilson+delta"
           },
           "srg": {
-            "point": -0.029172885707392626,
+            "point": -0.0294909746488905,
             "ci95": [
-              -0.08355110679948363,
-              0.025573554099701357
+              -0.08386966454620326,
+              0.025256244766288405
             ],
-            "p_value": 0.20496783345237163,
-            "p_value_adjusted": 0.20496783345237163,
+            "p_value": 0.20007225523028152,
+            "p_value_adjusted": 0.20007225523028152,
             "p_value_adjustment": "none",
             "method": "newcombe_wilson"
           },
           "small_n_flag": false,
           "p_value_method": "two_proportion_z_test",
           "confidence_level": 0.95,
-          "seed_material": "sha256:be9636579c7c551a6fdbf9ae3289d2236740ab92145cf0275a15f58334e78e75"
+          "seed_material": "sha256:04789d89e7f247c538e38d008abe4ae29b5a8fca3b823e63b13dae96a653943a"
         }
       },
       "worst_case_pair": "other",
