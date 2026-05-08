@@ -48,6 +48,17 @@ The workflow fails fast when `PRODUCER_TOKEN` is missing for a cross-repo privat
 
 Rotate the token on the same cadence as other CI cross-repo credentials, and remove it when the producer repository is no longer private or when this intake path is retired.
 
+If automatic intake snapshot PR creation is required, add a separate `WP_INTAKE_PR_TOKEN`
+secret in this repo. Prefer a GitHub App installation token, or a fine-grained PAT scoped
+only to `equilens-labs/fl-bsa-whitepaper` with:
+
+- Contents: write
+- Pull requests: write
+
+Rotate `WP_INTAKE_PR_TOKEN` on the same cadence as `PRODUCER_TOKEN`. Remove it when the
+organization allows GitHub Actions to create pull requests with this repo's default token
+or when the persisted intake branch is sufficient without automatic PR creation.
+
 ## What happens after pull
 
 The workflow downloads `WhitePaper_Intake_Bundle_v4.zip`, verifies its GitHub artifact
@@ -75,9 +86,14 @@ producer artifact selectors, `bundle_filename`, and `bundle_sha256` used for the
 the incoming bundle SHA-256 matches the already committed snapshot, the workflow preserves the
 existing consumer stamp so daily cron runs do not open timestamp-only PR churn.
 
-When `persist_intake_pr=true`, the workflow opens or updates a branch named `chore/wp-intake-<producer-sha>-<producer-run-id>` with the synced `intake/`, `config/`, generated `includes/`, and generated `figures/` changes. This PR is the reproducibility anchor for the PDF source snapshot; the transient `whitepaper-pdf-from-intake` artifact is not the only copy of the evidence state.
+When `persist_intake_pr=true`, the workflow opens or updates a branch named `chore/wp-intake-<producer-sha>-<producer-run-id>` with the synced `intake/`, `config/`, generated `includes/`, and generated `figures/` changes. This branch is the canonical reproducibility anchor for the PDF source snapshot; the transient `whitepaper-pdf-from-intake` artifact is not the only copy of the evidence state.
 
-This snapshot PR is the audit anchor for FL-BSA `reports/wp-audit.md` CR-9: the whitepaper
+The snapshot PR is a best-effort reviewer convenience layered on top of the persisted branch.
+If GitHub rejects PR creation or update because the default Actions token cannot create or
+approve pull requests, the workflow writes a `$GITHUB_STEP_SUMMARY` notice and uploads an
+`intake-pr-soft-fail` sentinel artifact. Other PR-management failures still fail the workflow.
+
+The intake branch is the audit anchor for FL-BSA `reports/wp-audit.md` CR-9: the whitepaper
 source repo must preserve the exact intake/config/macro/figure state that produced the PDF,
 instead of relying only on expiring transient workflow artifacts.
 

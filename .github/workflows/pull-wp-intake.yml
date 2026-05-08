@@ -317,6 +317,7 @@ jobs:
       - name: Open intake snapshot PR
         env:
           GH_TOKEN: ${{ github.token }}
+          WP_INTAKE_PR_TOKEN: ${{ secrets.WP_INTAKE_PR_TOKEN }}
           PERSIST_INTAKE_PR: ${{ github.event_name == 'repository_dispatch' && format('{0}', github.event.client_payload.persist_intake_pr) || 'true' }}
           PRODUCER_REPO: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.producer_repo || 'equilens-labs/fl-bsa' }}
           PRODUCER_WORKFLOW: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'wp-evidence-nightly.yml' }}
@@ -385,13 +386,88 @@ jobs:
           git commit -m "$title"
           git push --force-with-lease origin "$branch"
 
+          soft_fail_dir="dist/intake-pr-soft-fail"
+          soft_fail_sentinel="${soft_fail_dir}/intake_pr_soft_fail.json"
+          permission_guard="GitHub Actions is not permitted to create or approve pull requests"
+
+          record_pr_permission_soft_fail() {
+            local operation="$1"
+            local branch_name="$2"
+            local pr_output="$3"
+
+            if ! printf '%s\n' "$pr_output" | grep -Fq "$permission_guard"; then
+              printf '%s\n' "$pr_output" >&2
+              return 1
+            fi
+
+            mkdir -p "$soft_fail_dir"
+            SOFT_FAIL_SENTINEL="$soft_fail_sentinel" \
+            SOFT_FAIL_OPERATION="$operation" \
+            SOFT_FAIL_BRANCH="$branch_name" \
+            SOFT_FAIL_OUTPUT="$pr_output" \
+            python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          sentinel = Path(os.environ["SOFT_FAIL_SENTINEL"])
+          payload = {
+              "status": "intake_pr_permission_soft_failed",
+              "operation": os.environ["SOFT_FAIL_OPERATION"],
+              "branch": os.environ["SOFT_FAIL_BRANCH"],
+              "repository": os.environ.get("GITHUB_REPOSITORY"),
+              "run_id": os.environ.get("GITHUB_RUN_ID"),
+              "run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
+              "producer_repo": os.environ.get("PRODUCER_REPO"),
+              "producer_workflow": os.environ.get("PRODUCER_WORKFLOW"),
+              "producer_branch": os.environ.get("PRODUCER_BRANCH"),
+              "reason": "GitHub Actions token is not permitted to create or approve pull requests.",
+              "stderr": os.environ["SOFT_FAIL_OUTPUT"],
+          }
+          sentinel.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          PY
+
+            {
+              echo "### Intake snapshot PR permission soft-fail"
+              echo ""
+              echo "- operation: \`${operation}\`"
+              echo "- branch: \`${branch_name}\`"
+              echo "- sentinel: \`${soft_fail_sentinel}\`"
+              echo "- reason: GitHub Actions token is not permitted to create or approve pull requests."
+              echo ""
+              echo "The intake branch was pushed successfully and remains the canonical audit anchor."
+            } >> "$GITHUB_STEP_SUMMARY"
+
+            echo "::warning title=Intake PR ${operation} skipped::The branch ${branch_name} was pushed successfully, but github.token cannot create or approve pull requests. Configure WP_INTAKE_PR_TOKEN or enable Actions PR creation."
+            printf '%s\n' "$pr_output" >&2
+            return 0
+          }
+
+          if [ -n "${WP_INTAKE_PR_TOKEN:-}" ]; then
+            export GH_TOKEN="$WP_INTAKE_PR_TOKEN"
+          fi
+
           if gh pr view "$branch" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh pr edit "$branch" --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$body_file"
+            if ! pr_output="$(gh pr edit "$branch" --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$body_file" 2>&1)"; then
+              record_pr_permission_soft_fail "update" "$branch" "$pr_output"
+              exit $?
+            fi
           else
-            gh pr create \
+            if ! pr_output="$(gh pr create \
               --repo "$GITHUB_REPOSITORY" \
               --base "${GITHUB_REF_NAME:-main}" \
               --head "$branch" \
               --title "$title" \
-              --body-file "$body_file"
+              --body-file "$body_file" 2>&1)"; then
+              record_pr_permission_soft_fail "creation" "$branch" "$pr_output"
+              exit $?
+            fi
           fi
+
+      - name: Upload intake PR soft-fail sentinel
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: intake-pr-soft-fail
+          path: dist/intake-pr-soft-fail/intake_pr_soft_fail.json
+          if-no-files-found: ignore
