@@ -1,50 +1,232 @@
 {
   "branch_mode": "amplification",
-  "certificate_hash": "99e41b1a5cdaea824c7b577ba27d62814f9c4178511bcfe5c342e961b1b0ec53",
-  "certificate_id": "model_cert_6f9688de-771c-461f-9afa-d9604e889a5f_amplification",
+  "certificate_hash": "97851b5b3d12fce0a69eaad2d65aaf6903e516c3ec9f9e6fc8efe8abe56142c9",
+  "certificate_id": "lc11_contract_amplification_6f9688de-771c-461f-9afa-d9604e889a5f",
+  "certificate_type": "lc11_contract_certificate",
+  "certificate_version": "1.0",
+  "config_hash": "7af6503b139a9b6aada668a66d002ade2704620af90bb1067e552600098c7059",
   "config_version": "1.0.0",
-  "data_fingerprint": "6ce24018070738c3",
-  "hyperparameters": {
-    "batch_size": 30,
-    "discriminator_decay": 1.1872731425335901e-06,
-    "discriminator_dim": [
-      128,
-      128
-    ],
-    "discriminator_lr": 0.00013833249975219982,
-    "embedding_dim": 32,
-    "epochs": 180,
-    "generator_decay": 6.341572775495279e-06,
-    "generator_dim": [
-      128,
-      128
-    ],
-    "generator_lr": 0.0003488960745139223,
-    "guardrails": {
-      "batch_size": 32,
-      "fingerprint": {
-        "max_corr": 0.8808936584289787,
-        "n": 3000.0
-      },
-      "mode": "threshold",
-      "pac": 5,
-      "pac_metadata": {
-        "source": "realism_gates",
-        "value": 5
-      }
+  "contract_certificate_schema": {
+    "contract_certification": {
+      "decline_reason_values": [
+        "minimum_group_size_floor_not_met",
+        "certification_declined_by_validator",
+        "training_convergence_missing",
+        "training_convergence_not_certified",
+        "branch_validation_failed"
+      ],
+      "reason_required_when": "status=declined",
+      "status_values": [
+        "certified",
+        "declined"
+      ]
     },
-    "pac": 5
+    "hash_domain": "canonical_json_certificate_payload",
+    "required_top_level_fields": [
+      "certificate_id",
+      "certificate_type",
+      "schema_version",
+      "certificate_version",
+      "contract_certificate_schema",
+      "timestamp",
+      "pipeline_id",
+      "branch_mode",
+      "previous_certificate_hash",
+      "model_certificate_hash",
+      "software_version",
+      "software_commit",
+      "config_version",
+      "config_hash",
+      "dataset_hash",
+      "data_fingerprint",
+      "validation_surface",
+      "validation_sample_policy",
+      "mechanism_family",
+      "declared_contract",
+      "protected_group_scope",
+      "runtime_switches",
+      "contract_certification",
+      "tolerance_multiplier_applied",
+      "effective_thresholds",
+      "validator",
+      "validation_results",
+      "training_metadata",
+      "performance_metrics"
+    ],
+    "schema_version": "lc11_contract_certificate.v1"
   },
-  "model_type": "CTGAN",
+  "contract_certification": {
+    "certified": true,
+    "reason": null,
+    "status": "certified"
+  },
+  "data_fingerprint": "6ce24018070738c3",
+  "dataset_hash": "ebceb84310e0702075e0fd6fc31bacfe6046faef2316fd890a208a3b620ae9b0",
+  "declared_contract": {
+    "claim_scope": "per_attribute",
+    "protected_attributes": [
+      "gender",
+      "race"
+    ],
+    "protected_group_scope": {
+      "claim_scope": "per_attribute",
+      "covered_attributes": [
+        "gender",
+        "race"
+      ],
+      "covered_ecoa_reg_b_bases": [
+        {
+          "attribute": "race",
+          "basis": "race_or_ethnicity",
+          "coverage": "configured_field_only"
+        },
+        {
+          "attribute": "gender",
+          "basis": "sex_or_gender",
+          "coverage": "configured_field_only"
+        }
+      ],
+      "excluded_claims": [
+        "absence_of_bias_for_uncovered_protected_bases",
+        "absence_of_intersectional_bias",
+        "multi_level_race_encoding_without_declared_schema_support"
+      ],
+      "human_readable": "LC11 v5.0 certifies only the declared per-attribute protected-group controls for gender, and race. It does not certify absence of bias for uncovered ECOA/Reg B bases (color, religion, national origin, marital status, age, receipt of public assistance, and exercise of consumer-credit rights) or for intersectional combinations.",
+      "schema_version": "lc11_protected_group_scope.v1",
+      "uncovered_ecoa_reg_b_bases": [
+        {
+          "basis": "color",
+          "label": "color"
+        },
+        {
+          "basis": "religion",
+          "label": "religion"
+        },
+        {
+          "basis": "national_origin",
+          "label": "national origin"
+        },
+        {
+          "basis": "marital_status",
+          "label": "marital status"
+        },
+        {
+          "basis": "age",
+          "label": "age"
+        },
+        {
+          "basis": "receipt_of_public_assistance",
+          "label": "receipt of public assistance"
+        },
+        {
+          "basis": "exercise_of_consumer_credit_rights",
+          "label": "exercise of consumer-credit rights"
+        }
+      ]
+    },
+    "representation_target": {
+      "binding_intersectional_claim": false,
+      "preserve": [
+        "P(A)",
+        "P(Y|A)"
+      ]
+    },
+    "tolerance_model": {
+      "max_demographic_drift_pp": 5.0,
+      "max_relative_di_drift": 0.1,
+      "max_spd_difference": 0.05
+    },
+    "utility_anchors": [
+      "credit_score",
+      "income",
+      "debt_to_income",
+      "loan_amount",
+      "age"
+    ]
+  },
+  "effective_thresholds": {
+    "correlation_absolute_difference_max": 0.2,
+    "di_relative_difference_max": 0.2,
+    "group_ratio_absolute_difference_max": 0.2,
+    "ks_statistic_hard_cap": 0.5,
+    "ks_statistic_max": 0.3,
+    "spd_absolute_difference_max": 0.1
+  },
+  "mechanism_family": "strict_post_generation_bias_preserving_resampling",
+  "model_certificate_hash": "99e41b1a5cdaea824c7b577ba27d62814f9c4178511bcfe5c342e961b1b0ec53",
   "performance_metrics": {
     "final_discriminator_loss": 0.027022123336791992,
     "final_generator_loss": -1.5359313488006592,
     "training_time_minutes": 3.2414016167322797
   },
   "pipeline_id": "6f9688de-771c-461f-9afa-d9604e889a5f",
-  "previous_certificate_hash": "d63b3137727a32611b4773847c3e1bc2962bba8c0a225af41a49431ba2e04c12",
-  "timestamp": "2026-05-09T03:02:12.728156+00:00",
-  "training_duration_minutes": 3.2414016167322797,
+  "previous_certificate_hash": "99e41b1a5cdaea824c7b577ba27d62814f9c4178511bcfe5c342e961b1b0ec53",
+  "protected_group_scope": {
+    "claim_scope": "per_attribute",
+    "covered_attributes": [
+      "gender",
+      "race"
+    ],
+    "covered_ecoa_reg_b_bases": [
+      {
+        "attribute": "race",
+        "basis": "race_or_ethnicity",
+        "coverage": "configured_field_only"
+      },
+      {
+        "attribute": "gender",
+        "basis": "sex_or_gender",
+        "coverage": "configured_field_only"
+      }
+    ],
+    "excluded_claims": [
+      "absence_of_bias_for_uncovered_protected_bases",
+      "absence_of_intersectional_bias",
+      "multi_level_race_encoding_without_declared_schema_support"
+    ],
+    "human_readable": "LC11 v5.0 certifies only the declared per-attribute protected-group controls for gender, and race. It does not certify absence of bias for uncovered ECOA/Reg B bases (color, religion, national origin, marital status, age, receipt of public assistance, and exercise of consumer-credit rights) or for intersectional combinations.",
+    "schema_version": "lc11_protected_group_scope.v1",
+    "uncovered_ecoa_reg_b_bases": [
+      {
+        "basis": "color",
+        "label": "color"
+      },
+      {
+        "basis": "religion",
+        "label": "religion"
+      },
+      {
+        "basis": "national_origin",
+        "label": "national origin"
+      },
+      {
+        "basis": "marital_status",
+        "label": "marital status"
+      },
+      {
+        "basis": "age",
+        "label": "age"
+      },
+      {
+        "basis": "receipt_of_public_assistance",
+        "label": "receipt of public assistance"
+      },
+      {
+        "basis": "exercise_of_consumer_credit_rights",
+        "label": "exercise of consumer-credit rights"
+      }
+    ]
+  },
+  "runtime_switches": {
+    "use_lc11_productization": true,
+    "use_refactored_audit": false,
+    "use_refactored_calibration": false
+  },
+  "schema_version": "lc11_contract_certificate.v1",
+  "software_commit": "4cd570523bc2d26f35201c22e911ab21c3bfcd16",
+  "software_version": "0.1.0",
+  "timestamp": "2026-05-09T03:02:12.745484+00:00",
+  "tolerance_multiplier_applied": 2.0,
   "training_metadata": {
     "branch_purpose": "bias amplification test",
     "epochs": 180,
@@ -74,6 +256,7 @@
     "includes_loan_decisions": true,
     "records_trained": 3000
   },
+  "training_time_minutes": 3.2414016167322797,
   "validation_results": {
     "bias_preservation_status": "PRESERVED",
     "branch": "amplification",
@@ -365,5 +548,15 @@
     "training_records": 3000,
     "valid": true,
     "validation_samples": 10000
+  },
+  "validation_sample_policy": {
+    "pac_adjusted": true,
+    "policy": "min(10000, len(processed_data) * 10), PAC-adjusted",
+    "target_sample_policy": "min(10000, len(processed_data) * 10), PAC-adjusted"
+  },
+  "validation_surface": null,
+  "validator": {
+    "identity": "AmplificationBranchValidator",
+    "result_digest": "26a31cf1d3d665c94066c7923b744d391985538e149d3d9593d5dc673aa61335"
   }
 }

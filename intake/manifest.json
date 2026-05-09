@@ -1,54 +1,29 @@
 {
-  "schema_version": "wp-intake.v1",
-  "run_id": "1c227681-f910-4e9f-b36d-433927ae772e",
-  "created": "2026-04-14T20:13:58.166645+00:00",
-  "dataset_hash": "sha256:ebceb84310e0702075e0fd6fc31bacfe6046faef2316fd890a208a3b620ae9b0",
-  "dataset_hash_source": "metrics.dataset_hash",
-  "dataset_hash_path": "dataset_1c227681-f910-4e9f-b36d-433927ae772e.csv",
-  "software_version": "0.1.0",
   "build_ref": "0.1.0",
-  "commit_sha": "8a2f5f0706c31df32fb78964f98a1196e33f5c26",
-  "code_commit": "8a2f5f0706c31df32fb78964f98a1196e33f5c26",
-  "source_commit": "8a2f5f0706c31df32fb78964f98a1196e33f5c26",
-  "software_commit": "8a2f5f0706c31df32fb78964f98a1196e33f5c26",
-  "container_digests": {
-    "api_image_digest": "sha256:a15bfefce7ca6aac67dbc743e62f3caa5f703893d63ff7bfe5ce5bd3137b4c20",
-    "worker_image_digest": "sha256:e99f2c847ecf57cce1c8f67bed1cf9b96416f157304e4fc3e3d8c976ec5dedbd"
-  },
-  "container_digest": "sha256:a15bfefce7ca6aac67dbc743e62f3caa5f703893d63ff7bfe5ce5bd3137b4c20",
-  "seeds": {
-    "rng_seed": 42,
-    "bootstrap_seed": 42
-  },
-  "config_hash": "efdad417dcb0c1a5aaa40cddfd31b3e26a6009098239cdcf74bcde9fffd08015",
   "capabilities": {
-    "eo_enabled": true,
     "ece_enabled": false,
-    "eo_requested": true,
-    "ece_requested": false
+    "ece_requested": false,
+    "eo_enabled": true,
+    "eo_requested": true
   },
-  "metrics_ci": {
-    "level": 0.95,
-    "wilson_continuity_correction": false
+  "code_commit": "4cd570523bc2d26f35201c22e911ab21c3bfcd16",
+  "commit_sha": "4cd570523bc2d26f35201c22e911ab21c3bfcd16",
+  "config_hash": "7af6503b139a9b6aada668a66d002ade2704620af90bb1067e552600098c7059",
+  "container_digest": "ghcr.io/equilens-labs/fl-bsa-runtime@sha256:6af561fd6ba390be8ce1eb1968bff1c837bc1ba2db2019159e72fc0ebb56902f",
+  "container_digests": {
+    "api_image_digest": "ghcr.io/equilens-labs/fl-bsa-runtime@sha256:6af561fd6ba390be8ce1eb1968bff1c837bc1ba2db2019159e72fc0ebb56902f",
+    "worker_image_digest": "ghcr.io/equilens-labs/fl-bsa-runtime@sha256:6af561fd6ba390be8ce1eb1968bff1c837bc1ba2db2019159e72fc0ebb56902f"
   },
-  "start_ts": "2026-04-14T19:47:45.269964+00:00",
-  "end_ts": "2026-04-14T20:13:58.166645+00:00",
-  "hardware": {
-    "cpu_count": 128,
-    "machine": "x86_64",
-    "processor": "",
-    "ram_bytes": 236380872704
-  },
-  "inference": {
-    "method": "bca",
-    "replicates": 2000,
-    "alpha": 0.05,
-    "seed": 42,
-    "smoothing": 1e-06
-  },
-  "fairness_reference_groups": {
-    "gender": "male",
-    "race": "white"
+  "created": "2026-05-09T03:02:53.421488+00:00",
+  "dataset_hash": "sha256:ebceb84310e0702075e0fd6fc31bacfe6046faef2316fd890a208a3b620ae9b0",
+  "dataset_hash_path": "original_data.csv",
+  "dataset_hash_source": "metrics.dataset_hash",
+  "end_ts": "2026-05-09T03:02:53.421488+00:00",
+  "fairness_policy": {
+    "display_race_in_main_pdf": {
+      "min_group_n": 300,
+      "min_group_pct": 0.05
+    }
   },
   "fairness_protected_groups": {
     "gender": [
@@ -61,10 +36,793 @@
       "other"
     ]
   },
-  "fairness_policy": {
-    "display_race_in_main_pdf": {
-      "min_group_n": 300,
-      "min_group_pct": 0.05
-    }
+  "fairness_reference_groups": {
+    "gender": "male",
+    "race": "white"
+  },
+  "hardware": {
+    "cpu_count": 128,
+    "gpu": {
+      "cuda_visible_devices": null,
+      "gpu_uuids": [
+        "GPU-0fc21d11-f4cc-a6cb-5bb0-55ee10ee0448"
+      ],
+      "nvidia_smi_gpus": [
+        {
+          "index": "0",
+          "name": "NVIDIA GeForce RTX 3090",
+          "uuid": "GPU-0fc21d11-f4cc-a6cb-5bb0-55ee10ee0448"
+        }
+      ],
+      "nvidia_visible_devices": "1"
+    },
+    "machine": "x86_64",
+    "processor": "",
+    "ram_bytes": 236380872704
+  },
+  "inference": {
+    "alpha": 0.05,
+    "bootstrap_usage": "metrics_long_annex_or_backcompat",
+    "headline_interval_methods": {
+      "air": "wilson+delta",
+      "selection_rate": "wilson",
+      "srg": "newcombe_wilson"
+    },
+    "method": "bca",
+    "method_note": "The legacy method/replicates fields describe bootstrap annex generation; whitepaper headline intervals are read from validation/metrics_uncertainty.json.",
+    "primary_interval_source": "validation/metrics_uncertainty.json",
+    "replicates": 2000,
+    "seed": 42,
+    "smoothing": 1e-06
+  },
+  "lc11_contract_references": {
+    "branch_contract_surfaces": {
+      "amplification": {
+        "branch_mode": "amplification",
+        "claim_scope": "per_attribute",
+        "contract_certificate_schema_version": "lc11_contract_certificate.v1",
+        "contract_certification": {
+          "certified": true,
+          "reason": null,
+          "status": "certified"
+        },
+        "effective_thresholds": {
+          "correlation_absolute_difference_max": 0.2,
+          "di_relative_difference_max": 0.2,
+          "group_ratio_absolute_difference_max": 0.2,
+          "ks_statistic_hard_cap": 0.5,
+          "ks_statistic_max": 0.3,
+          "spd_absolute_difference_max": 0.1
+        },
+        "mechanism_family": "strict_post_generation_bias_preserving_resampling",
+        "protected_attributes": [
+          "gender",
+          "race"
+        ],
+        "protected_group_scope": {
+          "claim_scope": "per_attribute",
+          "covered_attributes": [
+            "gender",
+            "race"
+          ],
+          "covered_ecoa_reg_b_bases": [
+            {
+              "attribute": "race",
+              "basis": "race_or_ethnicity",
+              "coverage": "configured_field_only"
+            },
+            {
+              "attribute": "gender",
+              "basis": "sex_or_gender",
+              "coverage": "configured_field_only"
+            }
+          ],
+          "excluded_claims": [
+            "absence_of_bias_for_uncovered_protected_bases",
+            "absence_of_intersectional_bias",
+            "multi_level_race_encoding_without_declared_schema_support"
+          ],
+          "human_readable": "LC11 v5.0 certifies only the declared per-attribute protected-group controls for gender, and race. It does not certify absence of bias for uncovered ECOA/Reg B bases (color, religion, national origin, marital status, age, receipt of public assistance, and exercise of consumer-credit rights) or for intersectional combinations.",
+          "schema_version": "lc11_protected_group_scope.v1",
+          "uncovered_ecoa_reg_b_bases": [
+            {
+              "basis": "color",
+              "label": "color"
+            },
+            {
+              "basis": "religion",
+              "label": "religion"
+            },
+            {
+              "basis": "national_origin",
+              "label": "national origin"
+            },
+            {
+              "basis": "marital_status",
+              "label": "marital status"
+            },
+            {
+              "basis": "age",
+              "label": "age"
+            },
+            {
+              "basis": "receipt_of_public_assistance",
+              "label": "receipt of public assistance"
+            },
+            {
+              "basis": "exercise_of_consumer_credit_rights",
+              "label": "exercise of consumer-credit rights"
+            }
+          ]
+        },
+        "representation_target": {
+          "binding_intersectional_claim": false,
+          "preserve": [
+            "P(A)",
+            "P(Y|A)"
+          ]
+        },
+        "runtime_switches": {
+          "use_lc11_productization": true,
+          "use_refactored_audit": false,
+          "use_refactored_calibration": false
+        },
+        "tolerance_multiplier_applied": 2.0,
+        "utility_anchors": [
+          "credit_score",
+          "income",
+          "debt_to_income",
+          "loan_amount",
+          "age"
+        ]
+      },
+      "intrinsic": {
+        "branch_mode": "intrinsic",
+        "claim_scope": "per_attribute",
+        "contract_certificate_schema_version": "lc11_contract_certificate.v1",
+        "contract_certification": {
+          "certified": true,
+          "reason": null,
+          "status": "certified"
+        },
+        "effective_thresholds": {
+          "max_absolute_spd": 0.1,
+          "max_feature_anchor_cv": 0.15,
+          "max_group_baseline_deviation": 0.05,
+          "max_group_rate_std": 0.03,
+          "min_disparate_impact": 0.8
+        },
+        "mechanism_family": "protected_group_aware_unlabeled_resampling_plus_equal_baseline_post_labeling",
+        "post_label_fairness_contract": {
+          "baseline_approval_rate": 0.7,
+          "decision_method": "equal_baseline",
+          "max_group_baseline_deviation": 0.05,
+          "max_group_rate_std": 0.03
+        },
+        "pre_label_representation_target": {
+          "binding_anchor_surface_summary": {
+            "bucket_count": 3,
+            "comparable_surface_available": true,
+            "comparison_count": 7,
+            "feature_anchors_checked": [
+              "credit_score",
+              "income",
+              "debt_to_income"
+            ],
+            "protected_attributes_checked": [
+              "gender",
+              "race"
+            ],
+            "ratio_threshold": 0.15000000000000002,
+            "requested_feature_anchors": [
+              "credit_score",
+              "income",
+              "debt_to_income"
+            ]
+          },
+          "current_anchor_diagnostic_features": [
+            "credit_score",
+            "income",
+            "debt_to_income"
+          ],
+          "current_anchor_surface": "coarse_bucketed_source_to_synthetic_anchor_profile_preservation",
+          "current_validation_status": {
+            "claim_scope": "p_a_preservation_plus_coarse_anchor_profile_preservation_and_diagnostics",
+            "valid": true
+          },
+          "diagnostic_coverage": {
+            "coarse_anchor_profile_preservation": "available",
+            "per_feature_anchor_bucket_preservation": "available",
+            "source_to_synthetic_feature_anchor_diagnostics": "available",
+            "within_synthetic_feature_anchor_diagnostics": "available"
+          },
+          "future_anchor_target": [
+            "credit_score",
+            "income",
+            "debt_to_income"
+          ],
+          "preserve": [
+            "P(A)",
+            "coarse_bucketed_anchor_profiles(X_anchor|A)"
+          ]
+        },
+        "protected_attributes": [
+          "gender",
+          "race"
+        ],
+        "protected_group_scope": {
+          "claim_scope": "per_attribute",
+          "covered_attributes": [
+            "gender",
+            "race"
+          ],
+          "covered_ecoa_reg_b_bases": [
+            {
+              "attribute": "race",
+              "basis": "race_or_ethnicity",
+              "coverage": "configured_field_only"
+            },
+            {
+              "attribute": "gender",
+              "basis": "sex_or_gender",
+              "coverage": "configured_field_only"
+            }
+          ],
+          "excluded_claims": [
+            "absence_of_bias_for_uncovered_protected_bases",
+            "absence_of_intersectional_bias",
+            "multi_level_race_encoding_without_declared_schema_support"
+          ],
+          "human_readable": "LC11 v5.0 certifies only the declared per-attribute protected-group controls for gender, and race. It does not certify absence of bias for uncovered ECOA/Reg B bases (color, religion, national origin, marital status, age, receipt of public assistance, and exercise of consumer-credit rights) or for intersectional combinations.",
+          "schema_version": "lc11_protected_group_scope.v1",
+          "uncovered_ecoa_reg_b_bases": [
+            {
+              "basis": "color",
+              "label": "color"
+            },
+            {
+              "basis": "religion",
+              "label": "religion"
+            },
+            {
+              "basis": "national_origin",
+              "label": "national origin"
+            },
+            {
+              "basis": "marital_status",
+              "label": "marital status"
+            },
+            {
+              "basis": "age",
+              "label": "age"
+            },
+            {
+              "basis": "receipt_of_public_assistance",
+              "label": "receipt of public assistance"
+            },
+            {
+              "basis": "exercise_of_consumer_credit_rights",
+              "label": "exercise of consumer-credit rights"
+            }
+          ]
+        },
+        "runtime_switches": {
+          "intrinsic_lc11_candidate_pool_factor_used": 5.0,
+          "intrinsic_lc11_validation_surface": "productized_raw_scale_intrinsic_lc11",
+          "use_lc11_productization": true,
+          "use_refactored_audit": false,
+          "use_refactored_calibration": false
+        },
+        "tolerance_multiplier_applied": 1.0
+      }
+    },
+    "branch_references": {
+      "amplification": {
+        "certificate_hash": "97851b5b3d12fce0a69eaad2d65aaf6903e516c3ec9f9e6fc8efe8abe56142c9",
+        "certificate_id": "lc11_contract_amplification_6f9688de-771c-461f-9afa-d9604e889a5f",
+        "certificate_name": "lc11_contract_certificate_amplification",
+        "certificate_path": "certificates/lc11_contract_certificate_amplification.json"
+      },
+      "intrinsic": {
+        "certificate_hash": "d426c02145a46c4eeb99d04119542c077e2069b59e489249101cfa979f2298d1",
+        "certificate_id": "lc11_contract_intrinsic_6f9688de-771c-461f-9afa-d9604e889a5f",
+        "certificate_name": "lc11_contract_certificate_intrinsic",
+        "certificate_path": "certificates/lc11_contract_certificate_intrinsic.json"
+      }
+    },
+    "branch_runtime_validation_surfaces": {
+      "amplification": {
+        "advisory_utility_checks": {
+          "correlation_preservation": {
+            "binding": false,
+            "error_count": 0,
+            "skipped": false,
+            "valid": true
+          },
+          "distribution_preservation": {
+            "binding": false,
+            "error_count": 0,
+            "skipped": false,
+            "valid": true
+          }
+        },
+        "bias_preservation_status": "PRESERVED",
+        "binding_contract_reason": null,
+        "binding_contract_satisfied": true,
+        "branch_mode": "amplification",
+        "checks": {
+          "bias_preservation": {
+            "skipped": false,
+            "valid": true
+          },
+          "group_ratios": {
+            "skipped": false,
+            "valid": true
+          }
+        },
+        "critical_failure": false,
+        "critical_failure_reason": null,
+        "regulatory_value": true,
+        "source": "metrics.json.branch_validations.amplification",
+        "summary": "Edge case validation completed for small_dataset. 4/4 checks passed, 0 checks skipped as inappropriate. Results suitable for proof-of-concept validation.",
+        "valid": true
+      },
+      "intrinsic": {
+        "anchor_alignment": {
+          "binding_anchor_surface_reason": null,
+          "binding_anchor_surface_satisfied": true,
+          "binding_anchor_surface_summary": {
+            "bucket_count": 3,
+            "comparable_surface_available": true,
+            "comparison_count": 7,
+            "feature_anchors_checked": [
+              "credit_score",
+              "income",
+              "debt_to_income"
+            ],
+            "protected_attributes_checked": [
+              "gender",
+              "race"
+            ],
+            "ratio_threshold": 0.15000000000000002,
+            "requested_feature_anchors": [
+              "credit_score",
+              "income",
+              "debt_to_income"
+            ]
+          },
+          "declared_anchor_surface": "coarse_bucketed_source_to_synthetic_anchor_profile_preservation",
+          "runtime_anchor_surface": "coarse_bucketed_source_to_synthetic_anchor_profile_preservation"
+        },
+        "binding_contract_reason": null,
+        "binding_contract_satisfied": true,
+        "branch_mode": "intrinsic",
+        "decision_fairness": {
+          "baseline_approval_rate": 0.7,
+          "decision_method": "equal_baseline",
+          "max_group_baseline_deviation": 0.05,
+          "max_group_rate_std": 0.03,
+          "minimal_bias_status": "Passed",
+          "minimal_bias_valid": true,
+          "post_label_fairness_status": "Passed",
+          "post_label_fairness_valid": true,
+          "status": "aligned",
+          "status_label": "Aligned",
+          "summary": "Intrinsic branch post-label decision-fairness checks passed for this run."
+        },
+        "minimal_bias": {
+          "valid": true
+        },
+        "post_label_fairness": {
+          "source_check": "fair_decisions",
+          "valid": true
+        },
+        "pre_label_representation": {
+          "binding_anchor_surface_reason": null,
+          "binding_anchor_surface_satisfied": true,
+          "binding_anchor_surface_summary": {
+            "bucket_count": 3,
+            "comparable_surface_available": true,
+            "comparison_count": 7,
+            "feature_anchors_checked": [
+              "credit_score",
+              "income",
+              "debt_to_income"
+            ],
+            "protected_attributes_checked": [
+              "gender",
+              "race"
+            ],
+            "ratio_threshold": 0.15000000000000002,
+            "requested_feature_anchors": [
+              "credit_score",
+              "income",
+              "debt_to_income"
+            ]
+          },
+          "claim_scope": "p_a_preservation_plus_coarse_anchor_profile_preservation_and_diagnostics",
+          "coarse_anchor_profile_preservation": {
+            "comparable_surface_available": true,
+            "feature_anchors_checked": [
+              "credit_score",
+              "income",
+              "debt_to_income"
+            ],
+            "skipped": false,
+            "valid": true
+          },
+          "declared_anchor_surface": "coarse_bucketed_source_to_synthetic_anchor_profile_preservation",
+          "diagnostic_coverage": {
+            "coarse_anchor_profile_preservation": "available",
+            "per_feature_anchor_bucket_preservation": "available",
+            "source_to_synthetic_feature_anchor_diagnostics": "available",
+            "within_synthetic_feature_anchor_diagnostics": "available"
+          },
+          "message": "Intrinsic pre-label slice satisfied: source-to-synthetic protected-group ratio preservation plus coarse source-to-synthetic anchor-profile preservation and supporting diagnostics",
+          "not_yet_proven": [
+            "source_to_synthetic_feature_anchor_preservation"
+          ],
+          "per_feature_anchor_bucket_preservation": {
+            "comparable_surface_available": true,
+            "feature_anchors_checked": [
+              "credit_score",
+              "income",
+              "debt_to_income"
+            ],
+            "skipped": false,
+            "valid": true
+          },
+          "runtime_anchor_surface": "coarse_bucketed_source_to_synthetic_anchor_profile_preservation",
+          "sampling": {
+            "anchor_feature_bucket_repair_applied": false,
+            "anchor_profile_group_fallback_applied": true,
+            "anchor_profile_nearest_fallback_applied": true,
+            "anchor_profile_preservation_enabled": true,
+            "applied_anchor_features": [
+              "credit_score",
+              "income",
+              "debt_to_income"
+            ],
+            "effective_sampling_strategy": "intrinsic_anchor_profile_resampling_with_group_fallback",
+            "generic_group_fallback_applied": false,
+            "requested_anchor_features": [
+              "credit_score",
+              "income",
+              "debt_to_income"
+            ],
+            "summary": {
+              "anchor_profile_replacement_rows_selected": 2730,
+              "anchor_profile_rows_selected": 9993,
+              "anchor_profile_target_count": 254,
+              "bucket_repair_group_count": 0,
+              "bucket_repair_iteration_limit_group_count": 0,
+              "bucket_repair_replacement_group_count": 0,
+              "fallback_fill_count": 0,
+              "generic_group_fallback_group_count": 0,
+              "group_shortfall_replacement_rows_selected": 0,
+              "group_shortfall_rows_selected": 7,
+              "group_shortfall_target_count": 1,
+              "missing_group_count": 0,
+              "nearest_profile_fallback_group_count": 1,
+              "nearest_profile_max_bucket_mismatch_count": 1,
+              "nearest_profile_max_distance": 1,
+              "target_allocation_allocated_count": 10000,
+              "target_allocation_dropped_invalid_group_count": 0,
+              "target_allocation_requested_group_count": 255,
+              "target_allocation_target_size": 10000,
+              "target_allocation_usable_group_count": 255
+            }
+          },
+          "sampling_strategy": "intrinsic_anchor_profile_resampling_with_group_fallback",
+          "valid": true
+        },
+        "source": "metrics.json.branch_validations.intrinsic",
+        "summary": null,
+        "valid": true
+      }
+    },
+    "canonical_downstream_branch_observations": {
+      "generation_process_certificate": "amplification",
+      "synthetic_quality_certificate": "amplification",
+      "synthetic_validation_certificate": "amplification"
+    },
+    "canonical_downstream_surface_complete": true,
+    "protected_group_scope": {
+      "claim_scope": "per_attribute",
+      "covered_attributes": [
+        "gender",
+        "race"
+      ],
+      "covered_ecoa_reg_b_bases": [
+        {
+          "attribute": "race",
+          "basis": "race_or_ethnicity",
+          "coverage": "configured_field_only"
+        },
+        {
+          "attribute": "gender",
+          "basis": "sex_or_gender",
+          "coverage": "configured_field_only"
+        }
+      ],
+      "excluded_claims": [
+        "absence_of_bias_for_uncovered_protected_bases",
+        "absence_of_intersectional_bias",
+        "multi_level_race_encoding_without_declared_schema_support"
+      ],
+      "human_readable": "LC11 v5.0 certifies only the declared per-attribute protected-group controls for gender, and race. It does not certify absence of bias for uncovered ECOA/Reg B bases (color, religion, national origin, marital status, age, receipt of public assistance, and exercise of consumer-credit rights) or for intersectional combinations.",
+      "schema_version": "lc11_protected_group_scope.v1",
+      "uncovered_ecoa_reg_b_bases": [
+        {
+          "basis": "color",
+          "label": "color"
+        },
+        {
+          "basis": "religion",
+          "label": "religion"
+        },
+        {
+          "basis": "national_origin",
+          "label": "national origin"
+        },
+        {
+          "basis": "marital_status",
+          "label": "marital status"
+        },
+        {
+          "basis": "age",
+          "label": "age"
+        },
+        {
+          "basis": "receipt_of_public_assistance",
+          "label": "receipt of public assistance"
+        },
+        {
+          "basis": "exercise_of_consumer_credit_rights",
+          "label": "exercise of consumer-credit rights"
+        }
+      ]
+    },
+    "runtime_audit_posture": {
+      "intrinsic_pre_label_failure": false,
+      "intrinsic_pre_label_failure_reason": null,
+      "intrinsic_pre_label_outcome_recorded": true,
+      "partial": false,
+      "source": "metrics.json",
+      "status": "passed"
+    },
+    "schema_version": "lc11_contract_references.v1",
+    "selected_branch_contract_surface": {
+      "branch_mode": "amplification",
+      "claim_scope": "per_attribute",
+      "contract_certificate_schema_version": "lc11_contract_certificate.v1",
+      "contract_certification": {
+        "certified": true,
+        "reason": null,
+        "status": "certified"
+      },
+      "effective_thresholds": {
+        "correlation_absolute_difference_max": 0.2,
+        "di_relative_difference_max": 0.2,
+        "group_ratio_absolute_difference_max": 0.2,
+        "ks_statistic_hard_cap": 0.5,
+        "ks_statistic_max": 0.3,
+        "spd_absolute_difference_max": 0.1
+      },
+      "mechanism_family": "strict_post_generation_bias_preserving_resampling",
+      "protected_attributes": [
+        "gender",
+        "race"
+      ],
+      "protected_group_scope": {
+        "claim_scope": "per_attribute",
+        "covered_attributes": [
+          "gender",
+          "race"
+        ],
+        "covered_ecoa_reg_b_bases": [
+          {
+            "attribute": "race",
+            "basis": "race_or_ethnicity",
+            "coverage": "configured_field_only"
+          },
+          {
+            "attribute": "gender",
+            "basis": "sex_or_gender",
+            "coverage": "configured_field_only"
+          }
+        ],
+        "excluded_claims": [
+          "absence_of_bias_for_uncovered_protected_bases",
+          "absence_of_intersectional_bias",
+          "multi_level_race_encoding_without_declared_schema_support"
+        ],
+        "human_readable": "LC11 v5.0 certifies only the declared per-attribute protected-group controls for gender, and race. It does not certify absence of bias for uncovered ECOA/Reg B bases (color, religion, national origin, marital status, age, receipt of public assistance, and exercise of consumer-credit rights) or for intersectional combinations.",
+        "schema_version": "lc11_protected_group_scope.v1",
+        "uncovered_ecoa_reg_b_bases": [
+          {
+            "basis": "color",
+            "label": "color"
+          },
+          {
+            "basis": "religion",
+            "label": "religion"
+          },
+          {
+            "basis": "national_origin",
+            "label": "national origin"
+          },
+          {
+            "basis": "marital_status",
+            "label": "marital status"
+          },
+          {
+            "basis": "age",
+            "label": "age"
+          },
+          {
+            "basis": "receipt_of_public_assistance",
+            "label": "receipt of public assistance"
+          },
+          {
+            "basis": "exercise_of_consumer_credit_rights",
+            "label": "exercise of consumer-credit rights"
+          }
+        ]
+      },
+      "representation_target": {
+        "binding_intersectional_claim": false,
+        "preserve": [
+          "P(A)",
+          "P(Y|A)"
+        ]
+      },
+      "runtime_switches": {
+        "use_lc11_productization": true,
+        "use_refactored_audit": false,
+        "use_refactored_calibration": false
+      },
+      "tolerance_multiplier_applied": 2.0,
+      "utility_anchors": [
+        "credit_score",
+        "income",
+        "debt_to_income",
+        "loan_amount",
+        "age"
+      ]
+    },
+    "selected_branch_reference": {
+      "certificate_hash": "97851b5b3d12fce0a69eaad2d65aaf6903e516c3ec9f9e6fc8efe8abe56142c9",
+      "certificate_id": "lc11_contract_amplification_6f9688de-771c-461f-9afa-d9604e889a5f",
+      "certificate_name": "lc11_contract_certificate_amplification",
+      "certificate_path": "certificates/lc11_contract_certificate_amplification.json"
+    },
+    "selected_branch_runtime_validation_surface": {
+      "advisory_utility_checks": {
+        "correlation_preservation": {
+          "binding": false,
+          "error_count": 0,
+          "skipped": false,
+          "valid": true
+        },
+        "distribution_preservation": {
+          "binding": false,
+          "error_count": 0,
+          "skipped": false,
+          "valid": true
+        }
+      },
+      "bias_preservation_status": "PRESERVED",
+      "binding_contract_reason": null,
+      "binding_contract_satisfied": true,
+      "branch_mode": "amplification",
+      "checks": {
+        "bias_preservation": {
+          "skipped": false,
+          "valid": true
+        },
+        "group_ratios": {
+          "skipped": false,
+          "valid": true
+        }
+      },
+      "critical_failure": false,
+      "critical_failure_reason": null,
+      "regulatory_value": true,
+      "source": "metrics.json.branch_validations.amplification",
+      "summary": "Edge case validation completed for small_dataset. 4/4 checks passed, 0 checks skipped as inappropriate. Results suitable for proof-of-concept validation.",
+      "valid": true
+    },
+    "selected_evidence_branch": "amplification"
+  },
+  "metrics_ci": {
+    "level": 0.95,
+    "wilson_continuity_correction": false
+  },
+  "protected_group_scope": {
+    "claim_scope": "per_attribute",
+    "covered_attributes": [
+      "gender",
+      "race"
+    ],
+    "covered_ecoa_reg_b_bases": [
+      {
+        "attribute": "race",
+        "basis": "race_or_ethnicity",
+        "coverage": "configured_field_only"
+      },
+      {
+        "attribute": "gender",
+        "basis": "sex_or_gender",
+        "coverage": "configured_field_only"
+      }
+    ],
+    "excluded_claims": [
+      "absence_of_bias_for_uncovered_protected_bases",
+      "absence_of_intersectional_bias",
+      "multi_level_race_encoding_without_declared_schema_support"
+    ],
+    "human_readable": "LC11 v5.0 certifies only the declared per-attribute protected-group controls for gender, and race. It does not certify absence of bias for uncovered ECOA/Reg B bases (color, religion, national origin, marital status, age, receipt of public assistance, and exercise of consumer-credit rights) or for intersectional combinations.",
+    "schema_version": "lc11_protected_group_scope.v1",
+    "uncovered_ecoa_reg_b_bases": [
+      {
+        "basis": "color",
+        "label": "color"
+      },
+      {
+        "basis": "religion",
+        "label": "religion"
+      },
+      {
+        "basis": "national_origin",
+        "label": "national origin"
+      },
+      {
+        "basis": "marital_status",
+        "label": "marital status"
+      },
+      {
+        "basis": "age",
+        "label": "age"
+      },
+      {
+        "basis": "receipt_of_public_assistance",
+        "label": "receipt of public assistance"
+      },
+      {
+        "basis": "exercise_of_consumer_credit_rights",
+        "label": "exercise of consumer-credit rights"
+      }
+    ]
+  },
+  "run_id": "6f9688de-771c-461f-9afa-d9604e889a5f",
+  "schema_version": "wp-intake.v1",
+  "seeds": {
+    "bootstrap_seed": 42,
+    "rng_seed": 42
+  },
+  "software_commit": "4cd570523bc2d26f35201c22e911ab21c3bfcd16",
+  "software_version": "0.1.0",
+  "source_commit": "4cd570523bc2d26f35201c22e911ab21c3bfcd16",
+  "start_ts": "2026-05-09T02:47:30.442123+00:00",
+  "torch_deterministic_mode": "strict",
+  "whitepaper_consumer": {
+    "event_name": "repository_dispatch",
+    "ingested_at": "2026-05-09T03:03:43.555115+00:00",
+    "producer": {
+      "artifact": "wp-intake-bundle-v4",
+      "branch": "main",
+      "bundle_filename": "WhitePaper_Intake_Bundle_v4.zip",
+      "bundle_sha256": "96100c370490f0232d5ddbeccf2e4d8e781e671702266f791f0f5cf2fba503b8",
+      "repo": "equilens-labs/fl-bsa",
+      "run_id": "25589285290",
+      "workflow": "release-evidence.yml"
+    },
+    "ref": "refs/heads/main",
+    "repo": "equilens-labs/fl-bsa-whitepaper",
+    "run_attempt": "1",
+    "run_id": "25589916289",
+    "sha": "d3f6c01b7bedc04c7d63a8360570521223aafd71",
+    "workflow": "pull-wp-intake"
   }
 }
