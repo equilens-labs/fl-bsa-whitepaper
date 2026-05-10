@@ -3,6 +3,9 @@ PDF=dist/whitepaper.pdf
 
 all: pdf
 
+test:
+	python3 -m unittest discover -s tests
+
 macros:
 	python3 scripts/gen_tex_macros_from_metrics.py --metrics intake/metrics_long.csv --sap config/sap.yaml --outdir includes || true
 	python3 scripts/gen_tex_preamble_from_manifest.py --manifest intake/manifest.json --sap config/sap.yaml --out includes/provenance_macros.tex || true
