@@ -1,57 +1,60 @@
 {
   "branch_mode": "intrinsic",
-  "certificate_hash": "31582b72edcb1e3e41db0b15b67dcc9b7f70941e5a67aea6d29e1f90d5fa9e07",
-  "certificate_id": "model_cert_88325003-be12-4262-a7c4-ca8c8874c47e_intrinsic",
+  "certificate_hash": "51ced2ff5dd7d8d3b758873ea07c454ebfa30277441e265e443ff303319dfbef",
+  "certificate_id": "model_cert_3b01578e-4b99-4a9f-9196-933016cd8390_intrinsic",
   "config_version": "1.0.0",
-  "data_fingerprint": "f5556ac8e05ac4c0",
+  "data_fingerprint": "0433ccff42dae050",
   "hyperparameters": {
     "batch_size": 30,
-    "discriminator_decay": 3.5213588054678678e-06,
+    "discriminator_decay": 3.912141628549696e-06,
     "discriminator_dim": [
       64,
       64
     ],
-    "discriminator_lr": 0.0002049798052095018,
-    "epochs": 120,
-    "generator_decay": 3.3118298880723843e-06,
+    "discriminator_lr": 0.0001583703155911876,
+    "embedding_dim": 64,
+    "epochs": 220,
+    "generator_decay": 3.2676417657817645e-06,
     "generator_dim": [
       64,
+      128,
       64
     ],
-    "generator_lr": 0.0004597505784732166,
+    "generator_lr": 0.0006097839109531517,
     "guardrails": {
-      "batch": {
-        "original": 512,
-        "source": "realism_gates",
-        "value": 32
-      },
+      "batch_size": 32,
       "fingerprint": {
         "max_corr": 0.8808936584289787,
-        "n": 3000.0,
-        "rho_p": 0.8808936584289787,
-        "rho_s": 0.8652764874238226
+        "n": 3000.0
       },
-      "pac": {
-        "original": 5,
+      "mode": "threshold",
+      "pac": 5,
+      "pac_metadata": {
         "source": "realism_gates",
         "value": 5
+      },
+      "profile": {
+        "apply_feature_transforms": true,
+        "branch": "intrinsic",
+        "epochs_multiplier": 1.0,
+        "winsorize_pct": 0.01
       }
     },
     "pac": 5
   },
   "model_type": "CTGAN",
   "performance_metrics": {
-    "final_discriminator_loss": 0.15460646152496338,
-    "final_generator_loss": -1.2568668127059937,
-    "training_time_minutes": 5.064580273628235
+    "final_discriminator_loss": -0.653122067451477,
+    "final_generator_loss": -0.7628435492515564,
+    "training_time_minutes": 4.0076256473859155
   },
-  "pipeline_id": "88325003-be12-4262-a7c4-ca8c8874c47e",
-  "previous_certificate_hash": "252b9334b62118ca830f468be446710e12822ce55ed2c203fc67c48813a3bcf5",
-  "timestamp": "2026-02-22T10:30:47.807566+00:00",
-  "training_duration_minutes": 5.064580273628235,
+  "pipeline_id": "3b01578e-4b99-4a9f-9196-933016cd8390",
+  "previous_certificate_hash": "8961b4b120704d79155612d2ec8e791424b9d6faa0cb71dd7f98d7096d1635d9",
+  "timestamp": "2026-05-10T06:21:10.668922+00:00",
+  "training_duration_minutes": 4.0076256473859155,
   "training_metadata": {
     "branch_purpose": "intrinsic fairness test",
-    "epochs": 120,
+    "epochs": 220,
     "features_included": [
       "age",
       "income",
@@ -63,21 +66,22 @@
       "income_bin"
     ],
     "guardrails": {
-      "batch": {
-        "original": 512,
-        "source": "realism_gates",
-        "value": 32
-      },
+      "batch_size": 32,
       "fingerprint": {
         "max_corr": 0.8808936584289787,
-        "n": 3000.0,
-        "rho_p": 0.8808936584289787,
-        "rho_s": 0.8652764874238226
+        "n": 3000.0
       },
-      "pac": {
-        "original": 5,
+      "mode": "threshold",
+      "pac": 5,
+      "pac_metadata": {
         "source": "realism_gates",
         "value": 5
+      },
+      "profile": {
+        "apply_feature_transforms": true,
+        "branch": "intrinsic",
+        "epochs_multiplier": 1.0,
+        "winsorize_pct": 0.01
       }
     },
     "includes_loan_decisions": false,
@@ -121,26 +125,38 @@
   "validation_results": {
     "branch": "intrinsic",
     "business_value": "Demonstrates achievable fairness baseline under configured screening thresholds (not a compliance determination)",
+    "certification_declined": false,
+    "certification_floor": {
+      "decision": "eligible_to_certify",
+      "min_group_size": 30,
+      "protected_attributes_evaluated": [
+        "gender",
+        "race"
+      ],
+      "satisfied": true,
+      "schema_version": "lc11_group_size_floor.v1",
+      "violations": []
+    },
     "checks": {
       "fair_decisions": {
         "details": {
           "gender": {
             "approval_rates": {
-              "female": 0.6995322058294351,
-              "male": 0.6994597028365601
+              "female": 0.6993903720832457,
+              "male": 0.6995994659546061
             },
-            "standard_deviation": 5.126735791821741e-05,
+            "standard_deviation": 0.00014785169434346264,
             "target_rate": 0.7
           },
           "race": {
             "approval_rates": {
-              "asian": 0.6985845129059117,
-              "black": 0.6995179432244242,
-              "hispanic": 0.6996115666810531,
-              "other": 0.6983240223463687,
-              "white": 0.6999230571941524
+              "asian": 0.6995169082125604,
+              "black": 0.6993464052287581,
+              "hispanic": 0.6985294117647058,
+              "other": 0.6996197718631179,
+              "white": 0.6996699669966997
             },
-            "standard_deviation": 0.0006962659944609934,
+            "standard_deviation": 0.0004678353990267715,
             "target_rate": 0.7
           }
         },
@@ -151,73 +167,157 @@
       "feature_independence": {
         "details": {
           "credit_score_by_gender": {
-            "coefficient_of_variation": 0.009350190867358145,
+            "coefficient_of_variation": 0.06101213739611488,
             "group_means": {
-              "female": 678.5345448002879,
-              "male": 687.5666366501575
+              "{\"kind\":\"str\",\"value\":\"female\"}": {
+                "group_display": "female",
+                "mean": 688.6434727769603
+              },
+              "{\"kind\":\"str\",\"value\":\"male\"}": {
+                "group_display": "male",
+                "mean": 750.741560175472
+              }
             },
-            "independent": true
+            "independent": true,
+            "skipped": false
           },
           "credit_score_by_race": {
-            "coefficient_of_variation": 0.033926771049782964,
+            "coefficient_of_variation": 0.006397874223868873,
             "group_means": {
-              "asian": 657.3263946711074,
-              "black": 656.2554900910552,
-              "hispanic": 669.4341821320673,
-              "other": 691.2932960893854,
-              "white": 709.0902795588612
+              "{\"kind\":\"str\",\"value\":\"asian\"}": {
+                "group_display": "asian",
+                "mean": 720.9893719806763
+              },
+              "{\"kind\":\"str\",\"value\":\"black\"}": {
+                "group_display": "black",
+                "mean": 712.6773618538324
+              },
+              "{\"kind\":\"str\",\"value\":\"hispanic\"}": {
+                "group_display": "hispanic",
+                "mean": 723.8272058823529
+              },
+              "{\"kind\":\"str\",\"value\":\"other\"}": {
+                "group_display": "other",
+                "mean": 722.8448669201521
+              },
+              "{\"kind\":\"str\",\"value\":\"white\"}": {
+                "group_display": "white",
+                "mean": 723.1937487866434
+              }
             },
-            "independent": true
+            "independent": true,
+            "skipped": false
           },
           "debt_to_income_by_gender": {
-            "coefficient_of_variation": 0.18698614714973405,
+            "coefficient_of_variation": 0.20963702906406997,
             "group_means": {
-              "female": 0.13544122283331225,
-              "male": 0.17671414765342844
+              "{\"kind\":\"str\",\"value\":\"female\"}": {
+                "group_display": "female",
+                "mean": 0.1542042200543327
+              },
+              "{\"kind\":\"str\",\"value\":\"male\"}": {
+                "group_display": "male",
+                "mean": 0.1143890859135471
+              }
             },
-            "independent": false
+            "independent": false,
+            "skipped": false
           },
           "debt_to_income_by_race": {
-            "coefficient_of_variation": 0.09496994102981196,
+            "coefficient_of_variation": 0.13777548266742912,
             "group_means": {
-              "asian": 0.1470485441536021,
-              "black": 0.1706228255033429,
-              "hispanic": 0.1671677544742327,
-              "other": 0.13916467317002415,
-              "white": 0.14250291113986321
+              "{\"kind\":\"str\",\"value\":\"asian\"}": {
+                "group_display": "asian",
+                "mean": 0.12658236990800179
+              },
+              "{\"kind\":\"str\",\"value\":\"black\"}": {
+                "group_display": "black",
+                "mean": 0.10624271605074163
+              },
+              "{\"kind\":\"str\",\"value\":\"hispanic\"}": {
+                "group_display": "hispanic",
+                "mean": 0.12941206538876565
+              },
+              "{\"kind\":\"str\",\"value\":\"other\"}": {
+                "group_display": "other",
+                "mean": 0.15589860783495268
+              },
+              "{\"kind\":\"str\",\"value\":\"white\"}": {
+                "group_display": "white",
+                "mean": 0.13839357282368717
+              }
             },
-            "independent": true
+            "independent": true,
+            "skipped": false
           },
           "income_by_gender": {
-            "coefficient_of_variation": -0.7421045220354994,
+            "coefficient_of_variation": 0.3045592315156594,
             "group_means": {
-              "female": -0.10771742937731688,
-              "male": -0.033574758107302836
+              "{\"kind\":\"str\",\"value\":\"female\"}": {
+                "group_display": "female",
+                "mean": 1.8112055923756716
+              },
+              "{\"kind\":\"str\",\"value\":\"male\"}": {
+                "group_display": "male",
+                "mean": 1.1693297315380673
+              }
             },
-            "independent": true
+            "independent": false,
+            "skipped": false
           },
           "income_by_race": {
-            "coefficient_of_variation": -2.5006155857281276,
+            "coefficient_of_variation": 0.5295688363016792,
             "group_means": {
-              "asian": -0.5106560585325168,
-              "black": -0.5596744945776961,
-              "hispanic": -0.023520953756889847,
-              "other": 0.14004979928665318,
-              "white": 0.22174918010972433
+              "{\"kind\":\"str\",\"value\":\"asian\"}": {
+                "group_display": "asian",
+                "mean": 1.2156075987943296
+              },
+              "{\"kind\":\"str\",\"value\":\"black\"}": {
+                "group_display": "black",
+                "mean": 1.0284479327739198
+              },
+              "{\"kind\":\"str\",\"value\":\"hispanic\"}": {
+                "group_display": "hispanic",
+                "mean": 1.6503435186113302
+              },
+              "{\"kind\":\"str\",\"value\":\"other\"}": {
+                "group_display": "other",
+                "mean": 0.26322577268623676
+              },
+              "{\"kind\":\"str\",\"value\":\"white\"}": {
+                "group_display": "white",
+                "mean": 1.9539597840235434
+              }
             },
-            "independent": true
+            "independent": false,
+            "skipped": false
+          },
+          "summary": {
+            "comparison_count": 6,
+            "feature_anchors_checked": [
+              "credit_score",
+              "income",
+              "debt_to_income"
+            ],
+            "protected_attributes_checked": [
+              "gender",
+              "race"
+            ]
           }
         },
         "errors": [
-          "debt_to_income varies too much by gender (CV=0.19, threshold=0.15). Means: {'female': 0.13544122283331225, 'male': 0.17671414765342844}"
+          "income varies too much by gender (CV=0.30, threshold=0.15). Means: {'female': 1.8112055923756716, 'male': 1.1693297315380673}",
+          "income varies too much by race (CV=0.53, threshold=0.15). Means: {'asian': 1.2156075987943296, 'black': 1.0284479327739198, 'hispanic': 1.6503435186113302, 'other': 0.26322577268623676, 'white': 1.9539597840235434}",
+          "debt_to_income varies too much by gender (CV=0.21, threshold=0.15). Means: {'female': 0.1542042200543327, 'male': 0.1143890859135471}"
         ],
+        "skipped": false,
         "valid": false
       },
       "minimal_bias": {
         "details": {
-          "demographic_parity": 7.250299287497874e-05,
-          "disparate_impact": 0.9998963550323048,
-          "statistical_parity_difference": 7.250299287497874e-05
+          "demographic_parity": 0.00020909387136036628,
+          "disparate_impact": 0.9997011234548685,
+          "statistical_parity_difference": 0.00020909387136036628
         },
         "errors": [],
         "message": "Minimal bias achieved under configured screening thresholds",
@@ -225,16 +325,20 @@
       },
       "population_diversity": {
         "details": {
-          "age_range": 54,
-          "age_std": 9.13162123615736,
-          "credit_score_range": 475,
-          "credit_score_std": 83.45995677496177,
-          "income_range": 5.373673649589455,
-          "income_std": 1.0358256683073106,
+          "age_range": 45.0,
+          "age_std": 11.164318915262326,
+          "credit_score_range": 477.0,
+          "credit_score_std": 106.04038831570458,
+          "income_range": 6.379417490792699,
+          "income_std": 1.673481366694963,
+          "protected_attributes_checked": [
+            "gender",
+            "race"
+          ],
           "unique_protected_combinations": 10
         },
         "errors": [
-          "Income diversity too low: std=1.0358256683073106"
+          "Income diversity too low: std=1.673481366694963"
         ],
         "valid": false
       }
@@ -244,29 +348,42 @@
       "missing_ratio": 0.0,
       "protected_attributes": {
         "gender": {
-          "max_group_ratio": 0.5558,
-          "min_group_size": 4442,
+          "max_group_ratio": 0.5243,
+          "min_group_size": 4757,
           "unique_values": 2,
           "value_counts": {
-            "female": 5558,
-            "male": 4442
+            "female": 4757,
+            "male": 5243
           }
         },
         "race": {
-          "max_group_ratio": 0.3899,
-          "min_group_size": 716,
+          "max_group_ratio": 0.5151,
+          "min_group_size": 816,
           "unique_values": 5,
           "value_counts": {
-            "asian": 1201,
-            "black": 1867,
-            "hispanic": 2317,
-            "other": 716,
-            "white": 3899
+            "asian": 1035,
+            "black": 1683,
+            "hispanic": 816,
+            "other": 1315,
+            "white": 5151
           }
         }
       }
     },
     "edge_case_type": "normal",
+    "effective_thresholds": {
+      "max_absolute_spd": 0.1,
+      "max_feature_anchor_cv": 0.15,
+      "max_group_baseline_deviation": 0.05,
+      "max_group_rate_std": 0.03,
+      "min_disparate_impact": 0.8
+    },
+    "pre_label_candidate_pool_factor_env": "FLBSA_INTRINSIC_LC11_CANDIDATE_POOL_FACTOR",
+    "pre_label_candidate_pool_factor_max": 10.0,
+    "pre_label_candidate_pool_factor_used": 1.0,
+    "pre_label_candidate_samples": 10000,
+    "pre_label_validation_samples": 10000,
+    "tolerance_multiplier_applied": 1.0,
     "training_records": 3000,
     "valid": false,
     "validation_samples": 10000

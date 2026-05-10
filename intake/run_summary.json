@@ -1,8 +1,8 @@
 {
-  "run_id": "1c227681-f910-4e9f-b36d-433927ae772e",
+  "run_id": "3b01578e-4b99-4a9f-9196-933016cd8390",
   "split": "wp_evidence",
   "model_id": "gate-wp-42",
-  "generated_at": "2026-04-14T20:14:02.516360+00:00",
+  "generated_at": "2026-05-10T06:21:55.392393+00:00",
   "violations": {
     "air": {
       "count": 1,
@@ -14,7 +14,12 @@
     "eo": {
       "count": 0,
       "attributes": [],
-      "available": true
+      "available": true,
+      "informative": false,
+      "not_informative_attributes": [
+        "gender",
+        "race"
+      ]
     },
     "ece": {
       "count": 0,
@@ -23,7 +28,7 @@
   },
   "compliance": {
     "air_status": "NON_COMPLIANT",
-    "eo_status": "COMPLIANT",
+    "eo_status": "NOT_INFORMATIVE",
     "ece_status": "NOT_EVALUATED"
   },
   "thresholds": {
@@ -45,31 +50,31 @@
     ],
     "per_attribute": {
       "gender": {
-        "value": 0.758952,
-        "lower_ci": 0.729775,
-        "upper_ci": 0.789296,
+        "value": 0.758345,
+        "lower_ci": 0.729189,
+        "upper_ci": 0.788667,
         "status": "VIOLATES",
         "ci_degenerate": false,
         "ci_excludes_threshold": true,
         "reference_group": "male",
         "protected_group": "female",
         "method": "wilson+delta",
-        "p_value": 6.104443058877863e-44,
-        "p_value_adjusted": 6.104443058877863e-44,
+        "p_value": 3.486614549406748e-44,
+        "p_value_adjusted": 3.486614549406748e-44,
         "p_value_adjustment": "none"
       },
       "race": {
-        "value": 0.942263,
-        "lower_ci": 0.857442,
-        "upper_ci": 1.035474,
+        "value": 0.942023,
+        "lower_ci": 0.857225,
+        "upper_ci": 1.03521,
         "status": "PASSES",
         "ci_degenerate": false,
         "ci_excludes_threshold": true,
         "reference_group": "white",
         "protected_group": "other",
         "method": "wilson+delta",
-        "p_value": 0.20496783345237163,
-        "p_value_adjusted": 0.6149035003571148,
+        "p_value": 0.2029852657010438,
+        "p_value_adjusted": 0.6089557971031314,
         "p_value_adjustment": "holm_bonferroni",
         "display_in_main_pdf": false,
         "policy": {
@@ -77,7 +82,9 @@
             "min_group_n": 300,
             "min_group_pct": 0.05
           }
-        }
+        },
+        "suppressed_groups": [],
+        "verdict_scope": "all_configured_groups"
       }
     },
     "definition": "pairwise_vs_reference",
@@ -85,17 +92,19 @@
   },
   "eo_details": {
     "available": true,
+    "informative": false,
     "thresholds": {
       "tpr_gap_max": 0.05,
       "fpr_gap_max": 0.05
     },
-    "overall_pass": true,
-    "num_violations": 0,
-    "passing_attributes": [
+    "overall_pass": null,
+    "num_violations": null,
+    "passing_attributes": [],
+    "violating_attributes": [],
+    "not_informative_attributes": [
       "gender",
       "race"
     ],
-    "violating_attributes": [],
     "per_attribute": {
       "gender": {
         "tpr_gap": {
@@ -110,7 +119,10 @@
           "upper_ci": 0.0,
           "passes": true
         },
-        "status": "PASSES"
+        "status": "NOT_INFORMATIVE",
+        "informative": false,
+        "reason": "degenerate_confusion_surface",
+        "explanation": "Every group has FP=0 and FN=0, so TPR=1 and FPR=0 by construction; the equalized-odds surface is diagnostic only and is not counted as a PASS."
       },
       "race": {
         "tpr_gap": {
@@ -125,7 +137,10 @@
           "upper_ci": 0.0,
           "passes": true
         },
-        "status": "PASSES"
+        "status": "NOT_INFORMATIVE",
+        "informative": false,
+        "reason": "degenerate_confusion_surface",
+        "explanation": "Every group has FP=0 and FN=0, so TPR=1 and FPR=0 by construction; the equalized-odds surface is diagnostic only and is not counted as a PASS."
       }
     }
   },
@@ -140,7 +155,7 @@
     "ci_excludes_threshold": null,
     "ci_degenerate": null
   },
-  "commit_sha": "8a2f5f0706c31df32fb78964f98a1196e33f5c26",
+  "commit_sha": "4cd570523bc2d26f35201c22e911ab21c3bfcd16",
   "dataset_hash": "sha256:ebceb84310e0702075e0fd6fc31bacfe6046faef2316fd890a208a3b620ae9b0",
   "fairness_reference_groups": {
     "gender": "male",
@@ -165,9 +180,17 @@
   },
   "inference": {
     "method": "bca",
-    "replicates": 2000,
+    "replicates": 500,
     "alpha": 0.05,
     "seed": 42,
-    "smoothing": 1e-06
+    "smoothing": 1e-06,
+    "bootstrap_usage": "metrics_long_annex_or_backcompat",
+    "primary_interval_source": "validation/metrics_uncertainty.json",
+    "headline_interval_methods": {
+      "selection_rate": "wilson",
+      "air": "wilson+delta",
+      "srg": "newcombe_wilson"
+    },
+    "method_note": "The legacy method/replicates fields describe bootstrap annex generation; whitepaper headline intervals are read from validation/metrics_uncertainty.json."
   }
 }
