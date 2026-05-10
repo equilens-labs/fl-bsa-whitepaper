@@ -80,7 +80,7 @@ This:
 
 ### Publication (This Repo)
 
-1. Import bundle to `intake/`, or run `pull-wp-intake.yml` so CI opens an intake snapshot PR
+1. Import bundle to `intake/`, or run `pull-wp-intake.yml` so CI persists an intake snapshot branch and artifacts
 2. Run `make pdf` to compile LaTeX with updated metrics
 3. CI automatically builds on push/PR
 
@@ -115,7 +115,7 @@ Defined in `config/sap.yaml`:
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
 | `latex.yml` | push, PR, release | Build PDF and arXiv bundle |
-| `pull-wp-intake.yml` | dispatch, schedule | Pull intake from producer, rebuild, and open/update an intake snapshot PR |
+| `pull-wp-intake.yml` | dispatch, schedule | Pull intake from producer, rebuild, and persist an intake snapshot branch/artifacts |
 
 On release, the CI attaches `whitepaper.pdf` and `whitepaper_arxiv_source.zip` to the GitHub release.
 

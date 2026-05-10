@@ -1,6 +1,24 @@
 # Intake Pull CI — Cross‑Repo Automation
 
-This repo can automatically pull the whitepaper intake bundle produced by the main `fl-bsa` repo, rebuild the whitepaper, and open a PR that preserves the exact intake snapshot in git history.
+This repo can automatically pull the whitepaper intake bundle produced by the main `fl-bsa` repo, rebuild the whitepaper, and persist the exact intake snapshot in git history.
+
+## Reviewer-Visible Evidence SLA
+
+The durable nightly reviewer surface is branch/artifact-only:
+
+- The canonical audit anchor is the persisted branch named
+  `chore/wp-intake-<producer-sha>-<producer-run-id>`.
+- The reviewer-visible artifacts are the workflow artifacts uploaded by `pull-wp-intake`,
+  including `whitepaper-pdf-from-intake`, `arxiv-source-from-intake`, and
+  `intake-bundle-used`.
+- Snapshot PR creation is best-effort convenience, not a release or nightly SLA. If GitHub
+  Actions cannot create or approve pull requests because of org or enterprise policy, the
+  workflow must still push the branch, upload artifacts, add a job-summary notice, and upload
+  the `intake-pr-soft-fail` sentinel artifact.
+
+`WP_INTAKE_PR_TOKEN` remains an optional enhancement for teams that want automatic snapshot
+PRs. It is not required for the release-evidence contract while the branch/artifact-only SLA is
+in force.
 
 ## Triggers (three options)
 
@@ -48,7 +66,7 @@ The workflow fails fast when `PRODUCER_TOKEN` is missing for a cross-repo privat
 
 Rotate the token on the same cadence as other CI cross-repo credentials, and remove it when the producer repository is no longer private or when this intake path is retired.
 
-If automatic intake snapshot PR creation is required, add a separate `WP_INTAKE_PR_TOKEN`
+If automatic intake snapshot PR creation is desired, add a separate `WP_INTAKE_PR_TOKEN`
 secret in this repo. Prefer a GitHub App installation token, or a fine-grained PAT scoped
 only to `equilens-labs/fl-bsa-whitepaper` with:
 
