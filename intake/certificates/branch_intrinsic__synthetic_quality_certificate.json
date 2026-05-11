@@ -1,0 +1,380 @@
+{
+  "bias_analysis": {
+    "bias_amplification_detected": false,
+    "bias_preservation_score": 1.0,
+    "bias_reduction_detected": false,
+    "conditional_parity_real": {},
+    "conditional_parity_synthetic": {},
+    "demographic_parity_difference": {},
+    "demographic_parity_real": {},
+    "demographic_parity_synthetic": {}
+  },
+  "branch_mode": "intrinsic",
+  "certificate_hash": "af2dd3961cb1370e6dab8b91f5f996b256be59d1e97ffc7c1d2966eb279e77b4",
+  "certificate_id": "5972feaa-ce0a-4369-8c47-3d07a63e6bb4",
+  "certificate_type": "synthetic_quality_certificate",
+  "certificate_version": "1.1",
+  "correlation_analysis": {
+    "broken_correlations": [
+      {
+        "column1": "age",
+        "column2": "credit_score",
+        "difference": 0.34989022856092594,
+        "real_correlation": 0.015621396725036216,
+        "synthetic_correlation": 0.36551162528596215
+      },
+      {
+        "column1": "income",
+        "column2": "credit_score",
+        "difference": 0.36520119965589687,
+        "real_correlation": 0.28415820143258697,
+        "synthetic_correlation": -0.08104299822330989
+      },
+      {
+        "column1": "credit_score",
+        "column2": "loan_amount",
+        "difference": 0.30464483635603085,
+        "real_correlation": 0.2448384848367677,
+        "synthetic_correlation": -0.05980635151926314
+      },
+      {
+        "column1": "credit_score",
+        "column2": "debt_to_income",
+        "difference": 0.3079702486330402,
+        "real_correlation": 0.009322291433324767,
+        "synthetic_correlation": -0.29864795719971543
+      }
+    ],
+    "correlation_differences": {
+      "age": {
+        "age": 0.0,
+        "credit_score": 0.34989022856092594,
+        "debt_to_income": 0.10763863584435626,
+        "income": 0.1728694422073209,
+        "loan_amount": 0.15142998507483066
+      },
+      "credit_score": {
+        "age": 0.34989022856092594,
+        "credit_score": 0.0,
+        "debt_to_income": 0.3079702486330402,
+        "income": 0.36520119965589687,
+        "loan_amount": 0.30464483635603085
+      },
+      "debt_to_income": {
+        "age": 0.10763863584435626,
+        "credit_score": 0.3079702486330402,
+        "debt_to_income": 0.0,
+        "income": 0.04570025932314878,
+        "loan_amount": 0.02039315092365368
+      },
+      "income": {
+        "age": 0.1728694422073209,
+        "credit_score": 0.36520119965589687,
+        "debt_to_income": 0.04570025932314878,
+        "income": 0.0,
+        "loan_amount": 0.17980798000103548
+      },
+      "loan_amount": {
+        "age": 0.15142998507483066,
+        "credit_score": 0.30464483635603085,
+        "debt_to_income": 0.02039315092365368,
+        "income": 0.17980798000103548,
+        "loan_amount": 0.0
+      }
+    },
+    "correlation_nonfinite_policy": "nonfinite_to_null",
+    "correlation_preservation_score": 0.799445403341976,
+    "correlation_scored_pair_count": 10,
+    "correlation_total_pair_count": 10,
+    "max_correlation_difference": 0.36520119965589687,
+    "mean_correlation_difference": 0.20055459665802394,
+    "real_correlation_matrix": {
+      "age": {
+        "age": 1.0,
+        "credit_score": 0.015621396725036216,
+        "debt_to_income": 0.010269970255047091,
+        "income": -0.012439136279730862,
+        "loan_amount": -0.030137609313218912
+      },
+      "credit_score": {
+        "age": 0.015621396725036216,
+        "credit_score": 1.0,
+        "debt_to_income": 0.009322291433324767,
+        "income": 0.28415820143258697,
+        "loan_amount": 0.2448384848367677
+      },
+      "debt_to_income": {
+        "age": 0.010269970255047091,
+        "credit_score": 0.009322291433324767,
+        "debt_to_income": 1.0,
+        "income": -0.013333375801136785,
+        "loan_amount": -0.005727320974461774
+      },
+      "income": {
+        "age": -0.012439136279730862,
+        "credit_score": 0.28415820143258697,
+        "debt_to_income": -0.013333375801136785,
+        "income": 1.0,
+        "loan_amount": 0.8808936584289794
+      },
+      "loan_amount": {
+        "age": -0.030137609313218912,
+        "credit_score": 0.2448384848367677,
+        "debt_to_income": -0.005727320974461774,
+        "income": 0.8808936584289794,
+        "loan_amount": 1.0
+      }
+    },
+    "synthetic_correlation_matrix": {
+      "age": {
+        "age": 1.0,
+        "credit_score": 0.36551162528596215,
+        "debt_to_income": -0.09736866558930916,
+        "income": 0.16043030592759003,
+        "loan_amount": 0.12129237576161175
+      },
+      "credit_score": {
+        "age": 0.36551162528596215,
+        "credit_score": 1.0,
+        "debt_to_income": -0.29864795719971543,
+        "income": -0.08104299822330989,
+        "loan_amount": -0.05980635151926314
+      },
+      "debt_to_income": {
+        "age": -0.09736866558930916,
+        "credit_score": -0.29864795719971543,
+        "debt_to_income": 1.0,
+        "income": 0.032366883522011995,
+        "loan_amount": 0.014665829949191906
+      },
+      "income": {
+        "age": 0.16043030592759003,
+        "credit_score": -0.08104299822330989,
+        "debt_to_income": 0.032366883522011995,
+        "income": 1.0,
+        "loan_amount": 0.7010856784279439
+      },
+      "loan_amount": {
+        "age": 0.12129237576161175,
+        "credit_score": -0.05980635151926314,
+        "debt_to_income": 0.014665829949191906,
+        "income": 0.7010856784279439,
+        "loan_amount": 1.0
+      }
+    },
+    "undefined_correlation_columns_real": [],
+    "undefined_correlation_columns_synthetic": [],
+    "undefined_correlation_pair_both_count": 0,
+    "undefined_correlation_pair_count": 0,
+    "undefined_correlation_pair_mismatch_count": 0
+  },
+  "critical_issues": [],
+  "demographic_alignment": {
+    "attributes": {
+      "gender": {
+        "abs_pp_drift": {
+          "female": 3.10333333333333,
+          "male": 3.1033333333333357
+        },
+        "max_abs_pp_drift": 3.1033333333333357,
+        "missing_in_synthetic": [],
+        "real_group_proportions": {
+          "female": 0.5163333333333333,
+          "male": 0.4836666666666667
+        },
+        "synthetic_group_proportions": {
+          "female": 0.4853,
+          "male": 0.5147
+        },
+        "unexpected_in_synthetic": [],
+        "within_threshold": true
+      },
+      "race": {
+        "abs_pp_drift": {
+          "asian": 2.513333333333334,
+          "black": 11.996666666666666,
+          "hispanic": 4.706666666666666,
+          "other": 8.086666666666668,
+          "white": 27.303333333333335
+        },
+        "max_abs_pp_drift": 27.303333333333335,
+        "missing_in_synthetic": [],
+        "real_group_proportions": {
+          "asian": 0.08266666666666667,
+          "black": 0.052333333333333336,
+          "hispanic": 0.027333333333333334,
+          "other": 0.050333333333333334,
+          "white": 0.7873333333333333
+        },
+        "synthetic_group_proportions": {
+          "asian": 0.1078,
+          "black": 0.1723,
+          "hispanic": 0.0744,
+          "other": 0.1312,
+          "white": 0.5143
+        },
+        "unexpected_in_synthetic": [],
+        "within_threshold": false
+      }
+    },
+    "max_abs_pp_drift": 27.303333333333335,
+    "threshold_pp": 5.0,
+    "within_threshold": false
+  },
+  "issued_at": "2026-05-11T06:38:08.628271+00:00",
+  "issued_by": "FL-BSA Synthetic Quality Validation System",
+  "overall_quality_score": 0.8411525660149455,
+  "pipeline_id": "fbb32402-afde-4511-8196-fe9766cd761a",
+  "previous_certificate_hash": "ba8b7cdadf87da21c5d72ba5a5a90580d77cac619f7cf8e1b8df425821bcae8d",
+  "privacy_metrics": {
+    "duplicate_count": 0,
+    "mean_nearest_neighbor_distance": 0.8415647014445394,
+    "min_nearest_neighbor_distance": 0.10734287574839244,
+    "near_duplicate_count": 0,
+    "privacy_preservation_score": 0.8331176766587592,
+    "unique_combination_overlap": 0.0006469700237222342
+  },
+  "quality_ok": null,
+  "quality_threshold_met": false,
+  "quality_threshold_used": 0.8,
+  "real_data_columns": 9,
+  "real_data_hash": "ebceb84310e0702075e0fd6fc31bacfe6046faef2316fd890a208a3b620ae9b0",
+  "real_data_path": "dataset_fbb32402-afde-4511-8196-fe9766cd761a.csv",
+  "real_data_rows": 3000,
+  "recommendations": [
+    "Synthetic data quality is good and suitable for most use cases",
+    "Review worst distribution columns (effect score): income=0.57, loan_amount=0.62, credit_score=0.67, age=0.71, race=0.74",
+    "Review 4 broken correlations",
+    "Review input-to-synthetic protected-group drift and tighten sampling controls for race (worst drift 27.3pp)."
+  ],
+  "statistical_comparison": {
+    "chi_square_results": {
+      "gender": {
+        "p_value": 5.299103469155029e-10,
+        "significant": true,
+        "statistic": 38.56386303784619
+      },
+      "race": {
+        "p_value": 0.0,
+        "significant": true,
+        "statistic": 5882.995975989773
+      }
+    },
+    "distribution_effect_scores": {
+      "age": 0.7053,
+      "credit_score": 0.6705333333333333,
+      "debt_to_income": 0.8435333333333334,
+      "gender": 0.9736405622240948,
+      "income": 0.5697,
+      "loan_amount": 0.6223666666666667,
+      "race": 0.7392563928558994
+    },
+    "distribution_scoring_method": "effect_size_v1_ks_js_base2_missingness_penalty",
+    "js_divergences": {
+      "gender": 0.02635943777590525,
+      "race": 0.2607436071441006
+    },
+    "ks_test_results": {
+      "age": {
+        "p_value": 1.9050647230297158e-177,
+        "significant": true,
+        "statistic": 0.2947
+      },
+      "credit_score": {
+        "p_value": 1.3054054482040304e-222,
+        "significant": true,
+        "statistic": 0.3294666666666667
+      },
+      "debt_to_income": {
+        "p_value": 9.2870821687562e-50,
+        "significant": true,
+        "statistic": 0.15646666666666667
+      },
+      "income": {
+        "p_value": 7.826e-321,
+        "significant": true,
+        "statistic": 0.4303
+      },
+      "loan_amount": {
+        "p_value": 2.6151477317728217e-294,
+        "significant": true,
+        "statistic": 0.3776333333333333
+      }
+    },
+    "kurtosis_differences": {
+      "age": 0.5793692372936738,
+      "credit_score": 0.43116551982897633,
+      "debt_to_income": 1.0556988624123023,
+      "income": 7.353375239942693,
+      "loan_amount": 6.892209535891203
+    },
+    "mean_differences": {
+      "age": 0.142920527208292,
+      "credit_score": 0.06188270226934853,
+      "debt_to_income": 0.06783310587376638,
+      "income": 1.164314468157213,
+      "loan_amount": 0.9054802504103643
+    },
+    "median_js_divergence": 0.14355152246000294,
+    "median_wasserstein_distance": 49.86659999999999,
+    "missingness_rate_differences": {
+      "age": 0.0,
+      "credit_score": 0.0,
+      "debt_to_income": 0.0,
+      "gender": 0.0,
+      "income": 0.0,
+      "loan_amount": 0.0,
+      "race": 0.0
+    },
+    "n_significant_differences": 7,
+    "overall_distribution_score": 0.7320471840590467,
+    "overall_distribution_score_min": 0.5697,
+    "range_violations": {
+      "debt_to_income": {
+        "real_range": [
+          0.0003612944732134,
+          0.4179596270574621
+        ],
+        "synthetic_range": [
+          0.0,
+          0.307
+        ],
+        "violation_type": "out_of_bounds"
+      }
+    },
+    "skewness_differences": {
+      "age": 0.8967640182312466,
+      "credit_score": 0.7008575108231454,
+      "debt_to_income": 1.0145605750681965,
+      "income": 2.0614178483653287,
+      "loan_amount": 1.4159184021295934
+    },
+    "std_differences": {
+      "age": 0.01658291728946712,
+      "credit_score": 0.2983900036037046,
+      "debt_to_income": 0.0381909201552485,
+      "income": 0.7992195102239216,
+      "loan_amount": 0.5748486355814474
+    },
+    "wasserstein_distances": {
+      "age": 6.035866666666667,
+      "credit_score": 49.86659999999999,
+      "debt_to_income": 0.028254098667257956,
+      "income": 73853.47187472445,
+      "loan_amount": 17183.306666666667
+    }
+  },
+  "status": "valid",
+  "synthetic_data_columns": 7,
+  "synthetic_data_hash": "bc45aa6c1e24b56d4759f6693f19060c920b2b778a2c51611fc06aef6635fd66",
+  "synthetic_data_path": "synthetic_data.csv",
+  "synthetic_data_rows": 10000,
+  "utility_metrics": null,
+  "validation_completed_at": "2026-05-11T06:38:09.228393+00:00",
+  "validation_duration_seconds": 0.600119,
+  "validation_started_at": "2026-05-11T06:38:08.628274+00:00",
+  "warnings": [
+    "Distribution similarity score 0.73 indicates notable distribution drift",
+    "Protected-group proportion drift exceeds 5.0pp for race (max 27.3pp)"
+  ]
+}
