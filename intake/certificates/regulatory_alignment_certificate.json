@@ -1,45 +1,58 @@
 {
   "certificate_chain_depth": 1,
-  "certificate_hash": "b0175fb67cd330b3a8c03856a18eda4213988dbe22c05f6b0a9d2fe030568621",
+  "certificate_hash": "ff39a8669ac4516ce1349f59f3e375deabab70c4b7946f68ead1dac2cc6a77c2",
   "certificate_type": "regulatory_alignment",
   "compliance_reference": {
     "compliance_path": "validation/compliance_decision.json",
-    "compliance_sha256": "0fdcb41b36e8f395c5a999f787394b09732cadf80fb0790981b87b5102ff76a2",
+    "compliance_sha256": "4ab407299733449074169bcd72daa9fd8a2b1cd93594bd20a648dbe334aab515",
     "summary": {
       "compliant": false,
-      "has_decision": true
+      "has_decision": true,
+      "legacy_compliant_field_semantics": "Compatibility field only: reflects configured screening thresholds, not a legal compliance determination.",
+      "legal_attestation": false,
+      "operator_legal_review_required": true,
+      "screening_only": true,
+      "screening_status": "outside_configured_threshold",
+      "within_configured_threshold": false
     }
   },
-  "dataset_hash": "7fbc4c8b4d24b2173d2c536e5d3f62c8fcc28cfdf3a165071c6ad04864721ba8",
+  "dataset_hash": "ebceb84310e0702075e0fd6fc31bacfe6046faef2316fd890a208a3b620ae9b0",
   "findings": {
-    "aod": 0.13110067898528993,
+    "aod": 0.1394951101749805,
     "basis": {
       "derived_from": "metrics.compliance_status",
-      "di": 0.771060352757132,
+      "di": 0.7583450886076565,
       "metric": "disparate_impact",
       "source": "validation/compliance_decision.json",
       "threshold": 0.8
     },
-    "di": 0.771060352757132,
-    "ecoa_non_compliant": true,
-    "eod": 0.13110067898528993,
+    "di": 0.7583450886076565,
+    "ecoa_screening_flag": true,
+    "eod": 0.1394951101749805,
     "four_fifths_flag": true,
+    "four_fifths_screening_flag": true,
+    "legacy_compliant_field_semantics": "Compatibility field only: reflects configured screening thresholds, not a legal compliance determination.",
+    "legal_attestation": false,
+    "operator_legal_review_required": true,
     "protected_attributes": [
       "gender",
       "race"
     ],
-    "rule_id": "flbsa_gold_compliance_v1"
+    "rule_id": "flbsa_gold_compliance_v1",
+    "screening_only": true,
+    "screening_status": "outside_configured_threshold",
+    "within_configured_threshold": false
   },
   "metrics_reference": {
     "metrics_path": "metrics.json",
-    "metrics_sha256": "76b8618027ccc8f274a68cc2ec8e7d2effc69b87fda8079c02d09ffbe8d6b442"
+    "metrics_sha256": "f30a36f39ef98bb3a60d985d481aab2e0edbc01ef17e40410a7d5cf5eb0b9ede"
   },
-  "pipeline_id": "88325003-be12-4262-a7c4-ca8c8874c47e",
-  "previous_certificate_hash": "1018559a6a83171f1218022e629bdb73ed2fe948b70496254fc972027456aeaa",
+  "pipeline_id": "ce9f3f68-372a-4f6d-bdf4-7bbb438128d0",
+  "previous_certificate_hash": "823f4083ed616143204d3fe3cac627d4363a0a05eb6865f135996477ae892625",
   "regulatory_scope": {
     "ecoa_cfpb": true,
     "eu_ai_act": true,
     "fca_consumer_duty": true
   },
-  "timestamp": "2026-02-22T10:31:28.991013+00:00"
+  "timestamp": "2026-05-14T12:18:27.627707+00:00"
 }
