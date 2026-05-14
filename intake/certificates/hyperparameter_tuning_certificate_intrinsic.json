@@ -1,69 +1,92 @@
 {
   "branch_mode": "intrinsic",
-  "cache_confidence": 1.0,
-  "cache_hit": true,
-  "cache_source": "exact",
+  "cache_confidence": 0.0,
+  "cache_hit": false,
   "categorical_columns": [
     "gender",
     "race"
   ],
-  "certificate_hash": "3b79db60c64122e598d0ea23e887ca2c82a911d7142dfea0e06dd7a05d5914b5",
-  "certificate_id": "4bbde61c-3e4a-4865-b692-67c7c0a05f0a",
+  "certificate_hash": "0a9511a60f91c57aee89e0488e502ec192e9666b964530d1fd37b98c56fa6a9e",
+  "certificate_id": "37ff6561-5d30-414e-9a95-4f6ae1692ae0",
   "certificate_version": "1.0",
   "config_version": "1.0",
   "data_columns": 7,
-  "data_profile_fingerprint": "f5556ac8e05ac4c0",
+  "data_profile_fingerprint": "0433ccff42dae050",
   "data_rows": 3000,
+  "effective_pac": 5,
   "fallback_used": false,
-  "hyperparameter_validation_passed": true,
-  "issued_at": "2026-02-22T10:25:42Z",
-  "issued_by": "FL-BSA Hyperparameter Tuner",
-  "n_trials": 0,
-  "optimal_hyperparameters": {
+  "guardrails": {
     "batch_size": 32,
-    "discriminator_decay": 3.5213588054678678e-06,
+    "fingerprint": {
+      "max_corr": 0.8808936584289787,
+      "n": 3000.0
+    },
+    "mode": "threshold",
+    "pac": 5,
+    "pac_metadata": {
+      "source": "realism_gates",
+      "value": 5
+    },
+    "profile": {
+      "apply_feature_transforms": true,
+      "branch": "intrinsic",
+      "epochs_multiplier": 1.0,
+      "winsorize_pct": 0.01
+    }
+  },
+  "hyperparameter_validation_passed": true,
+  "issued_at": "2026-05-14T13:46:17Z",
+  "issued_by": "FL-BSA Hyperparameter Tuner",
+  "n_trials": 20,
+  "normalized_batch_size": 30,
+  "optimal_hyperparameters": {
+    "batch_size": 30,
+    "discriminator_decay": 3.912141628549696e-06,
     "discriminator_dim": [
       64,
       64
     ],
-    "discriminator_lr": 0.0002049798052095018,
+    "discriminator_lr": 0.0001583703155911876,
     "embedding_dim": 64,
-    "epochs": 120,
-    "generator_decay": 3.3118298880723843e-06,
+    "epochs": 220,
+    "generator_decay": 3.2676417657817645e-06,
     "generator_dim": [
       64,
+      128,
       64
     ],
-    "generator_lr": 0.0004597505784732166,
+    "generator_lr": 0.0006097839109531517,
     "guardrails": {
-      "batch": {
-        "original": 512,
-        "source": "realism_gates",
-        "value": 32
-      },
+      "batch_size": 32,
       "fingerprint": {
         "max_corr": 0.8808936584289787,
-        "n": 3000.0,
-        "rho_p": 0.8808936584289787,
-        "rho_s": 0.8652764874238226
+        "n": 3000.0
       },
-      "pac": {
-        "original": 5,
+      "mode": "threshold",
+      "pac": 5,
+      "pac_metadata": {
         "source": "realism_gates",
         "value": 5
+      },
+      "profile": {
+        "apply_feature_transforms": true,
+        "branch": "intrinsic",
+        "epochs_multiplier": 1.0,
+        "winsorize_pct": 0.01
       }
     },
     "pac": 5
   },
-  "optimization_time_seconds": 0.0,
-  "optimization_trials_completed": 0,
-  "previous_certificate_hash": "188c3f0d609288c905c6a5d1909da576a5eb8d5d84a193b3e5f3eb024eadec98",
-  "status": "valid",
-  "timeout_seconds": 0,
+  "optimization_time_seconds": 189.09590802667663,
+  "optimization_trials_completed": 4,
+  "previous_certificate_hash": "64316a1ef3d62e5e40432990b7af751c684c0f07fb8ca51ec7e1af41d96fdb91",
+  "status": "valid_with_limitations",
+  "timeout_seconds": 180,
   "tuner_version": "1.0.0",
   "tuning_enabled": true,
   "tuning_environment": "production",
-  "tuning_method": "cache_lookup",
-  "tuning_successful": true,
+  "tuning_method": "bayesian_optimization_truncated",
+  "tuning_successful": false,
+  "tuning_truncation_reason": "timeout_before_configured_trials_completed",
   "validation_warnings": []
 }
