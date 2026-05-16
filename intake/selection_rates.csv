@@ -1,8 +1,8 @@
 run_id,split,model_id,attribute,group,selected,n
-1c227681-f910-4e9f-b36d-433927ae772e,test,ctgan,gender,female,2262,5165
-1c227681-f910-4e9f-b36d-433927ae772e,test,ctgan,gender,male,2790,4835
-1c227681-f910-4e9f-b36d-433927ae772e,test,ctgan,race,asian,415,826
-1c227681-f910-4e9f-b36d-433927ae772e,test,ctgan,race,black,282,522
-1c227681-f910-4e9f-b36d-433927ae772e,test,ctgan,race,hispanic,136,273
-1c227681-f910-4e9f-b36d-433927ae772e,test,ctgan,race,other,239,502
-1c227681-f910-4e9f-b36d-433927ae772e,test,ctgan,race,white,3980,7877
+71ab971b-52d1-4df1-9d22-eaeb92dca276,test,ctgan,gender,female,2261,5165
+71ab971b-52d1-4df1-9d22-eaeb92dca276,test,ctgan,gender,male,2791,4835
+71ab971b-52d1-4df1-9d22-eaeb92dca276,test,ctgan,race,asian,415,826
+71ab971b-52d1-4df1-9d22-eaeb92dca276,test,ctgan,race,black,282,523
+71ab971b-52d1-4df1-9d22-eaeb92dca276,test,ctgan,race,hispanic,136,274
+71ab971b-52d1-4df1-9d22-eaeb92dca276,test,ctgan,race,other,239,502
+71ab971b-52d1-4df1-9d22-eaeb92dca276,test,ctgan,race,white,3980,7875
