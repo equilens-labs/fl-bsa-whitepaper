@@ -1,70 +1,84 @@
 {
   "branch_mode": "amplification",
-  "cache_confidence": 1.0,
-  "cache_hit": true,
-  "cache_source": "exact",
+  "cache_confidence": 0.0,
+  "cache_hit": false,
   "categorical_columns": [
     "gender",
     "race"
   ],
-  "certificate_hash": "188c3f0d609288c905c6a5d1909da576a5eb8d5d84a193b3e5f3eb024eadec98",
-  "certificate_id": "766e6b32-825a-4c0b-b9c3-0f3d59194845",
+  "certificate_hash": "4d325e91870faec4063396777774fc31da988f25b59d5d2f5a6bd0bccc097797",
+  "certificate_id": "40058252-7779-4220-ac03-a5ac755047ce",
   "certificate_version": "1.0",
   "config_version": "1.0",
   "data_columns": 8,
-  "data_profile_fingerprint": "af451650c2b612b4",
+  "data_profile_fingerprint": "6ce24018070738c3",
   "data_rows": 3000,
+  "effective_pac": 5,
   "fallback_used": false,
-  "hyperparameter_validation_passed": true,
-  "issued_at": "2026-02-22T10:12:45Z",
-  "issued_by": "FL-BSA Hyperparameter Tuner",
-  "n_trials": 0,
-  "optimal_hyperparameters": {
+  "guardrails": {
     "batch_size": 32,
-    "discriminator_decay": 3.991305878561677e-06,
+    "fingerprint": {
+      "max_corr": 0.8808936584289787,
+      "n": 3000.0
+    },
+    "mode": "threshold",
+    "pac": 5,
+    "pac_metadata": {
+      "source": "realism_gates",
+      "value": 5
+    }
+  },
+  "hp_tuning_claim_scope": "timeout_bounded_truncated_search; no full Bayesian optimization claim",
+  "hp_tuning_completion_ratio": 0.2,
+  "hp_tuning_explanation": "Completed/configured trial ratio is 4/20. No full Bayesian optimization claim is made because configured trials are incomplete.",
+  "hp_tuning_search_status": "timeout_bounded_truncated",
+  "hyperparameter_validation_passed": true,
+  "issued_at": "2026-05-16T17:43:47Z",
+  "issued_by": "FL-BSA Hyperparameter Tuner",
+  "n_trials": 20,
+  "normalized_batch_size": 30,
+  "optimal_hyperparameters": {
+    "batch_size": 30,
+    "discriminator_decay": 1.1872731425335901e-06,
     "discriminator_dim": [
-      64,
       128,
-      64
+      128
     ],
-    "discriminator_lr": 0.00011430983876313228,
-    "embedding_dim": 128,
-    "epochs": 170,
-    "generator_decay": 7.348118405270443e-06,
+    "discriminator_lr": 0.00013833249975219982,
+    "embedding_dim": 32,
+    "epochs": 180,
+    "generator_decay": 6.341572775495279e-06,
     "generator_dim": [
-      64,
-      64
+      128,
+      128
     ],
-    "generator_lr": 0.00014321698289111514,
+    "generator_lr": 0.0003488960745139223,
     "guardrails": {
-      "batch": {
-        "original": 128,
-        "source": "realism_gates",
-        "value": 32
-      },
+      "batch_size": 32,
       "fingerprint": {
         "max_corr": 0.8808936584289787,
-        "n": 3000.0,
-        "rho_p": 0.8808936584289787,
-        "rho_s": 0.8652764874238226
+        "n": 3000.0
       },
-      "pac": {
-        "original": 1,
+      "mode": "threshold",
+      "pac": 5,
+      "pac_metadata": {
         "source": "realism_gates",
         "value": 5
       }
     },
     "pac": 5
   },
-  "optimization_time_seconds": 0.0,
-  "optimization_trials_completed": 0,
-  "previous_certificate_hash": "58ce257bff0d05aec80132b7abd4688baa5b116d91234fa77b020d1f2ab7eb8b",
-  "status": "valid",
-  "timeout_seconds": 0,
+  "optimization_time_seconds": 199.14513833401725,
+  "optimization_trials_completed": 4,
+  "previous_certificate_hash": "429408b84d6e759e58430120784f0b14c37b9064df36d84197342f0c2f1f7d38",
+  "selected_parameters_validated": true,
+  "status": "valid_with_limitations",
+  "timeout_seconds": 180,
   "tuner_version": "1.0.0",
   "tuning_enabled": true,
-  "tuning_environment": "production",
-  "tuning_method": "cache_lookup",
-  "tuning_successful": true,
+  "tuning_environment": "public_artifact_ci",
+  "tuning_method": "bayesian_optimization_truncated",
+  "tuning_successful": false,
+  "tuning_truncation_reason": "timeout_before_configured_trials_completed",
   "validation_warnings": []
 }
