@@ -22,8 +22,8 @@ You can complete it directly in Markdown or use the attached CSV/JSON/YAML templ
 ## 1) Scope & Audience
 **Please answer succinctly.**
 
-1. **Primary audience**: (e.g., regulators, bank model‑risk, execs, DS leads).
-2. **Decisions to support**: (e.g., procurement, validation, sign‑off, compliance attestation).
+1. **Primary audience**: (e.g., governance reviewers, credit/model‑risk teams, execs, DS leads, implementation partners).
+2. **Decisions to support**: (e.g., procurement, validation, governance sign‑off, evidence-pack review).
 3. **Top claims to substantiate** (bullet list):
    - _Example_: “Synthetic borrowers preserve pairwise & higher‑order dependencies within ±δ for features S.”
    - _Example_: “Fairness metric **AIR** ≥ 0.80 with 95% CI across protected classes.”
@@ -73,7 +73,7 @@ Use the CSV templates under `whitepaper_intake_templates/` or equivalent exports
   `feature, split, frac_missing`
 
 ### 3.5 Shift Diagnostics (optional but valuable)
-- Provide population/sample shift across time/banks (e.g., PSI/JSD) as a short table or figure.
+- Provide population/sample shift across time, institutions, portfolios, or channels (e.g., PSI/JSD) as a short table or figure.
 
 **Command Templates (optional)**
 ```sql
@@ -165,7 +165,7 @@ Provide: data splits, threshold policy, metrics, error budget, robustness checks
 - `runs.json`: list of run manifests (`run_id, dataset_hash, code_commit, container_digest, start_ts, end_ts`).
 
 **Questions**
-1. **Splits**: time‑based or k‑fold; bank‑holdout or cross‑bank generalization.
+1. **Splits**: time‑based or k‑fold; institution/portfolio holdout or cross‑institution generalization.
 2. **Threshold selection**: global vs group‑wise; calibration method; Brier/ECE targets.
 3. **Metric set**: AIR/DI, EO/EOpp, TPR/FPR gaps, calibration within groups, predictive parity, ROC‑AUC, PR‑AUC, KS, cost curves.
 4. **Error budget**: how uncertainty propagates (synthesis → training → assessment).
