@@ -30,19 +30,19 @@ References used: `docs/_INDEX.md`, `docs/_CURRENT_STATE.md`, `SSoT.md`, `docs/go
 ## 1) Scope & Audience
 
 1. Primary audience
-   - Banking regulators and supervisors (ECOA/Reg B, EU AI Act reviewers)
-   - Bank Model Risk Management (SR 11‑7), Compliance/Legal, Internal Audit
+   - Governance, audit, and supervisory-review stakeholders (ECOA/Reg B, EU AI Act reviewers)
+   - Credit-risk, model-risk, compliance/legal, and internal-audit teams at regulated credit providers and credit-infrastructure firms
    - Data Science Leads, Risk Analytics, Executive sponsors
 
 2. Decisions to support
-   - Procurement and due diligence; model validation sign‑off; compliance attestations
+   - Procurement and due diligence; model validation sign‑off; evidence-pack review
    - Evidence packaging for supervisory examinations; ongoing monitoring approvals
 
 3. Top claims to substantiate
    - Dual‑branch method quantifies historical bias vs achievable fairness with auditable evidence
    - Disparate Impact/AIR and EO gaps measured with validated statistics and CIs
-   - Synthetic borrowers preserve key dependencies; QC thresholds enforced and certified
-   - No‑Data‑Leaves: zero external egress; cryptographic chain of evidence and signed outputs
+   - Synthetic borrowers preserve key dependencies; QC thresholds recorded in evidence artifacts
+   - No‑raw‑data‑leaves stance: raw customer data remains in the customer's environment by default; cryptographic chain of evidence and signed outputs when configured
    - Performance SLAs: 10k < 15s; 100k < 2m; 1M < 15m; PDF < 30s
 
 4. Context constraints
@@ -67,11 +67,11 @@ Applicable frameworks (deployment‑dependent):
 - EU: EU AI Act (Art. 10 data/records, bias testing), EBA ICT/Security
 - Global: SR 11‑7 (model risk), NIST AI RMF, ISO/IEC 23894
 
-Controls and evidence (how we comply):
+Controls and evidence (supporting review):
 - Bias testing: dual‑branch analysis; metrics and CIs; signed reports and manifests
-- Documentation: regulator templates (ECOA/EU/FCA) via LaTeX → PDF; evidence bundling
+- Documentation: review-oriented templates (ECOA/EU/FCA) via LaTeX → PDF; evidence bundling
 - Governance: segregation of duties for sign‑off; monitoring triggers and thresholds
-- Privacy/Security: no external egress; SBOM; signed images; vuln scanning; key management
+- Privacy/Security: no external egress by default in the configured self-hosted posture; SBOM; signed images; vuln scanning; key management
 
 Evidence references
 - Certificates and hashing: docs/crypto/CERT_HASHING.md, `flbsa/certification/*`
@@ -111,11 +111,11 @@ CSV schema: `feature_missingness.csv`
 `feature, split, frac_missing`
 
 ### 3.5 Shift Diagnostics (optional)
-Population/sample shift across time/banks (e.g., PSI/Jensen–Shannon) with brief table/figure.
+Population/sample shift across time, institutions, portfolios, or channels (e.g., PSI/Jensen–Shannon) with brief table/figure.
 
 Command stubs: see `tasks/FUTURE/Whitepaper/WhitePaper_RFI.md` §3 templates (SQL provided).
 
-Status: Pending client data. Repo includes complete methodology and validation, but not bank data.
+Status: Pending client data. Repo includes complete methodology and validation, but not customer data.
 
 ---
 
@@ -189,7 +189,7 @@ Baselines/ablations
 - CTGAN branch comparison; ablate PAC, embedding, dims, epochs; with/without fairness post‑processing; optional DP mode (future)
 
 Privacy
-- No external egress; signed artifacts; privacy AUC improvements observed (<0.89 in P2.5 remediation); membership/attribute inference tests to be executed per‑client if required
+- No external egress by default in the configured self-hosted posture; signed artifacts when configured; privacy AUC improvements observed (<0.89 in P2.5 remediation); membership/attribute inference tests to be executed per‑client if required
 
 Fairness interventions
 - Amplification: strict bias preservation sampler (`bias_preserving_sampler_v2`)
@@ -212,7 +212,7 @@ Key sources: `flbsa/utils/ctgan_wrapper.py`, `flbsa/hyperparameters/tuner.py`, `
 ## 6) Evaluation Design & Metrics
 
 Splits
-- Time‑based or k‑fold; bank‑holdout or cross‑bank generalization as applicable
+- Time‑based or k‑fold; institution/portfolio holdout or cross‑institution generalization as applicable
 
 Threshold selection & calibration
 - Global threshold with within‑group calibration checks; ECE targets ≤ 0.02; Brier score tracked
@@ -331,7 +331,7 @@ Contacts (owner/reviewer)
 - Dual‑branch method quantifies bias amplification vs intrinsic fairness; evidence tables and figures included
 - AIR ≥ 0.80 for balanced and evidence_tamper scenarios; gender_bias fails by design; security shows race AIR ≈ 0.78 (fails 0.80 rule) and is flagged for remediation (policy‑dependent)
 - Distribution/QC fidelity: range, correlation, and privacy checks; contracts enforced via BVH
-- No‑Data‑Leaves Promise: zero external egress; cryptographic certificate chain; signed outputs
+- No‑raw‑data‑leaves stance: raw customer data remains in the customer's environment by default; cryptographic certificate chain; signed outputs when configured
 - Performance SLAs met at 10k/100k/1M; generator reuse for monitoring runs
 
 ---
