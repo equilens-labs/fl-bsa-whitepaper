@@ -1,54 +1,29 @@
 {
-  "schema_version": "wp-intake.v1",
-  "run_id": "1c227681-f910-4e9f-b36d-433927ae772e",
-  "created": "2026-04-14T20:13:58.166645+00:00",
-  "dataset_hash": "sha256:ebceb84310e0702075e0fd6fc31bacfe6046faef2316fd890a208a3b620ae9b0",
-  "dataset_hash_source": "metrics.dataset_hash",
-  "dataset_hash_path": "dataset_1c227681-f910-4e9f-b36d-433927ae772e.csv",
-  "software_version": "0.1.0",
   "build_ref": "0.1.0",
-  "commit_sha": "8a2f5f0706c31df32fb78964f98a1196e33f5c26",
-  "code_commit": "8a2f5f0706c31df32fb78964f98a1196e33f5c26",
-  "source_commit": "8a2f5f0706c31df32fb78964f98a1196e33f5c26",
-  "software_commit": "8a2f5f0706c31df32fb78964f98a1196e33f5c26",
-  "container_digests": {
-    "api_image_digest": "sha256:a15bfefce7ca6aac67dbc743e62f3caa5f703893d63ff7bfe5ce5bd3137b4c20",
-    "worker_image_digest": "sha256:e99f2c847ecf57cce1c8f67bed1cf9b96416f157304e4fc3e3d8c976ec5dedbd"
-  },
-  "container_digest": "sha256:a15bfefce7ca6aac67dbc743e62f3caa5f703893d63ff7bfe5ce5bd3137b4c20",
-  "seeds": {
-    "rng_seed": 42,
-    "bootstrap_seed": 42
-  },
-  "config_hash": "efdad417dcb0c1a5aaa40cddfd31b3e26a6009098239cdcf74bcde9fffd08015",
   "capabilities": {
-    "eo_enabled": true,
     "ece_enabled": false,
-    "eo_requested": true,
-    "ece_requested": false
+    "ece_requested": false,
+    "eo_enabled": true,
+    "eo_requested": true
   },
-  "metrics_ci": {
-    "level": 0.95,
-    "wilson_continuity_correction": false
+  "code_commit": "086f6a98074ddcd253978c4e41d26ff0facb2300",
+  "commit_sha": "086f6a98074ddcd253978c4e41d26ff0facb2300",
+  "config_hash": "496380a0743189d0b0ccb629905cb20413e57458e9b121061eb2c6bbb1d468cf",
+  "container_digest": "ghcr.io/equilens-labs/fl-bsa-runtime@sha256:238830fa50e9e699039768a3fe3b727386071f8c84476ba50b0cc15b2bc338ed",
+  "container_digests": {
+    "api_image_digest": "ghcr.io/equilens-labs/fl-bsa-runtime@sha256:238830fa50e9e699039768a3fe3b727386071f8c84476ba50b0cc15b2bc338ed",
+    "worker_image_digest": "ghcr.io/equilens-labs/fl-bsa-runtime@sha256:238830fa50e9e699039768a3fe3b727386071f8c84476ba50b0cc15b2bc338ed"
   },
-  "start_ts": "2026-04-14T19:47:45.269964+00:00",
-  "end_ts": "2026-04-14T20:13:58.166645+00:00",
-  "hardware": {
-    "cpu_count": 128,
-    "machine": "x86_64",
-    "processor": "",
-    "ram_bytes": 236380872704
-  },
-  "inference": {
-    "method": "bca",
-    "replicates": 2000,
-    "alpha": 0.05,
-    "seed": 42,
-    "smoothing": 1e-06
-  },
-  "fairness_reference_groups": {
-    "gender": "male",
-    "race": "white"
+  "created": "2026-05-23T06:23:02.820288+00:00",
+  "dataset_hash": "sha256:ebceb84310e0702075e0fd6fc31bacfe6046faef2316fd890a208a3b620ae9b0",
+  "dataset_hash_path": "original_data.csv",
+  "dataset_hash_source": "metrics.dataset_hash",
+  "end_ts": "2026-05-23T06:23:02.820288+00:00",
+  "fairness_policy": {
+    "display_race_in_main_pdf": {
+      "min_group_n": 300,
+      "min_group_pct": 0.05
+    }
   },
   "fairness_protected_groups": {
     "gender": [
@@ -61,10 +36,77 @@
       "other"
     ]
   },
-  "fairness_policy": {
-    "display_race_in_main_pdf": {
-      "min_group_n": 300,
-      "min_group_pct": 0.05
-    }
+  "fairness_reference_groups": {
+    "gender": "male",
+    "race": "white"
+  },
+  "hardware": {
+    "cpu_count": 128,
+    "gpu": {
+      "cuda_visible_devices": null,
+      "gpu_uuids": [
+        "GPU-8b82ea42-bfcc-f187-279c-ea42859e65ea"
+      ],
+      "nvidia_smi_gpus": [
+        {
+          "index": "0",
+          "name": "NVIDIA GeForce RTX 3090",
+          "uuid": "GPU-8b82ea42-bfcc-f187-279c-ea42859e65ea"
+        }
+      ],
+      "nvidia_visible_devices": "0"
+    },
+    "machine": "x86_64",
+    "processor": "",
+    "ram_bytes": 236380909568
+  },
+  "inference": {
+    "alpha": 0.05,
+    "bootstrap_usage": "metrics_long_annex_or_backcompat",
+    "headline_interval_methods": {
+      "air": "wilson+delta",
+      "selection_rate": "wilson",
+      "srg": "newcombe_wilson"
+    },
+    "method": "bca",
+    "method_note": "The legacy method/replicates fields describe bootstrap annex generation; whitepaper headline intervals are read from validation/metrics_uncertainty.json.",
+    "primary_interval_source": "validation/metrics_uncertainty.json",
+    "replicates": 500,
+    "seed": 42,
+    "smoothing": 1e-06
+  },
+  "metrics_ci": {
+    "level": 0.95,
+    "wilson_continuity_correction": false
+  },
+  "run_id": "6c16f44a-baf5-4b13-aeb2-94086bc902d1",
+  "schema_version": "wp-intake.v1",
+  "seeds": {
+    "bootstrap_seed": 42,
+    "rng_seed": 42
+  },
+  "software_commit": "086f6a98074ddcd253978c4e41d26ff0facb2300",
+  "software_version": "0.1.0",
+  "source_commit": "086f6a98074ddcd253978c4e41d26ff0facb2300",
+  "start_ts": "2026-05-23T06:08:26.356979+00:00",
+  "torch_deterministic_mode": "strict",
+  "whitepaper_consumer": {
+    "event_name": "repository_dispatch",
+    "ingested_at": "2026-05-23T06:23:52.449876+00:00",
+    "producer": {
+      "artifact": "wp-intake-bundle-v4",
+      "branch": "main",
+      "bundle_filename": "WhitePaper_Intake_Bundle_v4.zip",
+      "bundle_sha256": "a9c69b8b385134cc6eb990f2e9f00d077994e740fd1638e0162417ca84ca3987",
+      "repo": "equilens-labs/fl-bsa",
+      "run_id": "26325365563",
+      "workflow": "wp-evidence-nightly.yml"
+    },
+    "ref": "refs/heads/main",
+    "repo": "equilens-labs/fl-bsa-whitepaper",
+    "run_attempt": "1",
+    "run_id": "26325684359",
+    "sha": "1f134b89037e8e6b2a08b3b467c73a7964454d87",
+    "workflow": "pull-wp-intake"
   }
 }
