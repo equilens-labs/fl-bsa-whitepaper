@@ -27,6 +27,10 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
                 self.assertIn("Enable public demo watermark", workflow)
                 self.assertIn("includes/publication_profile.local.tex", workflow)
                 self.assertIn(r"printf '\\drafttrue\n'", workflow)
+                self.assertIn("Ensure pdftotext available", workflow)
+                self.assertIn("Assert public demo watermark in PDF", workflow)
+                self.assertIn("pdftotext main.pdf -", workflow)
+                self.assertIn("DEMO / EVALUATION ONLY", workflow)
                 self.assertIn(f"name: {artifact_name}", workflow)
 
     def test_local_watermark_override_is_not_committed_by_intake_pr(self) -> None:
