@@ -33,11 +33,24 @@ jobs:
         run: |
           mkdir -p includes
           printf '\\drafttrue\n' > includes/publication_profile.local.tex
+      - name: Ensure pdftotext available
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends poppler-utils
       - name: Compile LaTeX
         uses: xu-cheng/latex-action@v3
         with:
           root_file: main.tex
           latexmk_use_xelatex: false
+      - name: Assert public demo watermark in PDF
+        run: |
+          set -euo pipefail
+          hits="$(pdftotext main.pdf - | grep -F -c 'DEMO / EVALUATION ONLY' || true)"
+          if [ "$hits" -lt 1 ]; then
+            echo "whitepaper.pdf is missing DEMO / EVALUATION ONLY text marker." >&2
+            exit 1
+          fi
+          echo "Found DEMO / EVALUATION ONLY marker ${hits} time(s)."
       - name: Prepare artifacts directory
         run: |
           mkdir -p dist
