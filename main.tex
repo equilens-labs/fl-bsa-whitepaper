@@ -8,6 +8,7 @@
 \usepackage{lmodern}
 \usepackage{microtype}
 \usepackage{graphicx}
+\usepackage{eso-pic}
 \usepackage{xcolor}
 \usepackage{xspace}
 \usepackage{booktabs}
@@ -48,8 +49,22 @@
 
 % --- Includes ---
 \input{includes/macros}
+\InputIfFileExists{includes/publication_profile.local.tex}{}{}
 \input{includes/provenance_macros}
 \input{includes/metrics_macros}
+
+\newcommand{\DemoEvaluationWatermark}{DEMO / EVALUATION ONLY}
+\ifdraft
+\AddToShipoutPictureBG{%
+  \put(\LenToUnit{0.5\paperwidth},\LenToUnit{0.52\paperheight}){%
+    \makebox(0,0){%
+      \rotatebox{35}{%
+        \textcolor{black!10}{\bfseries\fontsize{36}{42}\selectfont \DemoEvaluationWatermark}%
+      }%
+    }%
+  }%
+}
+\fi
 
 % --- Title ---
 \title{\papertitle}
@@ -62,6 +77,7 @@
 \fancyhead[L]{\raisebox{-0.35\height}{\includegraphics[height=0.6cm]{figures/equilens-wordmark-light.png}}}
 \fancyhead[R]{\scriptsize Equilens \textbar{} Synthetic Audit \& Fairness Evaluation for \sysname}
 \fancyfoot[L]{\scriptsize Equilens}
+\ifdraft\fancyfoot[C]{\scriptsize\textbf{\DemoEvaluationWatermark}}\fi
 \fancyfoot[R]{\scriptsize page~\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 \renewcommand{\footrulewidth}{0pt}
@@ -70,6 +86,7 @@
   \fancyhead[L]{\raisebox{-0.35\height}{\includegraphics[height=0.6cm]{figures/equilens-wordmark-light.png}}}
   \fancyhead[R]{\scriptsize Equilens \textbar{} Synthetic Audit \& Fairness Evaluation for \sysname}
   \fancyfoot[L]{\scriptsize Equilens}
+  \ifdraft\fancyfoot[C]{\scriptsize\textbf{\DemoEvaluationWatermark}}\fi
   \fancyfoot[R]{\scriptsize page~\thepage}
   \renewcommand{\headrulewidth}{0.4pt}
   \renewcommand{\footrulewidth}{0pt}

@@ -284,6 +284,11 @@ jobs:
           set -euo pipefail
           python scripts/gen_plots_from_intake.py --selection intake/selection_rates.csv --metrics intake/metrics_long.csv --outdir figures
 
+      - name: Enable public demo watermark
+        run: |
+          mkdir -p includes
+          printf '\\drafttrue\n' > includes/publication_profile.local.tex
+
       - name: Compile LaTeX
         uses: xu-cheng/latex-action@v3
         with:

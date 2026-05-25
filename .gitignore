@@ -5,6 +5,7 @@ Thumbs.db
 # Ignore generated outputs that should not be versioned
 *.tmp
 *.log
+includes/publication_profile.local.tex
 
 # LaTeX build artifacts
 *.aux

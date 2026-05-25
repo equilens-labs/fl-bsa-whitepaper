@@ -118,6 +118,9 @@ Defined in `config/sap.yaml`:
 | `pull-wp-intake.yml` | dispatch, schedule | Pull intake from producer, rebuild, and persist an intake snapshot branch/artifacts |
 
 On release, the CI attaches `whitepaper.pdf` and `whitepaper_arxiv_source.zip` to the GitHub release.
+Public CI PDF artifacts enable the optional `DEMO / EVALUATION ONLY` text-layer watermark via
+`includes/publication_profile.local.tex`; local builds remain unmarked unless that local include
+sets `\drafttrue`.
 
 ---
 

@@ -29,6 +29,10 @@ jobs:
       - name: Generate TeX macros (tolerate missing intake/)
         run: |
           make macros
+      - name: Enable public demo watermark
+        run: |
+          mkdir -p includes
+          printf '\\drafttrue\n' > includes/publication_profile.local.tex
       - name: Compile LaTeX
         uses: xu-cheng/latex-action@v3
         with:
