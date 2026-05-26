@@ -6,7 +6,7 @@
   ],
   "categorical_statistics": {
     "gender": {
-      "most_frequent": "male",
+      "most_frequent": "female",
       "unique_count": 2
     },
     "race": {
@@ -14,8 +14,8 @@
       "unique_count": 5
     }
   },
-  "certificate_hash": "76e1ac15ef483c474b15a81c85fc0080abd1a0332130ef6598e864d3646df015",
-  "certificate_id": "data_profiling_intrinsic_88325003-be12-4262-a7c4-ca8c8874c47e",
+  "certificate_hash": "285d9f15c77b43b214fd109533f1850da14d576a4008584ff36bf5afabfb7319",
+  "certificate_id": "data_profiling_intrinsic_8e2a175c-df96-4f48-9ca7-5154cb9f554b",
   "certificate_type": "data_profiling_certificate",
   "certificate_version": "1.0",
   "data_quality_score": 0.95,
@@ -33,20 +33,20 @@
   ],
   "numeric_statistics": {
     "age": {
-      "kurtosis": -0.3261056402744207,
-      "max": 65.0,
-      "mean": 34.41866666666667,
-      "median": 34.0,
+      "kurtosis": -0.261986308046537,
+      "max": 75.0,
+      "mean": 38.315,
+      "median": 38.0,
       "min": 18.0,
       "quantiles": {
-        "q05": 18.0,
-        "q25": 27.0,
-        "q50": 34.0,
-        "q75": 41.0,
-        "q95": 51.0
+        "q05": 19.950000000000017,
+        "q25": 30.0,
+        "q50": 38.0,
+        "q75": 46.0,
+        "q95": 57.0
       },
-      "skew": 0.29314477908973613,
-      "std": 9.755055369258956
+      "skew": 0.22151190256130268,
+      "std": 10.935247362464773
     },
     "credit_score": {
       "kurtosis": -0.1447622155033068,
@@ -113,12 +113,12 @@
       "std": 15688.543417942952
     }
   },
-  "pipeline_id": "88325003-be12-4262-a7c4-ca8c8874c47e",
-  "previous_certificate_hash": "70c939b6ac755e08cd50b6e9b491466fa54bfca6ff3b1eb77fdfa5290a99bfa6",
+  "pipeline_id": "8e2a175c-df96-4f48-9ca7-5154cb9f554b",
+  "previous_certificate_hash": "3b7b9d55be0d5fa349047f20fcf7e1422c92a8c01b1199f5dbf0a445e2cabee4",
   "protected_attributes_found": [
     "age",
     "gender",
     "race"
   ],
-  "timestamp": "2026-02-22T10:07:32.275732+00:00"
+  "timestamp": "2026-05-26T06:31:53.231885+00:00"
 }
