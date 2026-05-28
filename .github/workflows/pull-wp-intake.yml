@@ -401,6 +401,10 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Keep a remote-tracking ref for deterministic intake branches before using
+          # --force-with-lease. Scheduled runs can revisit the same producer run/branch; without
+          # the remote ref, Git rejects the push as stale even though this branch is bot-owned.
+          git fetch origin "+refs/heads/${branch}:refs/remotes/origin/${branch}" || true
           git switch -C "$branch"
           git add intake config includes figures
           git commit -m "$title"
