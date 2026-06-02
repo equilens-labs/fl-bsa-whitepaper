@@ -1,16 +1,18 @@
 {
   "available": true,
+  "informative": false,
   "thresholds": {
     "tpr_gap_max": 0.05,
     "fpr_gap_max": 0.05
   },
-  "overall_pass": true,
-  "num_violations": 0,
-  "passing_attributes": [
+  "overall_pass": null,
+  "num_violations": null,
+  "passing_attributes": [],
+  "violating_attributes": [],
+  "not_informative_attributes": [
     "gender",
     "race"
   ],
-  "violating_attributes": [],
   "per_attribute": {
     "gender": {
       "tpr_gap": {
@@ -25,7 +27,10 @@
         "upper_ci": 0.0,
         "passes": true
       },
-      "status": "PASSES"
+      "status": "NOT_INFORMATIVE",
+      "informative": false,
+      "reason": "degenerate_confusion_surface",
+      "explanation": "Every group has FP=0 and FN=0, so TPR=1 and FPR=0 by construction; the equalized-odds surface is diagnostic only and is not counted as a PASS."
     },
     "race": {
       "tpr_gap": {
@@ -40,7 +45,10 @@
         "upper_ci": 0.0,
         "passes": true
       },
-      "status": "PASSES"
+      "status": "NOT_INFORMATIVE",
+      "informative": false,
+      "reason": "degenerate_confusion_surface",
+      "explanation": "Every group has FP=0 and FN=0, so TPR=1 and FPR=0 by construction; the equalized-odds surface is diagnostic only and is not counted as a PASS."
     }
   }
 }
