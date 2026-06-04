@@ -4,6 +4,11 @@
   "notes": [
     "This ZIP is a whitepaper intake bundle (inputs/diagnostics for review and templating).",
     "Certificates are included for auditability (hyperparameters/training/validation metadata) but are unsigned by default.",
+    "RC7.1 speed-regime HP certificates will label timeout-bounded search as bayesian_optimization_truncated with tuning_successful=false and a populated tuning_truncation_reason when completed trials are below n_trials.",
+    "Other valid HP selection labels are default_after_rejected_trials, default, and cache_lookup; public-artifact CI may emit tuning_environment=public_artifact_ci when no runtime environment label is set.",
+    "For regulator-readable evidence, honest truncated provenance is preferred over a dishonest complete optimization claim.",
+    "Headline AIR/SRG intervals use validation/metrics_uncertainty.json deterministic methods (Wilson/delta and Newcombe-Wilson); bootstrap/BCa settings are annex/back-compat provenance, not the headline interval source.",
+    "EO summaries marked NOT_INFORMATIVE indicate a degenerate confusion surface, not a fairness pass.",
     "For cryptographically verifiable artifacts, use the GOLD evidence bundles and certificate chain outputs."
   ],
   "purpose": "intake",
