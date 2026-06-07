@@ -6,7 +6,7 @@
   ],
   "categorical_statistics": {
     "gender": {
-      "most_frequent": "male",
+      "most_frequent": "female",
       "unique_count": 2
     },
     "race": {
@@ -14,8 +14,8 @@
       "unique_count": 5
     }
   },
-  "certificate_hash": "76e1ac15ef483c474b15a81c85fc0080abd1a0332130ef6598e864d3646df015",
-  "certificate_id": "data_profiling_intrinsic_88325003-be12-4262-a7c4-ca8c8874c47e",
+  "certificate_hash": "e2fbeffb060ce6219b2edb8ce2269deb4aa1cb8f6b1323071d16476e593d2d16",
+  "certificate_id": "data_profiling_intrinsic_3ca9fa42-6c89-4ed0-b0c2-33a3a86ea34f",
   "certificate_type": "data_profiling_certificate",
   "certificate_version": "1.0",
   "data_quality_score": 0.95,
@@ -33,20 +33,20 @@
   ],
   "numeric_statistics": {
     "age": {
-      "kurtosis": -0.3261056402744207,
-      "max": 65.0,
-      "mean": 34.41866666666667,
-      "median": 34.0,
+      "kurtosis": -0.261986308046537,
+      "max": 75.0,
+      "mean": 38.315,
+      "median": 38.0,
       "min": 18.0,
       "quantiles": {
-        "q05": 18.0,
-        "q25": 27.0,
-        "q50": 34.0,
-        "q75": 41.0,
-        "q95": 51.0
+        "q05": 19.950000000000017,
+        "q25": 30.0,
+        "q50": 38.0,
+        "q75": 46.0,
+        "q95": 57.0
       },
-      "skew": 0.29314477908973613,
-      "std": 9.755055369258956
+      "skew": 0.22151190256130268,
+      "std": 10.935247362464773
     },
     "credit_score": {
       "kurtosis": -0.1447622155033068,
@@ -113,12 +113,12 @@
       "std": 15688.543417942952
     }
   },
-  "pipeline_id": "88325003-be12-4262-a7c4-ca8c8874c47e",
-  "previous_certificate_hash": "70c939b6ac755e08cd50b6e9b491466fa54bfca6ff3b1eb77fdfa5290a99bfa6",
+  "pipeline_id": "3ca9fa42-6c89-4ed0-b0c2-33a3a86ea34f",
+  "previous_certificate_hash": "4e876191e97c9ae1d6c9fdfb093fd81f10a55490a9e6958ab36db0fb868900af",
   "protected_attributes_found": [
     "age",
     "gender",
     "race"
   ],
-  "timestamp": "2026-02-22T10:07:32.275732+00:00"
+  "timestamp": "2026-06-07T06:34:49.447950+00:00"
 }
