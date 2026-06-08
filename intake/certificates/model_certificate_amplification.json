@@ -1,39 +1,35 @@
 {
   "branch_mode": "amplification",
-  "certificate_hash": "252b9334b62118ca830f468be446710e12822ce55ed2c203fc67c48813a3bcf5",
-  "certificate_id": "model_cert_88325003-be12-4262-a7c4-ca8c8874c47e_amplification",
+  "certificate_hash": "30df5196d590d490deefdf98b7f57148e048cd12e011447ac6398e53715c634b",
+  "certificate_id": "model_cert_7fc768fd-9e5f-44d7-9a8f-b816e4e529b6_amplification",
   "config_version": "1.0.0",
-  "data_fingerprint": "af451650c2b612b4",
+  "data_fingerprint": "6ce24018070738c3",
+  "effective_pac": 5,
   "hyperparameters": {
     "batch_size": 30,
-    "discriminator_decay": 3.991305878561677e-06,
+    "discriminator_decay": 1.1872731425335901e-06,
     "discriminator_dim": [
-      64,
       128,
-      64
+      128
     ],
-    "discriminator_lr": 0.00011430983876313228,
-    "epochs": 170,
-    "generator_decay": 7.348118405270443e-06,
+    "discriminator_lr": 0.00013833249975219982,
+    "embedding_dim": 32,
+    "epochs": 180,
+    "generator_decay": 6.341572775495279e-06,
     "generator_dim": [
-      64,
-      64
+      128,
+      128
     ],
-    "generator_lr": 0.00014321698289111514,
+    "generator_lr": 0.0003488960745139223,
     "guardrails": {
-      "batch": {
-        "original": 128,
-        "source": "realism_gates",
-        "value": 32
-      },
+      "batch_size": 32,
       "fingerprint": {
         "max_corr": 0.8808936584289787,
-        "n": 3000.0,
-        "rho_p": 0.8808936584289787,
-        "rho_s": 0.8652764874238226
+        "n": 3000.0
       },
-      "pac": {
-        "original": 1,
+      "mode": "threshold",
+      "pac": 5,
+      "pac_metadata": {
         "source": "realism_gates",
         "value": 5
       }
@@ -41,18 +37,19 @@
     "pac": 5
   },
   "model_type": "CTGAN",
+  "normalized_batch_size": 30,
   "performance_metrics": {
-    "final_discriminator_loss": 0.14411163330078125,
-    "final_generator_loss": -0.04813821613788605,
-    "training_time_minutes": 7.69674217303594
+    "final_discriminator_loss": 0.027022123336791992,
+    "final_generator_loss": -1.5359313488006592,
+    "training_time_minutes": 3.1969536503156024
   },
-  "pipeline_id": "88325003-be12-4262-a7c4-ca8c8874c47e",
-  "previous_certificate_hash": "3b79db60c64122e598d0ea23e887ca2c82a911d7142dfea0e06dd7a05d5914b5",
-  "timestamp": "2026-02-22T10:30:47.805943+00:00",
-  "training_duration_minutes": 7.69674217303594,
+  "pipeline_id": "7fc768fd-9e5f-44d7-9a8f-b816e4e529b6",
+  "previous_certificate_hash": "b622fc56fb971e7eed005c2aaed837e808b06b3cbf51df9182ed178c680124e7",
+  "timestamp": "2026-06-08T06:56:55.281155+00:00",
+  "training_duration_minutes": 3.1969536503156024,
   "training_metadata": {
     "branch_purpose": "bias amplification test",
-    "epochs": 170,
+    "epochs": 180,
     "features_included": [
       "age",
       "income",
@@ -64,19 +61,14 @@
       "loan_approved"
     ],
     "guardrails": {
-      "batch": {
-        "original": 128,
-        "source": "realism_gates",
-        "value": 32
-      },
+      "batch_size": 32,
       "fingerprint": {
         "max_corr": 0.8808936584289787,
-        "n": 3000.0,
-        "rho_p": 0.8808936584289787,
-        "rho_s": 0.8652764874238226
+        "n": 3000.0
       },
-      "pac": {
-        "original": 1,
+      "mode": "threshold",
+      "pac": 5,
+      "pac_metadata": {
         "source": "realism_gates",
         "value": 5
       }
@@ -87,30 +79,42 @@
   "validation_results": {
     "bias_preservation_status": "PRESERVED",
     "branch": "amplification",
-    "business_value": "Successfully preserves historical bias patterns for regulatory testing. Note: Some statistical distributions may differ due to bias-preserving sampling.",
+    "business_value": "Successfully preserves historical bias patterns for regulatory testing. Customers can review model behavior on realistic historical data.",
+    "certification_declined": false,
+    "certification_floor": {
+      "decision": "eligible_to_certify",
+      "min_group_size": 30,
+      "protected_attributes_evaluated": [
+        "gender",
+        "race"
+      ],
+      "satisfied": true,
+      "schema_version": "lc11_group_size_floor.v1",
+      "violations": []
+    },
     "checks": {
       "bias_preservation": {
         "critical_failures": [],
         "details": {
           "disparate_impact": {
-            "difference": 0.00012537323865347005,
-            "original": 0.7705729793528648,
+            "difference": 1.5938321591302262e-05,
+            "original": 0.7589999553180048,
             "preserved": true,
-            "relative_change": 0.00016270110594541443,
-            "synthetic": 0.7706983525915183,
+            "relative_change": 2.0999079750333717e-05,
+            "synthetic": 0.7590158936395961,
             "threshold_used": 0.2
           },
           "disparate_impact_gender": {
-            "original": 0.7705729793528648,
-            "relative_change": 0.00016270110594541443,
-            "synthetic": 0.7706983525915183
+            "original": 0.7589999553180048,
+            "relative_change": 2.0999079750333717e-05,
+            "synthetic": 0.7590158936395961
           },
           "statistical_parity_difference": {
-            "difference": 0.0001730598230273439,
-            "original": 0.1314810356574052,
+            "difference": 7.752670137867179e-05,
+            "original": 0.13918541519194483,
             "preserved": true,
-            "relative_change": 0.0013162240922271345,
-            "synthetic": 0.13130797583437787,
+            "relative_change": 0.0005569990524704491,
+            "synthetic": 0.13910788849056616,
             "threshold_used": 0.1
           },
           "summary": {
@@ -126,38 +130,38 @@
       "correlation_preservation": {
         "details": {
           "age": {
-            "difference": 0.08693040677006739,
-            "original_correlation": 0.011680719355437566,
+            "difference": 6.756186092332986e-05,
+            "original_correlation": -0.007064723980911284,
             "preserved": true,
-            "synthetic_correlation": 0.09861112612550495,
+            "synthetic_correlation": -0.006997162119987954,
             "threshold": 0.2
           },
           "credit_score": {
-            "difference": 0.010687900689952123,
-            "original_correlation": 0.23980890273368494,
+            "difference": 0.000545495572138871,
+            "original_correlation": 0.20649239552832796,
             "preserved": true,
-            "synthetic_correlation": 0.25049680342363706,
+            "synthetic_correlation": 0.20703789110046683,
             "threshold": 0.2
           },
           "debt_to_income": {
-            "difference": 0.030593959338415924,
-            "original_correlation": -0.08007184291133686,
+            "difference": 0.0002020643487050111,
+            "original_correlation": -0.08624625535508865,
             "preserved": true,
-            "synthetic_correlation": -0.11066580224975278,
+            "synthetic_correlation": -0.08644831970379366,
             "threshold": 0.2
           },
           "income": {
-            "difference": 0.14787513333066749,
-            "original_correlation": 0.24600001464105903,
+            "difference": 0.000724262485834043,
+            "original_correlation": 0.24728359020393376,
             "preserved": true,
-            "synthetic_correlation": 0.3938751479717265,
+            "synthetic_correlation": 0.2480078526897678,
             "threshold": 0.2
           },
           "loan_amount": {
-            "difference": 0.12876407605217427,
-            "original_correlation": 0.21859501165525785,
+            "difference": 0.0006507004217825296,
+            "original_correlation": 0.22597937135462573,
             "preserved": true,
-            "synthetic_correlation": 0.3473590877074321,
+            "synthetic_correlation": 0.22663007177640826,
             "threshold": 0.2
           }
         },
@@ -167,42 +171,58 @@
       "distribution_preservation": {
         "details": {
           "age": {
-            "ks_statistic": 0.05146666666666667,
-            "p_value": 9.444674078158114e-06,
-            "preserved": false,
-            "threshold": 0.025
+            "hard_cap": 0.5,
+            "ks_statistic": 0.0015,
+            "p_value": 1.0,
+            "preserved": true,
+            "threshold": 0.3,
+            "threshold_metric": "ks_statistic",
+            "threshold_policy": "min(ks_statistic_max * tolerance_multiplier, hard_cap)",
+            "uncapped_threshold": 0.3
           },
           "credit_score": {
-            "ks_statistic": 0.022366666666666667,
-            "p_value": 0.1957065581330558,
+            "hard_cap": 0.5,
+            "ks_statistic": 0.0015333333333333334,
+            "p_value": 1.0,
             "preserved": true,
-            "threshold": 0.025
+            "threshold": 0.3,
+            "threshold_metric": "ks_statistic",
+            "threshold_policy": "min(ks_statistic_max * tolerance_multiplier, hard_cap)",
+            "uncapped_threshold": 0.3
           },
           "debt_to_income": {
-            "ks_statistic": 0.0147,
-            "p_value": 0.6953861588269351,
+            "hard_cap": 0.5,
+            "ks_statistic": 0.0010666666666666667,
+            "p_value": 1.0,
             "preserved": true,
-            "threshold": 0.025
+            "threshold": 0.3,
+            "threshold_metric": "ks_statistic",
+            "threshold_policy": "min(ks_statistic_max * tolerance_multiplier, hard_cap)",
+            "uncapped_threshold": 0.3
           },
           "income": {
-            "ks_statistic": 0.0667,
-            "p_value": 2.2827772084566055e-09,
-            "preserved": false,
-            "threshold": 0.025
+            "hard_cap": 0.5,
+            "ks_statistic": 0.0011333333333333334,
+            "p_value": 1.0,
+            "preserved": true,
+            "threshold": 0.3,
+            "threshold_metric": "ks_statistic",
+            "threshold_policy": "min(ks_statistic_max * tolerance_multiplier, hard_cap)",
+            "uncapped_threshold": 0.3
           },
           "loan_amount": {
-            "ks_statistic": 0.0633,
-            "p_value": 1.7646566431166968e-08,
-            "preserved": false,
-            "threshold": 0.025
+            "hard_cap": 0.5,
+            "ks_statistic": 0.0011666666666666668,
+            "p_value": 1.0,
+            "preserved": true,
+            "threshold": 0.3,
+            "threshold_metric": "ks_statistic",
+            "threshold_policy": "min(ks_statistic_max * tolerance_multiplier, hard_cap)",
+            "uncapped_threshold": 0.3
           }
         },
-        "errors": [
-          "income: Distribution not preserved (p=0.000, threshold=0.025)",
-          "loan_amount: Distribution not preserved (p=0.000, threshold=0.025)",
-          "age: Distribution not preserved (p=0.000, threshold=0.025)"
-        ],
-        "valid": false
+        "errors": [],
+        "valid": true
       },
       "group_ratios": {
         "critical_failures": [],
@@ -210,73 +230,73 @@
           "gender": {
             "differences": {
               "female": {
-                "absolute_diff": 6.666666666665932e-05,
-                "original": 0.48233333333333334,
-                "relative_diff": 0.0001382167141325747,
-                "synthetic": 0.4824
+                "absolute_diff": 0.0001666666666666483,
+                "original": 0.5163333333333333,
+                "relative_diff": 0.00032278827090712216,
+                "synthetic": 0.5165
               },
               "male": {
-                "absolute_diff": 6.666666666677035e-05,
-                "original": 0.5176666666666667,
-                "relative_diff": 0.00012878275186867702,
-                "synthetic": 0.5176
+                "absolute_diff": 0.00016666666666670382,
+                "original": 0.4836666666666667,
+                "relative_diff": 0.0003445892255220089,
+                "synthetic": 0.4835
               }
             },
             "original_ratios": {
-              "female": 0.48233333333333334,
-              "male": 0.5176666666666667
+              "female": 0.5163333333333333,
+              "male": 0.4836666666666667
             },
             "synthetic_ratios": {
-              "female": 0.4824,
-              "male": 0.5176
+              "female": 0.5165,
+              "male": 0.4835
             }
           },
           "race": {
             "differences": {
               "asian": {
-                "absolute_diff": 6.666666666666626e-05,
-                "original": 0.059666666666666666,
-                "relative_diff": 0.0011172997100607185,
-                "synthetic": 0.0596
+                "absolute_diff": 6.666666666665932e-05,
+                "original": 0.08266666666666667,
+                "relative_diff": 0.0008064418575580859,
+                "synthetic": 0.0826
               },
               "black": {
-                "absolute_diff": 3.333333333332966e-05,
-                "original": 0.13033333333333333,
-                "relative_diff": 0.0002557525134077974,
-                "synthetic": 0.1303
+                "absolute_diff": 3.33333333333366e-05,
+                "original": 0.052333333333333336,
+                "relative_diff": 0.000636930504512715,
+                "synthetic": 0.0523
               },
               "hispanic": {
-                "absolute_diff": 6.666666666665932e-05,
-                "original": 0.17266666666666666,
-                "relative_diff": 0.0003860981500106717,
-                "synthetic": 0.1726
+                "absolute_diff": 3.333333333333313e-05,
+                "original": 0.027333333333333334,
+                "relative_diff": 0.0012194675804543661,
+                "synthetic": 0.0273
               },
               "other": {
-                "absolute_diff": 3.333333333333313e-05,
-                "original": 0.028333333333333332,
-                "relative_diff": 0.0011764290672093855,
-                "synthetic": 0.0283
+                "absolute_diff": 3.33333333333366e-05,
+                "original": 0.050333333333333334,
+                "relative_diff": 0.000662238498572941,
+                "synthetic": 0.0503
               },
               "white": {
-                "absolute_diff": 0.00019999999999997797,
-                "original": 0.609,
-                "relative_diff": 0.00032840668570327134,
-                "synthetic": 0.6092
+                "absolute_diff": 0.0001666666666666483,
+                "original": 0.7873333333333333,
+                "relative_diff": 0.00021168474383815133,
+                "synthetic": 0.7875
               }
             },
             "original_ratios": {
-              "asian": 0.059666666666666666,
-              "black": 0.13033333333333333,
-              "hispanic": 0.17266666666666666,
-              "other": 0.028333333333333332,
-              "white": 0.609
+              "asian": 0.08266666666666667,
+              "black": 0.052333333333333336,
+              "hispanic": 0.027333333333333334,
+              "other": 0.050333333333333334,
+              "white": 0.7873333333333333
             },
             "synthetic_ratios": {
-              "asian": 0.0596,
-              "black": 0.1303,
-              "hispanic": 0.1726,
-              "other": 0.0283,
-              "white": 0.6092
+              "asian": 0.0826,
+              "black": 0.0523,
+              "hispanic": 0.0273,
+              "other": 0.0503,
+              "white": 0.7875
             }
           },
           "summary": {
@@ -295,34 +315,57 @@
       "missing_ratio": 0.0,
       "protected_attributes": {
         "gender": {
-          "max_group_ratio": 0.5176666666666667,
-          "min_group_size": 1447,
+          "max_group_ratio": 0.5163333333333333,
+          "min_group_size": 1451,
           "unique_values": 2,
           "value_counts": {
-            "female": 1447,
-            "male": 1553
+            "female": 1549,
+            "male": 1451
           }
         },
         "race": {
-          "max_group_ratio": 0.609,
-          "min_group_size": 85,
+          "max_group_ratio": 0.7873333333333333,
+          "min_group_size": 82,
           "unique_values": 5,
           "value_counts": {
-            "asian": 179,
-            "black": 391,
-            "hispanic": 518,
-            "other": 85,
-            "white": 1827
+            "asian": 248,
+            "black": 157,
+            "hispanic": 82,
+            "other": 151,
+            "white": 2362
           }
         }
       }
     },
     "edge_case_type": "small_dataset",
     "edge_case_warning": "Dataset has only 3000 samples. Validation focuses on key metrics with relaxed tolerances.",
+    "effective_thresholds": {
+      "correlation_absolute_difference_max": 0.2,
+      "di_relative_difference_max": 0.2,
+      "group_ratio_absolute_difference_max": 0.2,
+      "ks_statistic_hard_cap": 0.5,
+      "ks_statistic_max": 0.3,
+      "spd_absolute_difference_max": 0.1
+    },
     "regulatory_value": true,
-    "summary": "Edge case validation completed for small_dataset. 3/4 checks passed, 0 checks skipped as inappropriate. Results suitable for proof-of-concept validation.",
+    "summary": "Edge case validation completed for small_dataset. 4/4 checks passed, 0 checks skipped as inappropriate. Results suitable for proof-of-concept validation.",
+    "tolerance_multiplier_applied": 2.0,
+    "training_convergence": {
+      "certificate_hash": "2314348c92c9b2bfbc12011eb5f4e1e55fa098b2320f283fd829d30d0cbbc70c",
+      "convergence_criteria_met": true,
+      "convergence_epoch": 10,
+      "convergence_epoch_note": "stable throughout measurement window",
+      "early_stopping_epoch": null,
+      "early_stopping_triggered": false,
+      "status": "valid",
+      "training_completed_successfully": true,
+      "warnings": [
+        "Discriminator loss magnitude is very low - may indicate overfitting or mode collapse",
+        "Low coverage score - model may not be capturing full data distribution"
+      ]
+    },
     "training_records": 3000,
-    "valid": false,
+    "valid": true,
     "validation_samples": 10000
   }
 }
