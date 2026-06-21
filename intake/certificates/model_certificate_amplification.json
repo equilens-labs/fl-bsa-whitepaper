@@ -1,58 +1,28 @@
 {
   "branch_mode": "amplification",
-  "certificate_hash": "252b9334b62118ca830f468be446710e12822ce55ed2c203fc67c48813a3bcf5",
-  "certificate_id": "model_cert_88325003-be12-4262-a7c4-ca8c8874c47e_amplification",
+  "certificate_hash": "453b0d94a295df0eee461099f49308a6dae2659e084d9dcac47939869f4db722",
+  "certificate_id": "model_cert_5311decc-0b95-4283-9c54-08da247b1374_amplification",
   "config_version": "1.0.0",
-  "data_fingerprint": "af451650c2b612b4",
+  "data_fingerprint": "85932e8d8dd3c220a9fe3accaba61e1d4c389f65c117a41ff72cfcaae146620f",
   "hyperparameters": {
-    "batch_size": 30,
-    "discriminator_decay": 3.991305878561677e-06,
-    "discriminator_dim": [
-      64,
-      128,
-      64
-    ],
-    "discriminator_lr": 0.00011430983876313228,
-    "epochs": 170,
-    "generator_decay": 7.348118405270443e-06,
-    "generator_dim": [
-      64,
-      64
-    ],
-    "generator_lr": 0.00014321698289111514,
-    "guardrails": {
-      "batch": {
-        "original": 128,
-        "source": "realism_gates",
-        "value": 32
-      },
-      "fingerprint": {
-        "max_corr": 0.8808936584289787,
-        "n": 3000.0,
-        "rho_p": 0.8808936584289787,
-        "rho_s": 0.8652764874238226
-      },
-      "pac": {
-        "original": 1,
-        "source": "realism_gates",
-        "value": 5
-      }
-    },
-    "pac": 5
+    "algorithm": "native_branch_profile_empirical_sampler",
+    "backend_id": "first_party_evidence_native",
+    "batch_size": null,
+    "epochs": 0,
+    "numeric_jitter_fraction": null,
+    "pac": null
   },
-  "model_type": "CTGAN",
+  "model_type": "first_party_evidence_native",
   "performance_metrics": {
-    "final_discriminator_loss": 0.14411163330078125,
-    "final_generator_loss": -0.04813821613788605,
-    "training_time_minutes": 7.69674217303594
+    "training_time_minutes": 0.0005163311958312988
   },
-  "pipeline_id": "88325003-be12-4262-a7c4-ca8c8874c47e",
-  "previous_certificate_hash": "3b79db60c64122e598d0ea23e887ca2c82a911d7142dfea0e06dd7a05d5914b5",
-  "timestamp": "2026-02-22T10:30:47.805943+00:00",
-  "training_duration_minutes": 7.69674217303594,
+  "pipeline_id": "5311decc-0b95-4283-9c54-08da247b1374",
+  "previous_certificate_hash": "b0c2dfc43c493ee85fe436f78b4eca7d5efe8df5da933dac0b50489f133b1641",
+  "timestamp": "2026-06-21T16:28:12.673834+00:00",
+  "training_duration_minutes": 0.0005163311958312988,
   "training_metadata": {
+    "backend_id": "first_party_evidence_native",
     "branch_purpose": "bias amplification test",
-    "epochs": 170,
     "features_included": [
       "age",
       "income",
@@ -63,266 +33,45 @@
       "race",
       "loan_approved"
     ],
-    "guardrails": {
-      "batch": {
-        "original": 128,
-        "source": "realism_gates",
-        "value": 32
-      },
-      "fingerprint": {
-        "max_corr": 0.8808936584289787,
-        "n": 3000.0,
-        "rho_p": 0.8808936584289787,
-        "rho_s": 0.8652764874238226
-      },
-      "pac": {
-        "original": 1,
-        "source": "realism_gates",
-        "value": 5
-      }
-    },
+    "generator_type": "first_party_evidence_native",
+    "guardrails": null,
     "includes_loan_decisions": true,
-    "records_trained": 3000
+    "profile_data_class": "native_generator_profile_data_bearing_state",
+    "profile_exportable_as_evidence": false,
+    "records_trained": 3000,
+    "training_mode": "empirical_profile"
   },
   "validation_results": {
-    "bias_preservation_status": "PRESERVED",
-    "branch": "amplification",
-    "business_value": "Successfully preserves historical bias patterns for regulatory testing. Note: Some statistical distributions may differ due to bias-preserving sampling.",
+    "backend_id": "first_party_evidence_native",
     "checks": {
-      "bias_preservation": {
-        "critical_failures": [],
-        "details": {
-          "disparate_impact": {
-            "difference": 0.00012537323865347005,
-            "original": 0.7705729793528648,
-            "preserved": true,
-            "relative_change": 0.00016270110594541443,
-            "synthetic": 0.7706983525915183,
-            "threshold_used": 0.2
-          },
-          "disparate_impact_gender": {
-            "original": 0.7705729793528648,
-            "relative_change": 0.00016270110594541443,
-            "synthetic": 0.7706983525915183
-          },
-          "statistical_parity_difference": {
-            "difference": 0.0001730598230273439,
-            "original": 0.1314810356574052,
-            "preserved": true,
-            "relative_change": 0.0013162240922271345,
-            "synthetic": 0.13130797583437787,
-            "threshold_used": 0.1
-          },
-          "summary": {
-            "critical_failures": 0,
-            "tolerance_multiplier": 2.0,
-            "total_errors": 0
-          }
-        },
-        "errors": [],
-        "message": "Bias patterns preserved - synthetic data successfully mirrors historical disparities",
-        "valid": true
-      },
-      "correlation_preservation": {
-        "details": {
-          "age": {
-            "difference": 0.08693040677006739,
-            "original_correlation": 0.011680719355437566,
-            "preserved": true,
-            "synthetic_correlation": 0.09861112612550495,
-            "threshold": 0.2
-          },
-          "credit_score": {
-            "difference": 0.010687900689952123,
-            "original_correlation": 0.23980890273368494,
-            "preserved": true,
-            "synthetic_correlation": 0.25049680342363706,
-            "threshold": 0.2
-          },
-          "debt_to_income": {
-            "difference": 0.030593959338415924,
-            "original_correlation": -0.08007184291133686,
-            "preserved": true,
-            "synthetic_correlation": -0.11066580224975278,
-            "threshold": 0.2
-          },
-          "income": {
-            "difference": 0.14787513333066749,
-            "original_correlation": 0.24600001464105903,
-            "preserved": true,
-            "synthetic_correlation": 0.3938751479717265,
-            "threshold": 0.2
-          },
-          "loan_amount": {
-            "difference": 0.12876407605217427,
-            "original_correlation": 0.21859501165525785,
-            "preserved": true,
-            "synthetic_correlation": 0.3473590877074321,
-            "threshold": 0.2
-          }
-        },
-        "errors": [],
-        "valid": true
-      },
-      "distribution_preservation": {
-        "details": {
-          "age": {
-            "ks_statistic": 0.05146666666666667,
-            "p_value": 9.444674078158114e-06,
-            "preserved": false,
-            "threshold": 0.025
-          },
-          "credit_score": {
-            "ks_statistic": 0.022366666666666667,
-            "p_value": 0.1957065581330558,
-            "preserved": true,
-            "threshold": 0.025
-          },
-          "debt_to_income": {
-            "ks_statistic": 0.0147,
-            "p_value": 0.6953861588269351,
-            "preserved": true,
-            "threshold": 0.025
-          },
-          "income": {
-            "ks_statistic": 0.0667,
-            "p_value": 2.2827772084566055e-09,
-            "preserved": false,
-            "threshold": 0.025
-          },
-          "loan_amount": {
-            "ks_statistic": 0.0633,
-            "p_value": 1.7646566431166968e-08,
-            "preserved": false,
-            "threshold": 0.025
-          }
-        },
-        "errors": [
-          "income: Distribution not preserved (p=0.000, threshold=0.025)",
-          "loan_amount: Distribution not preserved (p=0.000, threshold=0.025)",
-          "age: Distribution not preserved (p=0.000, threshold=0.025)"
-        ],
-        "valid": false
-      },
-      "group_ratios": {
-        "critical_failures": [],
-        "details": {
-          "gender": {
-            "differences": {
-              "female": {
-                "absolute_diff": 6.666666666665932e-05,
-                "original": 0.48233333333333334,
-                "relative_diff": 0.0001382167141325747,
-                "synthetic": 0.4824
-              },
-              "male": {
-                "absolute_diff": 6.666666666677035e-05,
-                "original": 0.5176666666666667,
-                "relative_diff": 0.00012878275186867702,
-                "synthetic": 0.5176
-              }
-            },
-            "original_ratios": {
-              "female": 0.48233333333333334,
-              "male": 0.5176666666666667
-            },
-            "synthetic_ratios": {
-              "female": 0.4824,
-              "male": 0.5176
-            }
-          },
-          "race": {
-            "differences": {
-              "asian": {
-                "absolute_diff": 6.666666666666626e-05,
-                "original": 0.059666666666666666,
-                "relative_diff": 0.0011172997100607185,
-                "synthetic": 0.0596
-              },
-              "black": {
-                "absolute_diff": 3.333333333332966e-05,
-                "original": 0.13033333333333333,
-                "relative_diff": 0.0002557525134077974,
-                "synthetic": 0.1303
-              },
-              "hispanic": {
-                "absolute_diff": 6.666666666665932e-05,
-                "original": 0.17266666666666666,
-                "relative_diff": 0.0003860981500106717,
-                "synthetic": 0.1726
-              },
-              "other": {
-                "absolute_diff": 3.333333333333313e-05,
-                "original": 0.028333333333333332,
-                "relative_diff": 0.0011764290672093855,
-                "synthetic": 0.0283
-              },
-              "white": {
-                "absolute_diff": 0.00019999999999997797,
-                "original": 0.609,
-                "relative_diff": 0.00032840668570327134,
-                "synthetic": 0.6092
-              }
-            },
-            "original_ratios": {
-              "asian": 0.059666666666666666,
-              "black": 0.13033333333333333,
-              "hispanic": 0.17266666666666666,
-              "other": 0.028333333333333332,
-              "white": 0.609
-            },
-            "synthetic_ratios": {
-              "asian": 0.0596,
-              "black": 0.1303,
-              "hispanic": 0.1726,
-              "other": 0.0283,
-              "white": 0.6092
-            }
-          },
-          "summary": {
-            "critical_failures": 0,
-            "tolerance_multiplier": 2.0,
-            "total_errors": 0
-          }
-        },
-        "errors": [],
-        "message": "Group ratios successfully preserved",
+      "first_party_training": {
+        "backend_id": "first_party_evidence_native",
+        "training_mode": "empirical_profile",
         "valid": true
       }
     },
-    "edge_case_details": {
-      "dataset_size": 3000,
-      "missing_ratio": 0.0,
-      "protected_attributes": {
-        "gender": {
-          "max_group_ratio": 0.5176666666666667,
-          "min_group_size": 1447,
-          "unique_values": 2,
-          "value_counts": {
-            "female": 1447,
-            "male": 1553
-          }
-        },
-        "race": {
-          "max_group_ratio": 0.609,
-          "min_group_size": 85,
-          "unique_values": 5,
-          "value_counts": {
-            "asian": 179,
-            "black": 391,
-            "hispanic": 518,
-            "other": 85,
-            "white": 1827
-          }
-        }
-      }
+    "summary": "FL-BSA Native Generator characterization backend training completed",
+    "training_convergence": {
+      "backend_id": "first_party_evidence_native",
+      "branch_mode": "amplification",
+      "certificate_hash": "33ae7ae4025f069059aaeadbb785208b8f3cac5d2f2428e7b2be84da6a62f13c",
+      "convergence_claim": "not_applicable",
+      "convergence_criteria_met": null,
+      "convergence_epoch": null,
+      "convergence_epoch_note": "not applicable to empirical profile training",
+      "early_stopping_epoch": null,
+      "early_stopping_triggered": false,
+      "reason": "first_party_backend_has_no_adversarial_convergence_claim",
+      "status": "valid",
+      "training_completed_successfully": true,
+      "training_mode": "empirical_profile",
+      "warnings": [
+        "FL-BSA Native Generator characterization backend does not train an adversarial loss surface"
+      ]
     },
-    "edge_case_type": "small_dataset",
-    "edge_case_warning": "Dataset has only 3000 samples. Validation focuses on key metrics with relaxed tolerances.",
-    "regulatory_value": true,
-    "summary": "Edge case validation completed for small_dataset. 3/4 checks passed, 0 checks skipped as inappropriate. Results suitable for proof-of-concept validation.",
     "training_records": 3000,
-    "valid": false,
-    "validation_samples": 10000
+    "valid": true,
+    "validation_samples": 3000,
+    "validation_surface": "first_party_evidence_native_producer"
   }
 }
