@@ -6,170 +6,170 @@
       "reference_group": "male",
       "protected_group": "female",
       "counts": {
-        "ref_n": 4835,
-        "prot_n": 5165,
-        "ref_approved": 2790,
-        "prot_approved": 2262
+        "ref_n": 4837,
+        "prot_n": 5163,
+        "ref_approved": 2793,
+        "prot_approved": 2263
       },
       "selection_rates": {
         "ref": {
-          "p": 0.5770423991726991,
+          "p": 0.5774240231548481,
           "ci95": [
-            0.5630611510159549,
-            0.5909013180179561
+            0.5634470527456136,
+            0.5912781090940136
           ]
         },
         "prot": {
-          "p": 0.43794772507260404,
+          "p": 0.43831105946155335,
           "ci95": [
-            0.4244680899703014,
-            0.4515195974836922
+            0.42482731999625983,
+            0.4518865316534598
           ]
         }
       },
       "air": {
-        "point": 0.7589524196150683,
+        "point": 0.759080055358229,
         "ci95": [
-          0.729774954839436,
-          0.7892964418959806
+          0.7299180687027133,
+          0.7894071336893185
         ],
-        "p_value": 6.104443058877863e-44,
-        "p_value_adjusted": 6.104443058877863e-44,
+        "p_value": 5.925343298757943e-44,
+        "p_value_adjusted": 5.925343298757943e-44,
         "p_value_adjustment": "none",
         "method": "wilson+delta"
       },
       "srg": {
-        "point": -0.13909467410009502,
+        "point": -0.13911296369329473,
         "ci95": [
-          -0.1664332280476547,
-          -0.1115415535322627
+          -0.16645078909775374,
+          -0.11156052109215375
         ],
-        "p_value": 6.104443058877863e-44,
-        "p_value_adjusted": 6.104443058877863e-44,
+        "p_value": 5.925343298757943e-44,
+        "p_value_adjusted": 5.925343298757943e-44,
         "p_value_adjustment": "none",
         "method": "newcombe_wilson"
       },
       "small_n_flag": false,
       "p_value_method": "two_proportion_z_test",
       "confidence_level": 0.95,
-      "seed_material": "sha256:a690699a4a0efceb4e7cdabad86bf940051620cf5cfcde1c8a0103acc66537e5"
+      "seed_material": "sha256:5114f948ead4e018f6fd7ca8df50d6e0abe9730b06941d1de1fd41ba97226d80"
     },
     "race": {
       "reference_group": "white",
       "pairs": {
         "black": {
           "counts": {
-            "ref_n": 7877,
-            "prot_n": 522,
+            "ref_n": 7874,
+            "prot_n": 523,
             "ref_approved": 3980,
-            "prot_approved": 282
+            "prot_approved": 283
           },
           "selection_rates": {
             "ref": {
-              "p": 0.5052685032372731,
+              "p": 0.5054610109220219,
               "ci95": [
-                0.49422729232338874,
-                0.516304577775358
+                0.4944176491067761,
+                0.5164990466541541
               ]
             },
             "prot": {
-              "p": 0.5402298850574713,
+              "p": 0.5411089866156787,
               "ci95": [
-                0.49733705866430983,
-                0.5825349027780713
+                0.4982568390342248,
+                0.5833616208596029
               ]
             }
           },
           "air": {
-            "point": 1.0691936694969097,
+            "point": 1.0705256684954407,
             "ci95": [
-              0.9849185809211408,
-              1.1606798013934485
+              0.9863515669955099,
+              1.1618830904263442
             ],
-            "p_value": 0.12179603492015206,
-            "p_value_adjusted": 0.48718413968060825,
+            "p_value": 0.11431898945231772,
+            "p_value_adjusted": 0.4572759578092709,
             "p_value_adjustment": "holm_bonferroni",
             "method": "wilson+delta"
           },
           "srg": {
-            "point": 0.034961381820198145,
+            "point": 0.03564797569365685,
             "ci95": [
-              -0.01896751911104816,
-              0.08830761045468255
+              -0.01824220761992934,
+              0.08894397175282676
             ],
-            "p_value": 0.12179603492015206,
-            "p_value_adjusted": 0.12179603492015206,
+            "p_value": 0.11431898945231772,
+            "p_value_adjusted": 0.11431898945231772,
             "p_value_adjustment": "none",
             "method": "newcombe_wilson"
           },
           "small_n_flag": false,
           "p_value_method": "two_proportion_z_test",
           "confidence_level": 0.95,
-          "seed_material": "sha256:f39c4464be7c188207cd7c18bd4a8ceaa3b663458e399058e58d3e60ce93ba36"
+          "seed_material": "sha256:5d1753576d056b86b787dd5c228d41bdfd43fb4251e066bd29adb712c7347539"
         },
         "asian": {
           "counts": {
-            "ref_n": 7877,
-            "prot_n": 826,
+            "ref_n": 7874,
+            "prot_n": 827,
             "ref_approved": 3980,
-            "prot_approved": 415
+            "prot_approved": 417
           },
           "selection_rates": {
             "ref": {
-              "p": 0.5052685032372731,
+              "p": 0.5054610109220219,
               "ci95": [
-                0.49422729232338874,
-                0.516304577775358
+                0.4944176491067761,
+                0.5164990466541541
               ]
             },
             "prot": {
-              "p": 0.5024213075060533,
+              "p": 0.5042321644498187,
               "ci95": [
-                0.46839095260845054,
-                0.5364292444026417
+                0.4702147444763315,
+                0.5382104475217582
               ]
             }
           },
           "air": {
-            "point": 0.9943649847299451,
+            "point": 0.9975688600195658,
             "ci95": [
-              0.9259374044643622,
-              1.067849422746848
+              0.929175114609154,
+              1.0709968603704274
             ],
-            "p_value": 0.8762648729767283,
+            "p_value": 0.9463918000412538,
             "p_value_adjusted": 1.0,
             "p_value_adjustment": "holm_bonferroni",
             "method": "wilson+delta"
           },
           "srg": {
-            "point": -0.0028471957312198315,
+            "point": -0.0012288464722032266,
             "ci95": [
-              -0.04791362516690745,
-              0.04220195207925298
+              -0.046284302177822645,
+              0.04379279841498207
             ],
-            "p_value": 0.8762648729767283,
-            "p_value_adjusted": 0.8762648729767283,
+            "p_value": 0.9463918000412538,
+            "p_value_adjusted": 0.9463918000412538,
             "p_value_adjustment": "none",
             "method": "newcombe_wilson"
           },
           "small_n_flag": false,
           "p_value_method": "two_proportion_z_test",
           "confidence_level": 0.95,
-          "seed_material": "sha256:798043d68600888bbbf363e809665c69e4889eebd99dbc4f2fa1443cafe77b5a"
+          "seed_material": "sha256:483c1ea49c86bc681a3c3047b5f1cef5a219fbd8820dddfeb151d63940010470"
         },
         "hispanic": {
           "counts": {
-            "ref_n": 7877,
+            "ref_n": 7874,
             "prot_n": 273,
             "ref_approved": 3980,
             "prot_approved": 136
           },
           "selection_rates": {
             "ref": {
-              "p": 0.5052685032372731,
+              "p": 0.5054610109220219,
               "ci95": [
-                0.49422729232338874,
-                0.516304577775358
+                0.4944176491067761,
+                0.5164990466541541
               ]
             },
             "prot": {
@@ -181,81 +181,81 @@
             }
           },
           "air": {
-            "point": 0.9859480552947889,
+            "point": 0.9855725514016971,
             "ci95": [
-              0.8735428456785068,
-              1.1128172734155035
+              0.873210822137317,
+              1.112392596897637
             ],
-            "p_value": 0.8175701648538751,
+            "p_value": 0.8127149271442823,
             "p_value_adjusted": 1.0,
             "p_value_adjustment": "holm_bonferroni",
             "method": "wilson+delta"
           },
           "srg": {
-            "point": -0.0071000050687749505,
+            "point": -0.007292512753523717,
             "ci95": [
-              -0.07700961127682537,
-              0.06286556728513765
+              -0.07720408015562152,
+              0.06267521050175029
             ],
-            "p_value": 0.8175701648538751,
-            "p_value_adjusted": 0.8175701648538751,
+            "p_value": 0.8127149271442823,
+            "p_value_adjusted": 0.8127149271442823,
             "p_value_adjustment": "none",
             "method": "newcombe_wilson"
           },
           "small_n_flag": false,
           "p_value_method": "two_proportion_z_test",
           "confidence_level": 0.95,
-          "seed_material": "sha256:5a0635da2e9b91e9cc3bd14b68e9925e2c0a5a5bdff9b21f50357921217482b9"
+          "seed_material": "sha256:7201bc6f0d9dc29af437fb6f9465536a77b063defa135951d060a90f8657aa57"
         },
         "other": {
           "counts": {
-            "ref_n": 7877,
-            "prot_n": 502,
+            "ref_n": 7874,
+            "prot_n": 503,
             "ref_approved": 3980,
-            "prot_approved": 239
+            "prot_approved": 240
           },
           "selection_rates": {
             "ref": {
-              "p": 0.5052685032372731,
+              "p": 0.5054610109220219,
               "ci95": [
-                0.49422729232338874,
-                0.516304577775358
+                0.4944176491067761,
+                0.5164990466541541
               ]
             },
             "prot": {
-              "p": 0.4760956175298805,
+              "p": 0.47713717693836977,
               "ci95": [
-                0.43275347097587435,
-                0.5198008464230901
+                0.4338255226333329,
+                0.520795408245269
               ]
             }
           },
           "air": {
-            "point": 0.9422626078600171,
+            "point": 0.9439643545760611,
             "ci95": [
-              0.8574419414895625,
-              1.0354739827967328
+              0.8592273824180954,
+              1.0370580837432044
             ],
-            "p_value": 0.20496783345237163,
-            "p_value_adjusted": 0.6149035003571148,
+            "p_value": 0.2180327497931365,
+            "p_value_adjusted": 0.6540982493794095,
             "p_value_adjustment": "holm_bonferroni",
             "method": "wilson+delta"
           },
           "srg": {
-            "point": -0.029172885707392626,
+            "point": -0.028323833983652125,
             "ci95": [
-              -0.08355110679948363,
-              0.025573554099701357
+              -0.08267352402082123,
+              0.02637775913849294
             ],
-            "p_value": 0.20496783345237163,
-            "p_value_adjusted": 0.20496783345237163,
+            "p_value": 0.2180327497931365,
+            "p_value_adjusted": 0.2180327497931365,
             "p_value_adjustment": "none",
             "method": "newcombe_wilson"
           },
           "small_n_flag": false,
           "p_value_method": "two_proportion_z_test",
           "confidence_level": 0.95,
-          "seed_material": "sha256:be9636579c7c551a6fdbf9ae3289d2236740ab92145cf0275a15f58334e78e75"
+          "seed_material": "sha256:d61b19622105dca5b22da7e21e49a974d85816cd231cee9dc3cde1d23767c4ff"
         }
       },
       "worst_case_pair": "other",
