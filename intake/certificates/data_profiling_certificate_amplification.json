@@ -1,12 +1,13 @@
 {
   "branch_mode": "amplification",
+  "branch_training_surface": "features + historic decisions",
   "categorical_features": [
     "gender",
     "race"
   ],
   "categorical_statistics": {
     "gender": {
-      "most_frequent": "male",
+      "most_frequent": "female",
       "unique_count": 2
     },
     "race": {
@@ -14,8 +15,8 @@
       "unique_count": 5
     }
   },
-  "certificate_hash": "70c939b6ac755e08cd50b6e9b491466fa54bfca6ff3b1eb77fdfa5290a99bfa6",
-  "certificate_id": "data_profiling_amplification_88325003-be12-4262-a7c4-ca8c8874c47e",
+  "certificate_hash": "0d22c3644987db64d65f61027273f56396f4865a7fd41583ccebb52d23cef16a",
+  "certificate_id": "data_profiling_amplification_5f8e2a8c-4251-4b55-8ff7-c05ecce85603",
   "certificate_type": "data_profiling_certificate",
   "certificate_version": "1.0",
   "data_quality_score": 0.95,
@@ -34,20 +35,20 @@
   ],
   "numeric_statistics": {
     "age": {
-      "kurtosis": -0.3261056402744207,
-      "max": 65.0,
-      "mean": 34.41866666666667,
-      "median": 34.0,
+      "kurtosis": -0.261986308046537,
+      "max": 75.0,
+      "mean": 38.315,
+      "median": 38.0,
       "min": 18.0,
       "quantiles": {
-        "q05": 18.0,
-        "q25": 27.0,
-        "q50": 34.0,
-        "q75": 41.0,
-        "q95": 51.0
+        "q05": 19.950000000000017,
+        "q25": 30.0,
+        "q50": 38.0,
+        "q75": 46.0,
+        "q95": 57.0
       },
-      "skew": 0.29314477908973613,
-      "std": 9.755055369258956
+      "skew": 0.22151190256130268,
+      "std": 10.935247362464773
     },
     "credit_score": {
       "kurtosis": -0.1447622155033068,
@@ -114,9 +115,9 @@
       "std": 15688.543417942952
     },
     "loan_approved": {
-      "kurtosis": -1.999836502063688,
+      "kurtosis": -2.0008199667880513,
       "max": 1.0,
-      "mean": 0.5096666666666667,
+      "mean": 0.5056666666666667,
       "median": 1.0,
       "min": 0.0,
       "quantiles": {
@@ -126,16 +127,20 @@
         "q75": 1.0,
         "q95": 1.0
       },
-      "skew": -0.03869324437330567,
-      "std": 0.49998988541508976
+      "skew": -0.022679463817857667,
+      "std": 0.5000512366767926
     }
   },
-  "pipeline_id": "88325003-be12-4262-a7c4-ca8c8874c47e",
+  "pipeline_id": "5f8e2a8c-4251-4b55-8ff7-c05ecce85603",
   "previous_certificate_hash": "",
+  "producer_backend_id": "first_party_evidence_native",
+  "profile_data_class": "native_generator_profile_data_bearing_state",
+  "profile_exportable_as_evidence": false,
   "protected_attributes_found": [
     "age",
     "gender",
     "race"
   ],
-  "timestamp": "2026-02-22T10:07:32.264744+00:00"
+  "timestamp": "2026-06-24T11:09:20.025132+00:00",
+  "training_mode": "empirical_profile"
 }

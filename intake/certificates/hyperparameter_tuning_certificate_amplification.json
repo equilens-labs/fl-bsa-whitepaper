@@ -1,70 +1,45 @@
 {
   "branch_mode": "amplification",
-  "cache_confidence": 1.0,
-  "cache_hit": true,
-  "cache_source": "exact",
+  "cache_confidence": 0.0,
+  "cache_hit": false,
   "categorical_columns": [
     "gender",
     "race"
   ],
-  "certificate_hash": "188c3f0d609288c905c6a5d1909da576a5eb8d5d84a193b3e5f3eb024eadec98",
-  "certificate_id": "766e6b32-825a-4c0b-b9c3-0f3d59194845",
+  "certificate_hash": "21190fedb5048ee9b20b23325d2ab4b504c4262de08c96f8f965874020e8ed59",
+  "certificate_id": "ca4284c7-3b94-4aaa-b823-d62769ebc0b8",
   "certificate_version": "1.0",
   "config_version": "1.0",
   "data_columns": 8,
-  "data_profile_fingerprint": "af451650c2b612b4",
+  "data_profile_fingerprint": "6ce24018070738c3",
   "data_rows": 3000,
-  "fallback_used": false,
-  "hyperparameter_validation_passed": true,
-  "issued_at": "2026-02-22T10:12:45Z",
+  "fallback_reason": "first_party_backend_has_no_tunable_hyperparameters",
+  "fallback_used": true,
+  "hp_tuning_claim_scope": "default_parameters; no Bayesian optimization claim",
+  "hp_tuning_completion_ratio": 0.0,
+  "hp_tuning_explanation": "Completed/configured trial ratio is 0/0. Default parameters were selected; no full Bayesian optimization claim is made.",
+  "hp_tuning_search_status": "default",
+  "hyperparameter_validation_passed": false,
+  "issued_at": "2026-06-24T11:09:20Z",
   "issued_by": "FL-BSA Hyperparameter Tuner",
   "n_trials": 0,
   "optimal_hyperparameters": {
-    "batch_size": 32,
-    "discriminator_decay": 3.991305878561677e-06,
-    "discriminator_dim": [
-      64,
-      128,
-      64
-    ],
-    "discriminator_lr": 0.00011430983876313228,
-    "embedding_dim": 128,
-    "epochs": 170,
-    "generator_decay": 7.348118405270443e-06,
-    "generator_dim": [
-      64,
-      64
-    ],
-    "generator_lr": 0.00014321698289111514,
-    "guardrails": {
-      "batch": {
-        "original": 128,
-        "source": "realism_gates",
-        "value": 32
-      },
-      "fingerprint": {
-        "max_corr": 0.8808936584289787,
-        "n": 3000.0,
-        "rho_p": 0.8808936584289787,
-        "rho_s": 0.8652764874238226
-      },
-      "pac": {
-        "original": 1,
-        "source": "realism_gates",
-        "value": 5
-      }
-    },
-    "pac": 5
+    "algorithm": "native_branch_profile_empirical_sampler",
+    "backend_id": "first_party_evidence_native",
+    "epochs": 0,
+    "numeric_jitter_fraction": null
   },
   "optimization_time_seconds": 0.0,
   "optimization_trials_completed": 0,
-  "previous_certificate_hash": "58ce257bff0d05aec80132b7abd4688baa5b116d91234fa77b020d1f2ab7eb8b",
-  "status": "valid",
-  "timeout_seconds": 0,
+  "previous_certificate_hash": "0c95d8a5cc6201511092491a4717c4f69feae6a11e9b9214a2b07d6c89e65b77",
+  "selected_parameters_validated": false,
+  "status": "valid_with_limitations",
   "tuner_version": "1.0.0",
-  "tuning_enabled": true,
+  "tuning_enabled": false,
   "tuning_environment": "production",
-  "tuning_method": "cache_lookup",
-  "tuning_successful": true,
-  "validation_warnings": []
+  "tuning_method": "default",
+  "tuning_successful": false,
+  "validation_warnings": [
+    "first_party_backend_has_no_tunable_hyperparameters"
+  ]
 }
