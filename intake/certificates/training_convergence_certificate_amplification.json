@@ -1,0 +1,30 @@
+{
+  "backend_id": "first_party_evidence_native",
+  "branch_mode": "amplification",
+  "certificate_hash": "05a86bfd6f5584331f3ef1592ffb82e57470f1dc014e05dcc4206707ec8d2667",
+  "certificate_id": "training_convergence_amplification_09249c60-7b74-45ee-92ab-4f9ac4285861",
+  "certificate_type": "training_convergence_certificate",
+  "certificate_version": "1.0",
+  "completion_evidence": {
+    "adversarial_loss_surface": "not_applicable",
+    "claim_scope": "empirical_profile_training_completed",
+    "convergence_epoch": null,
+    "discriminator_loss": null,
+    "generator_loss": null
+  },
+  "convergence_claim": "not_applicable",
+  "convergence_criteria_met": null,
+  "convergence_metrics": null,
+  "model_type": "first_party_evidence_native",
+  "pipeline_id": "09249c60-7b74-45ee-92ab-4f9ac4285861",
+  "previous_certificate_hash": "2950eb82497df35ad56e06e443c3e65f787bc407b29012132f875646c9ee235f",
+  "status": "valid",
+  "timestamp": "2026-06-25T19:09:39.990551+00:00",
+  "training_completed_successfully": true,
+  "training_duration_minutes": 0.0006178180376688639,
+  "training_epochs": 0,
+  "training_mode": "empirical_profile",
+  "warnings": [
+    "FL-BSA Native Generator characterization backend has no CTGAN/WGAN loss convergence claim"
+  ]
+}
