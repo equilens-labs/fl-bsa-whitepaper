@@ -1,0 +1,120 @@
+{
+  "branch_mode": "intrinsic",
+  "certificate_hash": "ce81151ee1cf6b84401852be09e053c1f92632ee41171e3c1c967f33013a2607",
+  "certificate_id": "57dfd21f-6e58-4069-890d-4a2a64a1dfc0",
+  "certificate_type": "generation_process_certificate",
+  "certificate_version": "1.0",
+  "generation_completed_at": "2026-06-25T18:00:23.698947+00:00",
+  "generation_environment": {
+    "cpu_count": 128,
+    "ctgan_version": "unknown",
+    "cuda_available": false,
+    "cuda_version": null,
+    "memory_available_gb": 192.1,
+    "numpy_version": "1.26.4",
+    "pandas_version": "2.3.3",
+    "python_version": "3.11.2",
+    "system": "Linux",
+    "torch_version": "2.8.0+cpu"
+  },
+  "generation_parameters": {
+    "batch_size": 500,
+    "condition_column": null,
+    "condition_value": null,
+    "include_metadata": true,
+    "n_samples": 10000,
+    "output_format": "csv",
+    "random_seed": 42,
+    "sampling_strategy": "intrinsic_anchor_profile_resampling",
+    "stratification_column": "gender,race",
+    "temperature": 1.0
+  },
+  "generation_started_at": "2026-06-25T18:00:23.510991+00:00",
+  "generator_backend": {
+    "backend_family": "evidence_native_tabular",
+    "backend_id": "first_party_evidence_native",
+    "backend_name": "FL-BSA Native Generator",
+    "backend_version": "0.1.0",
+    "branch_contract": {
+      "amplification": "preserve configured amplification targets and record achieved strata",
+      "intrinsic": "exclude outcome aliases before training and record post-label boundary"
+    },
+    "claim_limits": [
+      "not_ctgan",
+      "not_datacebo",
+      "not_gan",
+      "not_neural",
+      "not_differential_privacy",
+      "not_full_distribution_clone"
+    ],
+    "claims_family": "evidence_native_tabular",
+    "commercial_authorization_required": false,
+    "dependency_package_scope": "direct_runtime_dependencies_only_not_sbom",
+    "dependency_packages": {
+      "numpy": "1.26.4",
+      "pandas": "2.3.3"
+    },
+    "family_field_contract": {
+      "backend_family": "runtime_implementation_family",
+      "claims_family": "claim_taxonomy_family",
+      "relationship": "same_value_in_block_1_distinct_contract_fields"
+    },
+    "metadata_version": "1"
+  },
+  "issued_at": "2026-06-25T18:00:23.698468+00:00",
+  "issued_by": "FL-BSA Generation Process Validation System",
+  "model_certificate_hash": "ba68e4eb0e5682f20ba7137bc5bc2e06506fbed81c53d88fe2901c2ac2ff1219",
+  "model_path": "generator_a8d3845e-e62c-441b-8bb5-ea57c156cd04_both.pkl",
+  "model_type": "first_party_evidence_native",
+  "output_file_hash": "66a0ed84b8daba12837768c09bf49e7fccc84e0577791620d5fec8b12c6640e8",
+  "output_file_path": "synthetic_data.csv",
+  "output_file_size_mb": 0.4909048080444336,
+  "pipeline_id": "a8d3845e-e62c-441b-8bb5-ea57c156cd04",
+  "post_processing": {},
+  "previous_certificate_hash": "d11727e530244d835c30e9d109b5fb7f0a5e22b83c2feb02d98257179f6aadd7",
+  "recommendations": [
+    "Successfully generated 10000 samples for intrinsic branch"
+  ],
+  "status": "valid",
+  "total_generation_time": 0.18795561790466309,
+  "validation_results": {
+    "actual_model_hash": "",
+    "available_memory_gb": 192.1,
+    "error_message": null,
+    "error_occurred": false,
+    "estimated_memory_gb": 0.009313225746154785,
+    "expected_columns": [
+      "age",
+      "income",
+      "credit_score",
+      "loan_amount",
+      "debt_to_income",
+      "gender",
+      "race"
+    ],
+    "expected_model_hash": "",
+    "generated_columns": [
+      "age",
+      "income",
+      "credit_score",
+      "loan_amount",
+      "debt_to_income",
+      "gender",
+      "race"
+    ],
+    "generation_completed": true,
+    "generation_time_seconds": 0.18795561790466309,
+    "memory_sufficient": true,
+    "model_hash_verified": true,
+    "model_loaded_successfully": true,
+    "output_schema_matches": true,
+    "parameter_validation_errors": [],
+    "parameters_valid": true,
+    "samples_generated": 10000,
+    "samples_requested": 10000,
+    "warnings": []
+  },
+  "warnings": [
+    "CUDA not available - generation may be slower without GPU"
+  ]
+}
