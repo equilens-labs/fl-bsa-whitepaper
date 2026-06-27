@@ -1,30 +1,30 @@
 {
   "branch_mode": "amplification",
-  "certificate_hash": "75ad1c936b0ebe6f73e45c6d43cd0b7f29761156c31dbf820e85c84498f41a56",
-  "certificate_id": "f07b221d-84d9-4bba-ac28-54808f49be65",
+  "certificate_hash": "617abf2e1344d97a1941632b761d25084c3f2f74c7e71aa9f55877087cca6783",
+  "certificate_id": "763d2bdb-8912-4307-9033-8b6c2fc71061",
   "certificate_type": "synthetic_validation",
   "certificate_version": "1.0",
   "data_columns": 8,
   "data_rows": 10000,
   "data_schema_valid": true,
   "generation_successful": true,
-  "generation_time_seconds": 0.4271690845489502,
-  "generator_path": "generator_013b3cb7-a97f-4594-972d-77f09bdc4f0e_both.pkl",
+  "generation_time_seconds": 0.4366581439971924,
+  "generator_path": "generator_b3286b08-0859-4e0b-8446-a62003234807_both.pkl",
   "generator_type": "first_party_evidence_native",
-  "issued_at": "2026-06-27T07:20:49Z",
+  "issued_at": "2026-06-27T14:02:11Z",
   "issued_by": "FL-BSA Synthetic Validation Service",
   "issues_found": [],
   "metrics_summary": {},
   "n_samples_generated": 10000,
   "n_samples_requested": 10000,
-  "pipeline_id": "013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+  "pipeline_id": "b3286b08-0859-4e0b-8446-a62003234807",
   "post_processing_applied": [
     "type_conversion",
     "outlier_clipping",
     "category_standardization",
     "quantile_alignment"
   ],
-  "previous_certificate_hash": "873913d024530f2ffcb8e51d540de573dada1197c0c250871a8c971d53e182ba",
+  "previous_certificate_hash": "eb178132e32528246d61cfd7f6f648037a9e993f47fba3ce2e7ee5e9cc4ee4c6",
   "protected_attributes": [
     "gender",
     "race"
@@ -125,8 +125,8 @@
       "synthetic_sample_size_source": "default"
     },
     "lc11_contract_reference": {
-      "certificate_hash": "c9ba2f0f7da24d661f1d1b09661c57ea16dbd8551722993fdfc32cf1ddbc3bc2",
-      "certificate_id": "lc11_contract_amplification_013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+      "certificate_hash": "684aa6cff075bbf61d50aa7b622bf1da47c1c356c7f3587c04c3b628c3d94b35",
+      "certificate_id": "lc11_contract_amplification_b3286b08-0859-4e0b-8446-a62003234807",
       "certificate_name": "lc11_contract_certificate_amplification",
       "certificate_path": "certificates/lc11_contract_certificate_amplification.json"
     },
@@ -197,7 +197,7 @@
   "status": "valid",
   "synthetic_data_hash": "f2d04901d236fc64b689771efddaea22c1f970903c56a459e27b402f357f1497",
   "synthetic_data_path": "synthetic_data.csv",
-  "task_id": "b766c48e-d009-4eed-80c4-e506c5501172",
+  "task_id": "5bf4d9f2-27d6-419a-b73d-198f3ae36e39",
   "validation_summary": {
     "columns": 8,
     "issues_count": 0,

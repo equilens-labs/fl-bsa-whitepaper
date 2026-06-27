@@ -1,10 +1,10 @@
 {
   "certificate_chain_depth": 1,
-  "certificate_hash": "e7640816ffb5d7ee5a5c10980177f3a31b0de9a7b810455b8da3037a3a57af57",
+  "certificate_hash": "985082a54ff7eeb3e2cecf28f12fd2c042274230049b7eb646c3e1877aa062b8",
   "certificate_type": "regulatory_alignment",
   "compliance_reference": {
     "compliance_path": "validation/compliance_decision.json",
-    "compliance_sha256": "ee3c7ddcf6c99323b2c2c3adb8b1a4e7eef1109a92aa8dcbb63dc874582aeb2e",
+    "compliance_sha256": "d492b2b72411d42912986ce0a3e50f0b6c02d9909d2a8ecaf543841a3d571bad",
     "summary": {
       "compliant": false,
       "has_decision": true,
@@ -195,14 +195,14 @@
   },
   "metrics_reference": {
     "metrics_path": "metrics.json",
-    "metrics_sha256": "bad04a492e20e1872775c428cc5dfe1c3fd8fc51d881894b62003ab6c7dc95a3"
+    "metrics_sha256": "1471406150327c893ed6cee69845cacca0b6c109e361d861619f82b0a5e05ff1"
   },
-  "pipeline_id": "013b3cb7-a97f-4594-972d-77f09bdc4f0e",
-  "previous_certificate_hash": "c3b5f290e9b161b25e99627418ed80432c465db2cffefa1fb1c2bef875621201",
+  "pipeline_id": "b3286b08-0859-4e0b-8446-a62003234807",
+  "previous_certificate_hash": "d6c0c70fc36b6859a9b8a91a47c1dc02b0318dc75517f1d63227063f28a4c0b4",
   "regulatory_scope": {
     "ecoa_cfpb": true,
     "eu_ai_act": true,
     "fca_consumer_duty": true
   },
-  "timestamp": "2026-06-27T07:21:03.923893+00:00"
+  "timestamp": "2026-06-27T14:02:25.725313+00:00"
 }

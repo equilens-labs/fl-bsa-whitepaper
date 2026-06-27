@@ -15,8 +15,8 @@
       "unique_count": 5
     }
   },
-  "certificate_hash": "0b9f33289e3d45d1458c336e383bea708ffe6b42dfd55ae632bcd0c7389495a3",
-  "certificate_id": "data_profiling_amplification_013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+  "certificate_hash": "a886ab80c29c85092b30da08bcea506381f78a3334fe5b3c88d964c65ac95bf0",
+  "certificate_id": "data_profiling_amplification_b3286b08-0859-4e0b-8446-a62003234807",
   "certificate_type": "data_profiling_certificate",
   "certificate_version": "1.0",
   "data_quality_score": 0.95,
@@ -131,7 +131,7 @@
       "std": 0.5000512366767926
     }
   },
-  "pipeline_id": "013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+  "pipeline_id": "b3286b08-0859-4e0b-8446-a62003234807",
   "previous_certificate_hash": "",
   "producer_backend_id": "first_party_evidence_native",
   "profile_data_class": "native_generator_profile_data_bearing_state",
@@ -141,6 +141,6 @@
     "gender",
     "race"
   ],
-  "timestamp": "2026-06-27T07:20:48.353017+00:00",
+  "timestamp": "2026-06-27T14:02:10.402157+00:00",
   "training_mode": "empirical_profile"
 }
