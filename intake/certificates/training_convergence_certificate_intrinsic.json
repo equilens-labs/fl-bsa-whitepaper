@@ -1,8 +1,8 @@
 {
   "backend_id": "first_party_evidence_native",
   "branch_mode": "intrinsic",
-  "certificate_hash": "fa2ae7cc1acd00eb988bd64901d503bb7b7cda5f7cfff89f0a642090ef409c22",
-  "certificate_id": "training_convergence_intrinsic_013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+  "certificate_hash": "065808a1060100e9a2509d24c7de91262008ed57aea0d0fa53a2db4f827fda2d",
+  "certificate_id": "training_convergence_intrinsic_88ab091e-84af-4823-9b26-cf5125a47166",
   "certificate_type": "training_convergence_certificate",
   "certificate_version": "1.0",
   "completion_evidence": {
@@ -16,12 +16,12 @@
   "convergence_criteria_met": null,
   "convergence_metrics": null,
   "model_type": "first_party_evidence_native",
-  "pipeline_id": "013b3cb7-a97f-4594-972d-77f09bdc4f0e",
-  "previous_certificate_hash": "c9ba2f0f7da24d661f1d1b09661c57ea16dbd8551722993fdfc32cf1ddbc3bc2",
+  "pipeline_id": "88ab091e-84af-4823-9b26-cf5125a47166",
+  "previous_certificate_hash": "7069242266588b23b38f5854e08b5c2685df7bc1c3ea8106fbe7be800477e8a7",
   "status": "valid",
-  "timestamp": "2026-06-27T07:20:48.374083+00:00",
+  "timestamp": "2026-06-27T13:48:25.828334+00:00",
   "training_completed_successfully": true,
-  "training_duration_minutes": 0.0014428297678629558,
+  "training_duration_minutes": 0.0014206886291503907,
   "training_epochs": 0,
   "training_mode": "empirical_profile",
   "warnings": [

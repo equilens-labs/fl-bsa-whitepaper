@@ -1,7 +1,7 @@
 {
   "branch_mode": "amplification",
-  "certificate_hash": "2397de85c356134a85c4451a147fb8febe31d45c2d1a8570dc86a56cb7f05753",
-  "certificate_id": "model_cert_013b3cb7-a97f-4594-972d-77f09bdc4f0e_amplification",
+  "certificate_hash": "4e77c2a97cf3b683b95224bf128bbbc7bce6e62e62bdc92d93bb04dc3584832d",
+  "certificate_id": "model_cert_88ab091e-84af-4823-9b26-cf5125a47166_amplification",
   "config_version": "1.0.0",
   "data_fingerprint": "85932e8d8dd3c220a9fe3accaba61e1d4c389f65c117a41ff72cfcaae146620f",
   "hyperparameters": {
@@ -14,12 +14,12 @@
   },
   "model_type": "first_party_evidence_native",
   "performance_metrics": {
-    "training_time_minutes": 0.0014428297678629558
+    "training_time_minutes": 0.0014206886291503907
   },
-  "pipeline_id": "013b3cb7-a97f-4594-972d-77f09bdc4f0e",
-  "previous_certificate_hash": "0b71dd3489f58e9b1c2a5cb193ccb3839362070460edb385a082cb926f706e42",
-  "timestamp": "2026-06-27T07:20:48.368473+00:00",
-  "training_duration_minutes": 0.0014428297678629558,
+  "pipeline_id": "88ab091e-84af-4823-9b26-cf5125a47166",
+  "previous_certificate_hash": "ecc2171593876cc1a0d79e3a404860d09ad0052adf552191596aed6534ef6fc1",
+  "timestamp": "2026-06-27T13:48:25.822861+00:00",
+  "training_duration_minutes": 0.0014206886291503907,
   "training_metadata": {
     "backend_id": "first_party_evidence_native",
     "branch_purpose": "bias amplification test",
@@ -54,7 +54,7 @@
     "training_convergence": {
       "backend_id": "first_party_evidence_native",
       "branch_mode": "amplification",
-      "certificate_hash": "c9fa0e67f2b19c68d28a7dbb628a788d8d0ee2945256ca84adc6b0ea4d8174f8",
+      "certificate_hash": "c4a13da226a758f802df4f1dbb903155dd7de45410c2fc0e3f14b6e547bffe5c",
       "convergence_claim": "not_applicable",
       "convergence_criteria_met": null,
       "convergence_epoch": null,
