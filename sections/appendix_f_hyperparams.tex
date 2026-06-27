@@ -1,10 +1,10 @@
-\section{Model Hyperparameters (CTGAN)}
-This appendix summarises the chosen hyperparameters for the Conditional Tabular Generative Adversarial Network (CTGAN) models used in this synthetic audit scenario. Values are derived from the model certificates in the intake bundle for this run (preferred), with a fallback to the local intake hyperparameter template when certificates are not available.
+\section{Generator Configuration}
+This appendix summarises the branch generator configuration recorded in the intake certificates for this run. The current native/no-CTGAN evidence path uses the first-party evidence-native generator; CTGAN-specific fields such as epochs, PAC, batch size, and GAN layer widths are therefore not applicable and are not reported as chosen hyperparameters.
 
-\subsection{Chosen Hyperparameters by Branch}
+\subsection{Branch Configuration}
 \begin{table}[t]
 \centering
 \input{includes/table_hparams_chosen}
-\caption{Chosen CTGAN hyperparameters for each generator branch in this synthetic audit run, derived from the model certificates in the intake bundle when available. Generator and discriminator layers are given as hidden-unit widths per layer.}
-\label{tab:ctgan_hparams_branches}
+\caption{Generator configuration and hyperparameter disposition for each branch in this synthetic audit run, derived from the intake certificates when available.}
+\label{tab:generator_config_branches}
 \end{table}
