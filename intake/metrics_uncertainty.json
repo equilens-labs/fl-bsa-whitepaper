@@ -52,7 +52,7 @@
       "small_n_flag": false,
       "p_value_method": "two_proportion_z_test",
       "confidence_level": 0.95,
-      "seed_material": "sha256:ed8b6a2789bff126782a847f3c7f6b814bdc4676969567c4a85bc82e0bde82f4"
+      "seed_material": "sha256:565273e0d33b155108004bcf0d7d884f470029c8eeb5988dc90ec8ac692a30a5"
     },
     "race": {
       "reference_group": "black",
@@ -113,7 +113,7 @@
           "small_n_flag": false,
           "p_value_method": "two_proportion_z_test",
           "confidence_level": 0.95,
-          "seed_material": "sha256:19e7697781823ef7ebd34e4f88ea23f8b3af5822502f14c40870af5a22739602"
+          "seed_material": "sha256:b04978274746a08098fcca7c2224cb01826b718292cb8e9842d51ce6c7cbbb42"
         },
         "hispanic": {
           "counts": {
@@ -163,7 +163,7 @@
           "small_n_flag": false,
           "p_value_method": "two_proportion_z_test",
           "confidence_level": 0.95,
-          "seed_material": "sha256:9eef51b1900a44afb7a3ebb104fd3c41f088b00a2ad77818a65f6d59c0831ad1"
+          "seed_material": "sha256:db3beee4e5d1b6d759d53a6cdc098623a1241f52578d2f66e6ca7e0f970137df"
         },
         "other": {
           "counts": {
@@ -213,7 +213,7 @@
           "small_n_flag": false,
           "p_value_method": "two_proportion_z_test",
           "confidence_level": 0.95,
-          "seed_material": "sha256:a60ed142bcb17b6790e3bdef2fb129301d440238f431607a2b1e7416434aa113"
+          "seed_material": "sha256:ccf0dbedc29fcfd4533d5e5fec98d435b22a71237913d7ac8e59b5e4918180bf"
         },
         "white": {
           "counts": {
@@ -263,7 +263,7 @@
           "small_n_flag": false,
           "p_value_method": "two_proportion_z_test",
           "confidence_level": 0.95,
-          "seed_material": "sha256:94ac2d5e10fbc2fb37a0f95c201a702b1f80173583432b08997b5c180b1064fb"
+          "seed_material": "sha256:bb1e45e3e0bc3552dd1e7c759a69acaedc9d59ce67ce4084617fef345f03154c"
         }
       },
       "worst_case_pair": "other",

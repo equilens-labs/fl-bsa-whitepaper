@@ -1,16 +1,16 @@
 {
   "branch_mode": "amplification",
-  "certificate_hash": "873913d024530f2ffcb8e51d540de573dada1197c0c250871a8c971d53e182ba",
-  "certificate_id": "5555d058-2909-4dcf-958b-84654b60e7a3",
+  "certificate_hash": "2e5a2b07d99fc288cc690abcd01f02e6603f1a3a64a99fb573ac0cf423cdaf91",
+  "certificate_id": "a8fe1d72-354d-4d0c-a65f-c508eda8474b",
   "certificate_type": "generation_process_certificate",
   "certificate_version": "1.0",
-  "generation_completed_at": "2026-06-27T07:20:49.596917+00:00",
+  "generation_completed_at": "2026-06-27T17:21:29.032931+00:00",
   "generation_environment": {
     "cpu_count": 128,
     "ctgan_version": "unknown",
     "cuda_available": false,
     "cuda_version": null,
-    "memory_available_gb": 195.98,
+    "memory_available_gb": 206.46,
     "numpy_version": "1.26.4",
     "pandas_version": "2.3.3",
     "python_version": "3.11.2",
@@ -29,7 +29,7 @@
     "stratification_column": null,
     "temperature": 1.0
   },
-  "generation_started_at": "2026-06-27T07:20:49.169748+00:00",
+  "generation_started_at": "2026-06-27T17:21:28.593909+00:00",
   "generator_backend": {
     "backend_family": "evidence_native_tabular",
     "backend_id": "first_party_evidence_native",
@@ -61,15 +61,15 @@
     },
     "metadata_version": "1"
   },
-  "issued_at": "2026-06-27T07:20:49.596229+00:00",
+  "issued_at": "2026-06-27T17:21:29.032334+00:00",
   "issued_by": "FL-BSA Generation Process Validation System",
-  "model_certificate_hash": "2397de85c356134a85c4451a147fb8febe31d45c2d1a8570dc86a56cb7f05753",
-  "model_path": "generator_013b3cb7-a97f-4594-972d-77f09bdc4f0e_both.pkl",
+  "model_certificate_hash": "a717ea0c4d651d43a6473887dc9e671d52f115da8de9233aa29008aaab32b457",
+  "model_path": "generator_bb995002-33f5-4017-898f-9c98431dca08_both.pkl",
   "model_type": "first_party_evidence_native",
   "output_file_hash": "f2d04901d236fc64b689771efddaea22c1f970903c56a459e27b402f357f1497",
   "output_file_path": "synthetic_data.csv",
   "output_file_size_mb": 0.833256721496582,
-  "pipeline_id": "013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+  "pipeline_id": "bb995002-33f5-4017-898f-9c98431dca08",
   "post_processing": {
     "quantile_alignment": {
       "applied": true,
@@ -130,15 +130,15 @@
       "warnings": []
     }
   },
-  "previous_certificate_hash": "c9ba2f0f7da24d661f1d1b09661c57ea16dbd8551722993fdfc32cf1ddbc3bc2",
+  "previous_certificate_hash": "24ef07773fa33d905d734f338f36831fb84368fdec9f791c58a60d35fc04c76e",
   "recommendations": [
     "Successfully generated 10000 samples for amplification branch"
   ],
   "status": "valid",
-  "total_generation_time": 0.4271690845489502,
+  "total_generation_time": 0.4390225410461426,
   "validation_results": {
     "actual_model_hash": "",
-    "available_memory_gb": 195.98,
+    "available_memory_gb": 206.46,
     "error_message": null,
     "error_occurred": false,
     "estimated_memory_gb": 0.009313225746154785,
@@ -164,7 +164,7 @@
       "loan_approved"
     ],
     "generation_completed": true,
-    "generation_time_seconds": 0.4271690845489502,
+    "generation_time_seconds": 0.4390225410461426,
     "memory_sufficient": true,
     "model_hash_verified": true,
     "model_loaded_successfully": true,
