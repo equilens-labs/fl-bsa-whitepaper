@@ -1,57 +1,28 @@
 {
   "branch_mode": "intrinsic",
-  "certificate_hash": "31582b72edcb1e3e41db0b15b67dcc9b7f70941e5a67aea6d29e1f90d5fa9e07",
-  "certificate_id": "model_cert_88325003-be12-4262-a7c4-ca8c8874c47e_intrinsic",
+  "certificate_hash": "6fa8ed99cef3acad7efea289ba5e197a13e97b55da808c63d69cece4828fe9e0",
+  "certificate_id": "model_cert_013b3cb7-a97f-4594-972d-77f09bdc4f0e_intrinsic",
   "config_version": "1.0.0",
-  "data_fingerprint": "f5556ac8e05ac4c0",
+  "data_fingerprint": "c533c4300c515a8a287691e6d5833ba161aa2141d047f3e1f5d83c161fa71bb1",
   "hyperparameters": {
-    "batch_size": 30,
-    "discriminator_decay": 3.5213588054678678e-06,
-    "discriminator_dim": [
-      64,
-      64
-    ],
-    "discriminator_lr": 0.0002049798052095018,
-    "epochs": 120,
-    "generator_decay": 3.3118298880723843e-06,
-    "generator_dim": [
-      64,
-      64
-    ],
-    "generator_lr": 0.0004597505784732166,
-    "guardrails": {
-      "batch": {
-        "original": 512,
-        "source": "realism_gates",
-        "value": 32
-      },
-      "fingerprint": {
-        "max_corr": 0.8808936584289787,
-        "n": 3000.0,
-        "rho_p": 0.8808936584289787,
-        "rho_s": 0.8652764874238226
-      },
-      "pac": {
-        "original": 5,
-        "source": "realism_gates",
-        "value": 5
-      }
-    },
-    "pac": 5
+    "algorithm": "native_branch_profile_empirical_sampler",
+    "backend_id": "first_party_evidence_native",
+    "batch_size": null,
+    "epochs": 0,
+    "numeric_jitter_fraction": null,
+    "pac": null
   },
-  "model_type": "CTGAN",
+  "model_type": "first_party_evidence_native",
   "performance_metrics": {
-    "final_discriminator_loss": 0.15460646152496338,
-    "final_generator_loss": -1.2568668127059937,
-    "training_time_minutes": 5.064580273628235
+    "training_time_minutes": 0.0014428297678629558
   },
-  "pipeline_id": "88325003-be12-4262-a7c4-ca8c8874c47e",
-  "previous_certificate_hash": "252b9334b62118ca830f468be446710e12822ce55ed2c203fc67c48813a3bcf5",
-  "timestamp": "2026-02-22T10:30:47.807566+00:00",
-  "training_duration_minutes": 5.064580273628235,
+  "pipeline_id": "013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+  "previous_certificate_hash": "c9ba2f0f7da24d661f1d1b09661c57ea16dbd8551722993fdfc32cf1ddbc3bc2",
+  "timestamp": "2026-06-27T07:20:48.374370+00:00",
+  "training_duration_minutes": 0.0014428297678629558,
   "training_metadata": {
+    "backend_id": "first_party_evidence_native",
     "branch_purpose": "intrinsic fairness test",
-    "epochs": 120,
     "features_included": [
       "age",
       "income",
@@ -59,216 +30,58 @@
       "loan_amount",
       "debt_to_income",
       "gender",
-      "race",
-      "income_bin"
+      "race"
     ],
-    "guardrails": {
-      "batch": {
-        "original": 512,
-        "source": "realism_gates",
-        "value": 32
-      },
-      "fingerprint": {
-        "max_corr": 0.8808936584289787,
-        "n": 3000.0,
-        "rho_p": 0.8808936584289787,
-        "rho_s": 0.8652764874238226
-      },
-      "pac": {
-        "original": 5,
-        "source": "realism_gates",
-        "value": 5
-      }
-    },
+    "generator_type": "first_party_evidence_native",
+    "guardrails": null,
     "includes_loan_decisions": false,
+    "profile_data_class": "native_generator_profile_data_bearing_state",
+    "profile_exportable_as_evidence": false,
     "records_trained": 3000,
-    "transforms": {
-      "columns": [
-        "income",
-        "loan_amount"
-      ],
-      "income_bin": {
-        "bins_q": 10,
-        "enabled": true
-      },
-      "log1p": true,
-      "standardize": {
-        "income": {
-          "mean": 10.834793829598036,
-          "std": 0.6319221232251022
-        },
-        "loan_amount": {
-          "mean": 9.579199735862602,
-          "std": 0.7307366466811133
-        }
-      },
-      "winsorize": {
-        "income": {
-          "lower": 20000.0,
-          "lower_q": 0.01,
-          "upper": 237554.58999999816,
-          "upper_q": 0.99
-        },
-        "loan_amount": {
-          "lower": 3066.83,
-          "lower_q": 0.01,
-          "upper": 82761.24999999994,
-          "upper_q": 0.99
-        }
-      }
-    }
+    "training_mode": "empirical_profile"
   },
   "validation_results": {
-    "branch": "intrinsic",
-    "business_value": "Demonstrates achievable fairness baseline under configured screening thresholds (not a compliance determination)",
+    "backend_id": "first_party_evidence_native",
     "checks": {
-      "fair_decisions": {
-        "details": {
-          "gender": {
-            "approval_rates": {
-              "female": 0.6995322058294351,
-              "male": 0.6994597028365601
-            },
-            "standard_deviation": 5.126735791821741e-05,
-            "target_rate": 0.7
-          },
-          "race": {
-            "approval_rates": {
-              "asian": 0.6985845129059117,
-              "black": 0.6995179432244242,
-              "hispanic": 0.6996115666810531,
-              "other": 0.6983240223463687,
-              "white": 0.6999230571941524
-            },
-            "standard_deviation": 0.0006962659944609934,
-            "target_rate": 0.7
-          }
-        },
-        "errors": [],
-        "message": "Fair decisions generated successfully",
+      "first_party_training": {
+        "backend_id": "first_party_evidence_native",
+        "training_mode": "empirical_profile",
         "valid": true
       },
-      "feature_independence": {
-        "details": {
-          "credit_score_by_gender": {
-            "coefficient_of_variation": 0.009350190867358145,
-            "group_means": {
-              "female": 678.5345448002879,
-              "male": 687.5666366501575
-            },
-            "independent": true
-          },
-          "credit_score_by_race": {
-            "coefficient_of_variation": 0.033926771049782964,
-            "group_means": {
-              "asian": 657.3263946711074,
-              "black": 656.2554900910552,
-              "hispanic": 669.4341821320673,
-              "other": 691.2932960893854,
-              "white": 709.0902795588612
-            },
-            "independent": true
-          },
-          "debt_to_income_by_gender": {
-            "coefficient_of_variation": 0.18698614714973405,
-            "group_means": {
-              "female": 0.13544122283331225,
-              "male": 0.17671414765342844
-            },
-            "independent": false
-          },
-          "debt_to_income_by_race": {
-            "coefficient_of_variation": 0.09496994102981196,
-            "group_means": {
-              "asian": 0.1470485441536021,
-              "black": 0.1706228255033429,
-              "hispanic": 0.1671677544742327,
-              "other": 0.13916467317002415,
-              "white": 0.14250291113986321
-            },
-            "independent": true
-          },
-          "income_by_gender": {
-            "coefficient_of_variation": -0.7421045220354994,
-            "group_means": {
-              "female": -0.10771742937731688,
-              "male": -0.033574758107302836
-            },
-            "independent": true
-          },
-          "income_by_race": {
-            "coefficient_of_variation": -2.5006155857281276,
-            "group_means": {
-              "asian": -0.5106560585325168,
-              "black": -0.5596744945776961,
-              "hispanic": -0.023520953756889847,
-              "other": 0.14004979928665318,
-              "white": 0.22174918010972433
-            },
-            "independent": true
-          }
+      "pre_label_representation": {
+        "claim_scope": "first_party_pre_label_profile",
+        "diagnostic_coverage": {
+          "coarse_anchor_profile_preservation": "available",
+          "per_feature_anchor_bucket_preservation": "unavailable",
+          "source_to_synthetic_feature_anchor_diagnostics": "unavailable",
+          "within_synthetic_feature_anchor_diagnostics": "unavailable"
         },
-        "errors": [
-          "debt_to_income varies too much by gender (CV=0.19, threshold=0.15). Means: {'female': 0.13544122283331225, 'male': 0.17671414765342844}"
-        ],
-        "valid": false
-      },
-      "minimal_bias": {
-        "details": {
-          "demographic_parity": 7.250299287497874e-05,
-          "disparate_impact": 0.9998963550323048,
-          "statistical_parity_difference": 7.250299287497874e-05
-        },
-        "errors": [],
-        "message": "Minimal bias achieved under configured screening thresholds",
+        "summary": "First-party intrinsic pre-label profile trained without decision columns",
         "valid": true
-      },
-      "population_diversity": {
-        "details": {
-          "age_range": 54,
-          "age_std": 9.13162123615736,
-          "credit_score_range": 475,
-          "credit_score_std": 83.45995677496177,
-          "income_range": 5.373673649589455,
-          "income_std": 1.0358256683073106,
-          "unique_protected_combinations": 10
-        },
-        "errors": [
-          "Income diversity too low: std=1.0358256683073106"
-        ],
-        "valid": false
       }
     },
-    "edge_case_details": {
-      "dataset_size": 10000,
-      "missing_ratio": 0.0,
-      "protected_attributes": {
-        "gender": {
-          "max_group_ratio": 0.5558,
-          "min_group_size": 4442,
-          "unique_values": 2,
-          "value_counts": {
-            "female": 5558,
-            "male": 4442
-          }
-        },
-        "race": {
-          "max_group_ratio": 0.3899,
-          "min_group_size": 716,
-          "unique_values": 5,
-          "value_counts": {
-            "asian": 1201,
-            "black": 1867,
-            "hispanic": 2317,
-            "other": 716,
-            "white": 3899
-          }
-        }
-      }
+    "summary": "FL-BSA Native Generator characterization backend training completed",
+    "training_convergence": {
+      "backend_id": "first_party_evidence_native",
+      "branch_mode": "intrinsic",
+      "certificate_hash": "fa2ae7cc1acd00eb988bd64901d503bb7b7cda5f7cfff89f0a642090ef409c22",
+      "convergence_claim": "not_applicable",
+      "convergence_criteria_met": null,
+      "convergence_epoch": null,
+      "convergence_epoch_note": "not applicable to empirical profile training",
+      "early_stopping_epoch": null,
+      "early_stopping_triggered": false,
+      "reason": "first_party_backend_has_no_adversarial_convergence_claim",
+      "status": "valid",
+      "training_completed_successfully": true,
+      "training_mode": "empirical_profile",
+      "warnings": [
+        "FL-BSA Native Generator characterization backend does not train an adversarial loss surface"
+      ]
     },
-    "edge_case_type": "normal",
     "training_records": 3000,
-    "valid": false,
-    "validation_samples": 10000
+    "valid": true,
+    "validation_samples": 3000,
+    "validation_surface": "first_party_evidence_native_producer"
   }
 }

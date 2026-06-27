@@ -1,4 +1,4 @@
 
 \section{Model and Algorithm}
-FL-BSA uses a dual-branch CTGAN-style generator to produce synthetic borrower portfolios from tabular lending data. In this whitepaper, fairness is evaluated \emph{post hoc} from aggregate selection counts and does not rely on training-time fairness constraints. The intrinsic branch may apply a deterministic post-labelling policy to inject fair decisions; this is recorded in the run artefacts and certificates when enabled.
-Hyperparameters and seeds for the CTGAN generator branches used in this run are summarised in Appendix~F.
+FL-BSA uses a dual-branch tabular generator to produce synthetic borrower portfolios from tabular lending data. In this whitepaper, fairness is evaluated \emph{post hoc} from aggregate selection counts and does not rely on training-time fairness constraints. The intrinsic branch may apply a deterministic post-labelling policy to inject fair decisions; this is recorded in the run artefacts and certificates when enabled.
+The rc6 native/no-CTGAN run uses the first-party evidence-native generator. Branch generator configuration and hyperparameter disposition for this run are summarised in Appendix~F.
