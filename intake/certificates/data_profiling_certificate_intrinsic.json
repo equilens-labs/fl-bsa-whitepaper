@@ -1,6 +1,5 @@
 {
   "branch_mode": "intrinsic",
-  "branch_training_surface": "features only (no decisions)",
   "categorical_features": [
     "gender",
     "race"
@@ -15,8 +14,8 @@
       "unique_count": 5
     }
   },
-  "certificate_hash": "1babf1bf1ea96f2ac55786f2de9aea5f1f32631a4efea708e0c0caa9b8d740c0",
-  "certificate_id": "data_profiling_intrinsic_013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+  "certificate_hash": "74b4d36848f2fa82886607040904c6b81f30c31c808c4f387e3b5954ec999e20",
+  "certificate_id": "data_profiling_intrinsic_c4fbfb2d-0c83-4d4e-9389-cdb58d482f35",
   "certificate_type": "data_profiling_certificate",
   "certificate_version": "1.0",
   "data_quality_score": 0.95,
@@ -114,16 +113,12 @@
       "std": 15688.543417942952
     }
   },
-  "pipeline_id": "013b3cb7-a97f-4594-972d-77f09bdc4f0e",
-  "previous_certificate_hash": "0b9f33289e3d45d1458c336e383bea708ffe6b42dfd55ae632bcd0c7389495a3",
-  "producer_backend_id": "first_party_evidence_native",
-  "profile_data_class": "native_generator_profile_data_bearing_state",
-  "profile_exportable_as_evidence": false,
+  "pipeline_id": "c4fbfb2d-0c83-4d4e-9389-cdb58d482f35",
+  "previous_certificate_hash": "d3d416a82e95fa3ced8641ff518ef28493e477c98c565f8d0d712567b941b749",
   "protected_attributes_found": [
     "age",
     "gender",
     "race"
   ],
-  "timestamp": "2026-06-27T07:20:48.364485+00:00",
-  "training_mode": "empirical_profile"
+  "timestamp": "2026-06-28T06:33:55.166761+00:00"
 }

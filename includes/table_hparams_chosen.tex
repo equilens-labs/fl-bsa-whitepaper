@@ -1,8 +1,8 @@
-\begin{tabular}{@{}p{0.14\linewidth}p{0.20\linewidth}p{0.20\linewidth}p{0.32\linewidth}@{}}
+\begin{tabular}{lrrrllrr}
 \toprule
-branch & backend & generator & disposition\\
+branch & batch size & epochs & pac & gen. layers & disc. layers & gen. lr & disc. lr\\
 \midrule
-amplification & first-party evidence-native & branch-profile empirical sampler & No tunable GAN hyperparameters; epochs, PAC, batch size, and GAN layers are not applicable.\\
-intrinsic & first-party evidence-native & branch-profile empirical sampler & No tunable GAN hyperparameters; epochs, PAC, batch size, and GAN layers are not applicable.\\
+amplification & 30 & 180 & 5 & 128-128 & 128-128 & \num[round-mode=figures,round-precision=3]{3.489e-04} & \num[round-mode=figures,round-precision=3]{1.383e-04}\\
+intrinsic & 30 & 220 & 5 & 64-128-64 & 64-64 & \num[round-mode=figures,round-precision=3]{6.098e-04} & \num[round-mode=figures,round-precision=3]{1.584e-04}\\
 \bottomrule
 \end{tabular}
