@@ -1,16 +1,16 @@
 {
   "branch_mode": "amplification",
-  "certificate_hash": "873913d024530f2ffcb8e51d540de573dada1197c0c250871a8c971d53e182ba",
-  "certificate_id": "5555d058-2909-4dcf-958b-84654b60e7a3",
+  "certificate_hash": "fc39e3d1ec32fb374f929469546333d127fd5520c5844183ffb088f45d106c00",
+  "certificate_id": "a09e5e74-9fc8-4bef-9af3-2c30875a77e2",
   "certificate_type": "generation_process_certificate",
   "certificate_version": "1.0",
-  "generation_completed_at": "2026-06-27T07:20:49.596917+00:00",
+  "generation_completed_at": "2026-06-29T06:53:46.552093+00:00",
   "generation_environment": {
     "cpu_count": 128,
-    "ctgan_version": "unknown",
+    "ctgan_version": "0.7.5",
     "cuda_available": false,
     "cuda_version": null,
-    "memory_available_gb": 195.98,
+    "memory_available_gb": 194.85,
     "numpy_version": "1.26.4",
     "pandas_version": "2.3.3",
     "python_version": "3.11.2",
@@ -29,85 +29,54 @@
     "stratification_column": null,
     "temperature": 1.0
   },
-  "generation_started_at": "2026-06-27T07:20:49.169748+00:00",
-  "generator_backend": {
-    "backend_family": "evidence_native_tabular",
-    "backend_id": "first_party_evidence_native",
-    "backend_name": "FL-BSA Native Generator",
-    "backend_version": "0.1.0",
-    "branch_contract": {
-      "amplification": "preserve configured amplification targets and record achieved strata",
-      "intrinsic": "exclude outcome aliases before training and record post-label boundary"
-    },
-    "claim_limits": [
-      "not_ctgan",
-      "not_datacebo",
-      "not_gan",
-      "not_neural",
-      "not_differential_privacy",
-      "not_full_distribution_clone"
-    ],
-    "claims_family": "evidence_native_tabular",
-    "commercial_authorization_required": false,
-    "dependency_package_scope": "direct_runtime_dependencies_only_not_sbom",
-    "dependency_packages": {
-      "numpy": "1.26.4",
-      "pandas": "2.3.3"
-    },
-    "family_field_contract": {
-      "backend_family": "runtime_implementation_family",
-      "claims_family": "claim_taxonomy_family",
-      "relationship": "same_value_in_block_1_distinct_contract_fields"
-    },
-    "metadata_version": "1"
-  },
-  "issued_at": "2026-06-27T07:20:49.596229+00:00",
+  "generation_started_at": "2026-06-29T06:53:43.853527+00:00",
+  "issued_at": "2026-06-29T06:53:46.551637+00:00",
   "issued_by": "FL-BSA Generation Process Validation System",
-  "model_certificate_hash": "2397de85c356134a85c4451a147fb8febe31d45c2d1a8570dc86a56cb7f05753",
-  "model_path": "generator_013b3cb7-a97f-4594-972d-77f09bdc4f0e_both.pkl",
-  "model_type": "first_party_evidence_native",
-  "output_file_hash": "f2d04901d236fc64b689771efddaea22c1f970903c56a459e27b402f357f1497",
+  "model_certificate_hash": "67ebc63426c071e4234acd721ab619584c15f360c3fca94d148199f0255fa08c",
+  "model_path": "generator_29a93665-a4cf-47ee-b50e-f03ff23317ac_both.pkl",
+  "model_type": "CTGAN",
+  "output_file_hash": "befbcf1df81bace3f5bf090ac6019427ca500cf24716672fb1e151d02809163a",
   "output_file_path": "synthetic_data.csv",
-  "output_file_size_mb": 0.833256721496582,
-  "pipeline_id": "013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+  "output_file_size_mb": 0.8335142135620117,
+  "pipeline_id": "29a93665-a4cf-47ee-b50e-f03ff23317ac",
   "post_processing": {
     "quantile_alignment": {
       "applied": true,
       "ks_delta_by_column": {
         "age": {
-          "ks_statistic_delta": 0.029666666666666664,
+          "ks_statistic_delta": 0.11256666666666666,
           "post_ks_statistic": 0.0015,
           "post_p_value": 1.0,
-          "pre_ks_statistic": 0.031166666666666665,
-          "pre_p_value": 0.022136696824873636
+          "pre_ks_statistic": 0.11406666666666666,
+          "pre_p_value": 1.3464469134170797e-26
         },
         "credit_score": {
-          "ks_statistic_delta": 0.021433333333333332,
+          "ks_statistic_delta": 0.11460000000000001,
           "post_ks_statistic": 0.0015333333333333334,
           "post_p_value": 1.0,
-          "pre_ks_statistic": 0.022966666666666666,
-          "pre_p_value": 0.172599773924604
+          "pre_ks_statistic": 0.11613333333333334,
+          "pre_p_value": 1.4806151899311672e-27
         },
         "debt_to_income": {
-          "ks_statistic_delta": 0.012566666666666667,
+          "ks_statistic_delta": 0.060533333333333335,
           "post_ks_statistic": 0.0010666666666666667,
           "post_p_value": 1.0,
-          "pre_ks_statistic": 0.013633333333333334,
-          "pre_p_value": 0.7791329169073059
+          "pre_ks_statistic": 0.0616,
+          "pre_p_value": 4.713068036905022e-08
         },
         "income": {
-          "ks_statistic_delta": 0.08103333333333333,
+          "ks_statistic_delta": 0.12789999999999999,
           "post_ks_statistic": 0.0011666666666666668,
           "post_p_value": 1.0,
-          "pre_ks_statistic": 0.0822,
-          "pre_p_value": 5.2352686132570834e-14
+          "pre_ks_statistic": 0.12906666666666666,
+          "pre_p_value": 5.963475771044743e-34
         },
         "loan_amount": {
-          "ks_statistic_delta": 0.028,
+          "ks_statistic_delta": 0.12936666666666666,
           "post_ks_statistic": 0.0011666666666666668,
           "post_p_value": 1.0,
-          "pre_ks_statistic": 0.029166666666666667,
-          "pre_p_value": 0.03868967173725989
+          "pre_ks_statistic": 0.13053333333333333,
+          "pre_p_value": 1.0167837961111886e-34
         }
       },
       "numeric_columns": [
@@ -130,15 +99,15 @@
       "warnings": []
     }
   },
-  "previous_certificate_hash": "c9ba2f0f7da24d661f1d1b09661c57ea16dbd8551722993fdfc32cf1ddbc3bc2",
+  "previous_certificate_hash": "67ebc63426c071e4234acd721ab619584c15f360c3fca94d148199f0255fa08c",
   "recommendations": [
     "Successfully generated 10000 samples for amplification branch"
   ],
   "status": "valid",
-  "total_generation_time": 0.4271690845489502,
+  "total_generation_time": 2.698566436767578,
   "validation_results": {
     "actual_model_hash": "",
-    "available_memory_gb": 195.98,
+    "available_memory_gb": 194.85,
     "error_message": null,
     "error_occurred": false,
     "estimated_memory_gb": 0.009313225746154785,
@@ -164,7 +133,7 @@
       "loan_approved"
     ],
     "generation_completed": true,
-    "generation_time_seconds": 0.4271690845489502,
+    "generation_time_seconds": 2.698566436767578,
     "memory_sufficient": true,
     "model_hash_verified": true,
     "model_loaded_successfully": true,
