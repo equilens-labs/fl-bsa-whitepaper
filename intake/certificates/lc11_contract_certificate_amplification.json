@@ -1,7 +1,7 @@
 {
   "branch_mode": "amplification",
-  "certificate_hash": "c9ba2f0f7da24d661f1d1b09661c57ea16dbd8551722993fdfc32cf1ddbc3bc2",
-  "certificate_id": "lc11_contract_amplification_013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+  "certificate_hash": "288af2f6c3b9e7d5b3d7a8fd0fe6c934e7102175217a811bd17a3e34648526d2",
+  "certificate_id": "lc11_contract_amplification_e32e5a8f-83b9-482b-801c-a902f30a7f6c",
   "certificate_type": "lc11_contract_certificate",
   "certificate_version": "1.0",
   "config_hash": "0b4541d1dc81c9dc7e3b7dae261d16846cee214c1e918075d932c228458830b0",
@@ -146,12 +146,12 @@
   },
   "effective_thresholds": {},
   "mechanism_family": "strict_post_generation_bias_preserving_resampling",
-  "model_certificate_hash": "2397de85c356134a85c4451a147fb8febe31d45c2d1a8570dc86a56cb7f05753",
+  "model_certificate_hash": "a043921fe61c019fa023beaa19a5361e0dc33fa06a7bea475e1372668ec0e29f",
   "performance_metrics": {
-    "training_time_minutes": 0.0014428297678629558
+    "training_time_minutes": 0.0021173874537150066
   },
-  "pipeline_id": "013b3cb7-a97f-4594-972d-77f09bdc4f0e",
-  "previous_certificate_hash": "2397de85c356134a85c4451a147fb8febe31d45c2d1a8570dc86a56cb7f05753",
+  "pipeline_id": "e32e5a8f-83b9-482b-801c-a902f30a7f6c",
+  "previous_certificate_hash": "a043921fe61c019fa023beaa19a5361e0dc33fa06a7bea475e1372668ec0e29f",
   "profile_data_class": "native_generator_profile_data_bearing_state",
   "profile_exportable_as_evidence": false,
   "protected_group_scope": {
@@ -216,9 +216,9 @@
     "use_refactored_calibration": false
   },
   "schema_version": "lc11_contract_certificate.v1",
-  "software_commit": "d2661f2b0f789240264230229630c533dda4fcef",
+  "software_commit": "b8dcd3fa0430da93888aa3a7c7a6be857f8a8b9a",
   "software_version": "0.1.0",
-  "timestamp": "2026-06-27T07:20:48.372818+00:00",
+  "timestamp": "2026-06-29T18:32:28.036044+00:00",
   "tolerance_multiplier_applied": 1.0,
   "training_metadata": {
     "backend_id": "first_party_evidence_native",
@@ -241,7 +241,7 @@
     "records_trained": 3000,
     "training_mode": "empirical_profile"
   },
-  "training_time_minutes": 0.0014428297678629558,
+  "training_time_minutes": 0.0021173874537150066,
   "validation_results": {
     "backend_id": "first_party_evidence_native",
     "checks": {
@@ -255,7 +255,7 @@
     "training_convergence": {
       "backend_id": "first_party_evidence_native",
       "branch_mode": "amplification",
-      "certificate_hash": "c9fa0e67f2b19c68d28a7dbb628a788d8d0ee2945256ca84adc6b0ea4d8174f8",
+      "certificate_hash": "94b5998a8b8c65d006a5519676fa7e84b3620d8d461c3f40ac82d1d82e2fb0bd",
       "convergence_claim": "not_applicable",
       "convergence_criteria_met": null,
       "convergence_epoch": null,
@@ -283,6 +283,6 @@
   "validation_surface": "first_party_evidence_native_producer",
   "validator": {
     "identity": "AmplificationBranchValidator",
-    "result_digest": "71081bc403f13db96f2744effa501dc852b1f46eee1cdbb13e0317e151f1fe9a"
+    "result_digest": "9d58813760e43d94b20ac804561852899fe0e536286df26dbfde7ad0e01e0db8"
   }
 }

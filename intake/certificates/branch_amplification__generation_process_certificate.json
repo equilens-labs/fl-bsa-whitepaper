@@ -1,16 +1,16 @@
 {
   "branch_mode": "amplification",
-  "certificate_hash": "873913d024530f2ffcb8e51d540de573dada1197c0c250871a8c971d53e182ba",
-  "certificate_id": "5555d058-2909-4dcf-958b-84654b60e7a3",
+  "certificate_hash": "453f99103361bed0cf17e68ec1d5bdfbdd4198300d5204e066403f076c71e3b8",
+  "certificate_id": "f29e8eea-c6f0-4f6c-9d9a-bfb0d47ed1e4",
   "certificate_type": "generation_process_certificate",
   "certificate_version": "1.0",
-  "generation_completed_at": "2026-06-27T07:20:49.596917+00:00",
+  "generation_completed_at": "2026-06-29T18:32:29.984549+00:00",
   "generation_environment": {
     "cpu_count": 128,
     "ctgan_version": "unknown",
     "cuda_available": false,
     "cuda_version": null,
-    "memory_available_gb": 195.98,
+    "memory_available_gb": 196.34,
     "numpy_version": "1.26.4",
     "pandas_version": "2.3.3",
     "python_version": "3.11.2",
@@ -29,7 +29,7 @@
     "stratification_column": null,
     "temperature": 1.0
   },
-  "generation_started_at": "2026-06-27T07:20:49.169748+00:00",
+  "generation_started_at": "2026-06-29T18:32:29.470753+00:00",
   "generator_backend": {
     "backend_family": "evidence_native_tabular",
     "backend_id": "first_party_evidence_native",
@@ -61,16 +61,46 @@
     },
     "metadata_version": "1"
   },
-  "issued_at": "2026-06-27T07:20:49.596229+00:00",
+  "issued_at": "2026-06-29T18:32:29.983896+00:00",
   "issued_by": "FL-BSA Generation Process Validation System",
-  "model_certificate_hash": "2397de85c356134a85c4451a147fb8febe31d45c2d1a8570dc86a56cb7f05753",
-  "model_path": "generator_013b3cb7-a97f-4594-972d-77f09bdc4f0e_both.pkl",
+  "model_certificate_hash": "a043921fe61c019fa023beaa19a5361e0dc33fa06a7bea475e1372668ec0e29f",
+  "model_path": "generator_e32e5a8f-83b9-482b-801c-a902f30a7f6c_both.pkl",
   "model_type": "first_party_evidence_native",
   "output_file_hash": "f2d04901d236fc64b689771efddaea22c1f970903c56a459e27b402f357f1497",
   "output_file_path": "synthetic_data.csv",
   "output_file_size_mb": 0.833256721496582,
-  "pipeline_id": "013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+  "pipeline_id": "e32e5a8f-83b9-482b-801c-a902f30a7f6c",
   "post_processing": {
+    "native_final_exact_output_wall": {
+      "applied": true,
+      "artifact_scope": "amplification.synthetic_data.csv",
+      "branch_mode": "amplification",
+      "candidate_columns": [],
+      "checked_rows": 10000,
+      "claim_scope": "exact_training_row_reproduction_only",
+      "comparison_columns": [
+        "age",
+        "gender",
+        "race",
+        "income",
+        "credit_score",
+        "loan_amount",
+        "debt_to_income",
+        "loan_approved"
+      ],
+      "generator_backend_id": "first_party_evidence_native",
+      "matching_row_instances": 0,
+      "near_duplicate_privacy_not_claimed": true,
+      "policy": "certificate_tuple_exact_match_numeric_nudge",
+      "post_duplicate_count": 0,
+      "pre_duplicate_count": 0,
+      "repair_columns": [],
+      "repair_enabled": true,
+      "repaired_rows": 0,
+      "schema_version": "flbsa.native_final_exact_output_wall.v1",
+      "unrepaired_rows": 0,
+      "valid": true
+    },
     "quantile_alignment": {
       "applied": true,
       "ks_delta_by_column": {
@@ -130,15 +160,15 @@
       "warnings": []
     }
   },
-  "previous_certificate_hash": "c9ba2f0f7da24d661f1d1b09661c57ea16dbd8551722993fdfc32cf1ddbc3bc2",
+  "previous_certificate_hash": "288af2f6c3b9e7d5b3d7a8fd0fe6c934e7102175217a811bd17a3e34648526d2",
   "recommendations": [
     "Successfully generated 10000 samples for amplification branch"
   ],
   "status": "valid",
-  "total_generation_time": 0.4271690845489502,
+  "total_generation_time": 0.5137958526611328,
   "validation_results": {
     "actual_model_hash": "",
-    "available_memory_gb": 195.98,
+    "available_memory_gb": 196.34,
     "error_message": null,
     "error_occurred": false,
     "estimated_memory_gb": 0.009313225746154785,
@@ -164,7 +194,7 @@
       "loan_approved"
     ],
     "generation_completed": true,
-    "generation_time_seconds": 0.4271690845489502,
+    "generation_time_seconds": 0.5137958526611328,
     "memory_sufficient": true,
     "model_hash_verified": true,
     "model_loaded_successfully": true,
