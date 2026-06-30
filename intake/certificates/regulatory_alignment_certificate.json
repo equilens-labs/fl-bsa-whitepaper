@@ -1,10 +1,10 @@
 {
   "certificate_chain_depth": 1,
-  "certificate_hash": "e7640816ffb5d7ee5a5c10980177f3a31b0de9a7b810455b8da3037a3a57af57",
+  "certificate_hash": "c29feace614e62f9e9cbfc98dfbb39ba7156e9fb6238c6457bd124ac737b9105",
   "certificate_type": "regulatory_alignment",
   "compliance_reference": {
     "compliance_path": "validation/compliance_decision.json",
-    "compliance_sha256": "ee3c7ddcf6c99323b2c2c3adb8b1a4e7eef1109a92aa8dcbb63dc874582aeb2e",
+    "compliance_sha256": "72f9a6a17709261dfd3638679595d12b26a61dc00f06846aab7f598dc440d9db",
     "summary": {
       "compliant": false,
       "has_decision": true,
@@ -21,12 +21,12 @@
     "aod": null,
     "basis": {
       "derived_from": "metrics.compliance_status",
-      "di": 0.759080055358229,
+      "di": 0.7583450886076565,
       "metric": "worst_configured_screening_ratio",
       "observations": [
         {
           "metric": "disparate_impact",
-          "ratio": 0.759080055358229,
+          "ratio": 0.7583450886076565,
           "source": "metrics.di",
           "threshold": 0.8,
           "within_configured_threshold": false
@@ -35,7 +35,7 @@
           "attribute": "gender",
           "metric": "air",
           "protected_group": "female",
-          "ratio": 0.759080055358229,
+          "ratio": 0.7583450886076565,
           "reference_group": "male",
           "source": "fairness_uncertainty.gender.air",
           "threshold": 0.8,
@@ -45,7 +45,7 @@
           "attribute": "race",
           "metric": "air",
           "protected_group": "asian",
-          "ratio": 0.9318495477288169,
+          "ratio": 0.9317955454810847,
           "reference_group": "black",
           "source": "fairness_uncertainty.race.pairs.asian.air",
           "threshold": 0.8,
@@ -55,7 +55,7 @@
           "attribute": "race",
           "metric": "air",
           "protected_group": "hispanic",
-          "ratio": 0.9206435496188147,
+          "ratio": 0.92053631516281,
           "reference_group": "black",
           "source": "fairness_uncertainty.race.pairs.hispanic.air",
           "threshold": 0.8,
@@ -65,7 +65,7 @@
           "attribute": "race",
           "metric": "air",
           "protected_group": "other",
-          "ratio": 0.8817764789355739,
+          "ratio": 0.8829716594614451,
           "reference_group": "black",
           "source": "fairness_uncertainty.race.pairs.other.air",
           "threshold": 0.8,
@@ -75,7 +75,7 @@
           "attribute": "race",
           "metric": "air",
           "protected_group": "white",
-          "ratio": 0.9341205254848673,
+          "ratio": 0.93731397050546,
           "reference_group": "black",
           "source": "fairness_uncertainty.race.pairs.white.air",
           "threshold": 0.8,
@@ -85,7 +85,7 @@
           "attribute": "intersectional",
           "metric": "air",
           "pair": "female|asian",
-          "ratio": 0.7388137122237257,
+          "ratio": 0.7348628367572887,
           "source": "intersectional_fairness.pairs.female|asian.air",
           "threshold": 0.8,
           "within_configured_threshold": false
@@ -94,7 +94,7 @@
           "attribute": "intersectional",
           "metric": "air",
           "pair": "female|black",
-          "ratio": 0.6868445041652078,
+          "ratio": 0.684451317739545,
           "source": "intersectional_fairness.pairs.female|black.air",
           "threshold": 0.8,
           "within_configured_threshold": false
@@ -103,7 +103,7 @@
           "attribute": "intersectional",
           "metric": "air",
           "pair": "female|hispanic",
-          "ratio": 0.90644371415684,
+          "ratio": 0.9000150353330325,
           "source": "intersectional_fairness.pairs.female|hispanic.air",
           "threshold": 0.8,
           "within_configured_threshold": true
@@ -112,7 +112,7 @@
           "attribute": "intersectional",
           "metric": "air",
           "pair": "female|other",
-          "ratio": 0.7970213756841212,
+          "ratio": 0.7936106371712655,
           "source": "intersectional_fairness.pairs.female|other.air",
           "threshold": 0.8,
           "within_configured_threshold": false
@@ -121,7 +121,7 @@
           "attribute": "intersectional",
           "metric": "air",
           "pair": "female|white",
-          "ratio": 0.7623813723444123,
+          "ratio": 0.762191772401029,
           "source": "intersectional_fairness.pairs.female|white.air",
           "threshold": 0.8,
           "within_configured_threshold": false
@@ -130,7 +130,7 @@
           "attribute": "intersectional",
           "metric": "air",
           "pair": "male|asian",
-          "ratio": 1.0331488299830183,
+          "ratio": 1.0313217927414398,
           "source": "intersectional_fairness.pairs.male|asian.air",
           "threshold": 0.8,
           "within_configured_threshold": true
@@ -139,7 +139,7 @@
           "attribute": "intersectional",
           "metric": "air",
           "pair": "male|black",
-          "ratio": 1.2469429742172586,
+          "ratio": 1.2448605918824491,
           "source": "intersectional_fairness.pairs.male|black.air",
           "threshold": 0.8,
           "within_configured_threshold": true
@@ -170,13 +170,13 @@
         "attribute": "intersectional",
         "metric": "air",
         "pair": "female|black",
-        "ratio": 0.6868445041652078,
+        "ratio": 0.684451317739545,
         "source": "intersectional_fairness.pairs.female|black.air",
         "threshold": 0.8,
         "within_configured_threshold": false
       }
     },
-    "di": 0.759080055358229,
+    "di": 0.7583450886076565,
     "ecoa_screening_flag": true,
     "eod": null,
     "four_fifths_flag": true,
@@ -195,14 +195,14 @@
   },
   "metrics_reference": {
     "metrics_path": "metrics.json",
-    "metrics_sha256": "bad04a492e20e1872775c428cc5dfe1c3fd8fc51d881894b62003ab6c7dc95a3"
+    "metrics_sha256": "3340e4d6886c630a1536705b9689849a0ea6a16083a2cb78ba21ea8111b0d3e6"
   },
-  "pipeline_id": "013b3cb7-a97f-4594-972d-77f09bdc4f0e",
-  "previous_certificate_hash": "c3b5f290e9b161b25e99627418ed80432c465db2cffefa1fb1c2bef875621201",
+  "pipeline_id": "63b00f44-1b53-4727-8fae-7079c013fb36",
+  "previous_certificate_hash": "4bd9d326ede896eace8409da43e56b430704eef61999afff7a3da9a3dfc28ffc",
   "regulatory_scope": {
     "ecoa_cfpb": true,
     "eu_ai_act": true,
     "fca_consumer_duty": true
   },
-  "timestamp": "2026-06-27T07:21:03.923893+00:00"
+  "timestamp": "2026-06-30T06:47:38.526042+00:00"
 }
