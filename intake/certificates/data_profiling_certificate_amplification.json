@@ -1,6 +1,5 @@
 {
   "branch_mode": "amplification",
-  "branch_training_surface": "features + historic decisions",
   "categorical_features": [
     "gender",
     "race"
@@ -15,8 +14,8 @@
       "unique_count": 5
     }
   },
-  "certificate_hash": "0b9f33289e3d45d1458c336e383bea708ffe6b42dfd55ae632bcd0c7389495a3",
-  "certificate_id": "data_profiling_amplification_013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+  "certificate_hash": "a3e6e6de8c16ff81f977464db35471abf8aee6abc049c01ee488559ab98582dc",
+  "certificate_id": "data_profiling_amplification_870e0d98-b650-4e2f-9c14-7a35fd2f3687",
   "certificate_type": "data_profiling_certificate",
   "certificate_version": "1.0",
   "data_quality_score": 0.95,
@@ -131,16 +130,12 @@
       "std": 0.5000512366767926
     }
   },
-  "pipeline_id": "013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+  "pipeline_id": "870e0d98-b650-4e2f-9c14-7a35fd2f3687",
   "previous_certificate_hash": "",
-  "producer_backend_id": "first_party_evidence_native",
-  "profile_data_class": "native_generator_profile_data_bearing_state",
-  "profile_exportable_as_evidence": false,
   "protected_attributes_found": [
     "age",
     "gender",
     "race"
   ],
-  "timestamp": "2026-06-27T07:20:48.353017+00:00",
-  "training_mode": "empirical_profile"
+  "timestamp": "2026-07-01T06:35:43.072612+00:00"
 }
