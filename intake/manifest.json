@@ -7,22 +7,22 @@
     "eo_enabled": true,
     "eo_requested": true
   },
-  "code_commit": "d2661f2b0f789240264230229630c533dda4fcef",
-  "commit_sha": "d2661f2b0f789240264230229630c533dda4fcef",
+  "code_commit": "73084fbafcc0b6d2ed2425c20f3333468f938c41",
+  "commit_sha": "73084fbafcc0b6d2ed2425c20f3333468f938c41",
   "config_hash": "0b4541d1dc81c9dc7e3b7dae261d16846cee214c1e918075d932c228458830b0",
-  "container_digest": "ghcr.io/equilens-labs/fl-bsa-runtime@sha256:525597052da09069f30369b71383b8f87aa6e57152f6e635abc8a8338b2646c7",
+  "container_digest": "ghcr.io/equilens-labs/fl-bsa-runtime@sha256:11636b4b137a26b39ee794abe0d0ea3341f931f199ca99c9c1232990b13344b3",
   "container_digests": {
-    "api_image_digest": "ghcr.io/equilens-labs/fl-bsa-runtime@sha256:525597052da09069f30369b71383b8f87aa6e57152f6e635abc8a8338b2646c7",
-    "worker_image_digest": "ghcr.io/equilens-labs/fl-bsa-runtime@sha256:525597052da09069f30369b71383b8f87aa6e57152f6e635abc8a8338b2646c7"
+    "api_image_digest": "ghcr.io/equilens-labs/fl-bsa-runtime@sha256:11636b4b137a26b39ee794abe0d0ea3341f931f199ca99c9c1232990b13344b3",
+    "worker_image_digest": "ghcr.io/equilens-labs/fl-bsa-runtime@sha256:11636b4b137a26b39ee794abe0d0ea3341f931f199ca99c9c1232990b13344b3"
   },
-  "created": "2026-06-27T07:21:03.846011+00:00",
+  "created": "2026-07-01T04:17:44.164363+00:00",
   "dataset_hash": "sha256:ebceb84310e0702075e0fd6fc31bacfe6046faef2316fd890a208a3b620ae9b0",
   "dataset_hash_algorithm": "sha256",
   "dataset_hash_canonicalization": "CSV parsed with pandas.read_csv and re-serialized with DataFrame.to_csv(index=False) as UTF-8",
   "dataset_hash_path": "original_data.csv",
   "dataset_hash_source": "metrics.dataset_hash",
   "dataset_hash_surface": "canonicalized_input_csv",
-  "end_ts": "2026-06-27T07:21:03.846011+00:00",
+  "end_ts": "2026-07-01T04:17:44.164363+00:00",
   "fairness_policy": {
     "display_race_in_main_pdf": {
       "min_group_n": 300,
@@ -80,16 +80,16 @@
     "gpu": {
       "cuda_visible_devices": null,
       "gpu_uuids": [
-        "GPU-8b82ea42-bfcc-f187-279c-ea42859e65ea"
+        "GPU-0fc21d11-f4cc-a6cb-5bb0-55ee10ee0448"
       ],
       "nvidia_smi_gpus": [
         {
           "index": "0",
           "name": "NVIDIA GeForce RTX 3090",
-          "uuid": "GPU-8b82ea42-bfcc-f187-279c-ea42859e65ea"
+          "uuid": "GPU-0fc21d11-f4cc-a6cb-5bb0-55ee10ee0448"
         }
       ],
-      "nvidia_visible_devices": "0"
+      "nvidia_visible_devices": "1"
     },
     "machine": "x86_64",
     "processor": "",
@@ -315,14 +315,14 @@
     },
     "branch_references": {
       "amplification": {
-        "certificate_hash": "c9ba2f0f7da24d661f1d1b09661c57ea16dbd8551722993fdfc32cf1ddbc3bc2",
-        "certificate_id": "lc11_contract_amplification_013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+        "certificate_hash": "7e16296e8c4c9214d755b5cb6335d890467171f07c527ab4b2c94205af2b892f",
+        "certificate_id": "lc11_contract_amplification_995916db-4369-4efb-88ad-96d0a54e9d71",
         "certificate_name": "lc11_contract_certificate_amplification",
         "certificate_path": "certificates/lc11_contract_certificate_amplification.json"
       },
       "intrinsic": {
-        "certificate_hash": "be9f9b63fff348878242d37be5289b40c479279aed0f9c3778e92abcf701edd9",
-        "certificate_id": "lc11_contract_intrinsic_013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+        "certificate_hash": "f30e4793908f6a39a5e142cae175a771c0890dcf6374fa6326a7605ae472fb57",
+        "certificate_id": "lc11_contract_intrinsic_995916db-4369-4efb-88ad-96d0a54e9d71",
         "certificate_name": "lc11_contract_certificate_intrinsic",
         "certificate_path": "certificates/lc11_contract_certificate_intrinsic.json"
       }
@@ -680,8 +680,8 @@
       ]
     },
     "selected_branch_reference": {
-      "certificate_hash": "c9ba2f0f7da24d661f1d1b09661c57ea16dbd8551722993fdfc32cf1ddbc3bc2",
-      "certificate_id": "lc11_contract_amplification_013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+      "certificate_hash": "7e16296e8c4c9214d755b5cb6335d890467171f07c527ab4b2c94205af2b892f",
+      "certificate_id": "lc11_contract_amplification_995916db-4369-4efb-88ad-96d0a54e9d71",
       "certificate_name": "lc11_contract_certificate_amplification",
       "certificate_path": "certificates/lc11_contract_certificate_amplification.json"
     },
@@ -783,34 +783,34 @@
       }
     ]
   },
-  "run_id": "013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+  "run_id": "995916db-4369-4efb-88ad-96d0a54e9d71",
   "schema_version": "wp-intake.v1",
   "seeds": {
     "bootstrap_seed": 42,
     "rng_seed": 42
   },
-  "software_commit": "d2661f2b0f789240264230229630c533dda4fcef",
+  "software_commit": "73084fbafcc0b6d2ed2425c20f3333468f938c41",
   "software_version": "0.1.0",
-  "source_commit": "d2661f2b0f789240264230229630c533dda4fcef",
-  "start_ts": "2026-06-27T07:20:48.153307+00:00",
+  "source_commit": "73084fbafcc0b6d2ed2425c20f3333468f938c41",
+  "start_ts": "2026-07-01T04:17:24.301050+00:00",
   "torch_deterministic_mode": "strict",
   "whitepaper_consumer": {
     "event_name": "repository_dispatch",
-    "ingested_at": "2026-06-27T07:21:58.421996+00:00",
+    "ingested_at": "2026-07-01T04:18:46.210335+00:00",
     "producer": {
       "artifact": "wp-intake-bundle-v4",
       "branch": "main",
       "bundle_filename": "WhitePaper_Intake_Bundle_v4.zip",
-      "bundle_sha256": "5affd86da2dac95b5ebbbfc25a2f6c7f0c01714377cb46048a6fa5da90b6eedb",
+      "bundle_sha256": "f7738dee7091cc7ecec854cef3b3b1ae2414145906501190cc59f5be8cf198cd",
       "repo": "equilens-labs/fl-bsa",
-      "run_id": "28282242906",
+      "run_id": "28493046830",
       "workflow": "release-evidence.yml"
     },
     "ref": "refs/heads/main",
     "repo": "equilens-labs/fl-bsa-whitepaper",
     "run_attempt": "1",
-    "run_id": "28282380499",
-    "sha": "881e8c99bc75db9c4c82d70b3c22b2dceddfab01",
+    "run_id": "28493184141",
+    "sha": "b95c97f0fdea28defcaa3d95289f15617550fd42",
     "workflow": "pull-wp-intake"
   }
 }
