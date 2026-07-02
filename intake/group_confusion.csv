@@ -1,8 +1,8 @@
 run_id,split,model_id,attribute,group,TP,FP,TN,FN
-013b3cb7-a97f-4594-972d-77f09bdc4f0e,test,first_party_evidence_native,gender,female,679,0,870,0
-013b3cb7-a97f-4594-972d-77f09bdc4f0e,test,first_party_evidence_native,gender,male,838,0,613,0
-013b3cb7-a97f-4594-972d-77f09bdc4f0e,test,first_party_evidence_native,race,asian,125,0,123,0
-013b3cb7-a97f-4594-972d-77f09bdc4f0e,test,first_party_evidence_native,race,black,85,0,72,0
-013b3cb7-a97f-4594-972d-77f09bdc4f0e,test,first_party_evidence_native,race,hispanic,41,0,41,0
-013b3cb7-a97f-4594-972d-77f09bdc4f0e,test,first_party_evidence_native,race,other,72,0,79,0
-013b3cb7-a97f-4594-972d-77f09bdc4f0e,test,first_party_evidence_native,race,white,1194,0,1168,0
+8e9adc4a-d3ae-425d-b412-d3c7d18114fc,test,ctgan_legacy,gender,female,679,0,870,0
+8e9adc4a-d3ae-425d-b412-d3c7d18114fc,test,ctgan_legacy,gender,male,838,0,613,0
+8e9adc4a-d3ae-425d-b412-d3c7d18114fc,test,ctgan_legacy,race,asian,125,0,123,0
+8e9adc4a-d3ae-425d-b412-d3c7d18114fc,test,ctgan_legacy,race,black,85,0,72,0
+8e9adc4a-d3ae-425d-b412-d3c7d18114fc,test,ctgan_legacy,race,hispanic,41,0,41,0
+8e9adc4a-d3ae-425d-b412-d3c7d18114fc,test,ctgan_legacy,race,other,72,0,79,0
+8e9adc4a-d3ae-425d-b412-d3c7d18114fc,test,ctgan_legacy,race,white,1194,0,1168,0
