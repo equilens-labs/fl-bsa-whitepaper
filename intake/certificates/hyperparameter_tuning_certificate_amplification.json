@@ -6,40 +6,79 @@
     "gender",
     "race"
   ],
-  "certificate_hash": "ba717750314dc9b5b6031a7aac3e3bf1fe8d94e55354c0cf4254a0d4720c4151",
-  "certificate_id": "be217864-7dfb-4f5f-b3a7-8b1f5614e470",
+  "certificate_hash": "09931f780f8003811fd6a5041edd8af0148b13d3aef2101710a2442ad33700c8",
+  "certificate_id": "d076b08f-ec02-448a-8e77-57625b4aed53",
   "certificate_version": "1.0",
   "config_version": "1.0",
   "data_columns": 8,
   "data_profile_fingerprint": "6ce24018070738c3",
   "data_rows": 3000,
-  "fallback_reason": "first_party_backend_has_no_tunable_hyperparameters",
-  "fallback_used": true,
-  "hp_tuning_claim_scope": "default_parameters; no Bayesian optimization claim",
-  "hp_tuning_completion_ratio": 0.0,
-  "hp_tuning_explanation": "Completed/configured trial ratio is 0/0. Default parameters were selected; no full Bayesian optimization claim is made.",
-  "hp_tuning_search_status": "default",
-  "hyperparameter_validation_passed": false,
-  "issued_at": "2026-06-27T07:20:48Z",
-  "issued_by": "FL-BSA Hyperparameter Tuner",
-  "n_trials": 0,
-  "optimal_hyperparameters": {
-    "algorithm": "native_branch_profile_empirical_sampler",
-    "backend_id": "first_party_evidence_native",
-    "epochs": 0,
-    "numeric_jitter_fraction": null
+  "effective_pac": 5,
+  "fallback_used": false,
+  "guardrails": {
+    "batch_size": 32,
+    "fingerprint": {
+      "max_corr": 0.8808936584289787,
+      "n": 3000.0
+    },
+    "mode": "threshold",
+    "pac": 5,
+    "pac_metadata": {
+      "source": "realism_gates",
+      "value": 5
+    }
   },
-  "optimization_time_seconds": 0.0,
-  "optimization_trials_completed": 0,
-  "previous_certificate_hash": "bafb72c625e548dc47a2e9d32196d539db09da5b815c4eb9db8d3be510810240",
-  "selected_parameters_validated": false,
+  "hp_tuning_claim_scope": "timeout_bounded_truncated_search; no full Bayesian optimization claim",
+  "hp_tuning_completion_ratio": 0.2,
+  "hp_tuning_explanation": "Completed/configured trial ratio is 4/20. No full Bayesian optimization claim is made because configured trials are incomplete.",
+  "hp_tuning_search_status": "timeout_bounded_truncated",
+  "hyperparameter_validation_passed": true,
+  "issued_at": "2026-06-25T06:32:21Z",
+  "issued_by": "FL-BSA Hyperparameter Tuner",
+  "n_trials": 20,
+  "normalized_batch_size": 30,
+  "optimal_hyperparameters": {
+    "batch_size": 30,
+    "discriminator_decay": 1.1872731425335901e-06,
+    "discriminator_dim": [
+      128,
+      128
+    ],
+    "discriminator_lr": 0.00013833249975219982,
+    "embedding_dim": 32,
+    "epochs": 180,
+    "generator_decay": 6.341572775495279e-06,
+    "generator_dim": [
+      128,
+      128
+    ],
+    "generator_lr": 0.0003488960745139223,
+    "guardrails": {
+      "batch_size": 32,
+      "fingerprint": {
+        "max_corr": 0.8808936584289787,
+        "n": 3000.0
+      },
+      "mode": "threshold",
+      "pac": 5,
+      "pac_metadata": {
+        "source": "realism_gates",
+        "value": 5
+      }
+    },
+    "pac": 5
+  },
+  "optimization_time_seconds": 208.2076669470407,
+  "optimization_trials_completed": 4,
+  "previous_certificate_hash": "35b848aa96c7b6096d4621fd5a1c12a0ad73d5133be1d05004c4a644df658270",
+  "selected_parameters_validated": true,
   "status": "valid_with_limitations",
+  "timeout_seconds": 180,
   "tuner_version": "1.0.0",
-  "tuning_enabled": false,
+  "tuning_enabled": true,
   "tuning_environment": "production",
-  "tuning_method": "default",
+  "tuning_method": "bayesian_optimization_truncated",
   "tuning_successful": false,
-  "validation_warnings": [
-    "first_party_backend_has_no_tunable_hyperparameters"
-  ]
+  "tuning_truncation_reason": "timeout_before_configured_trials_completed",
+  "validation_warnings": []
 }

@@ -6,40 +6,92 @@
     "gender",
     "race"
   ],
-  "certificate_hash": "0b71dd3489f58e9b1c2a5cb193ccb3839362070460edb385a082cb926f706e42",
-  "certificate_id": "df387920-9794-4789-ac94-8e06414ec2da",
+  "certificate_hash": "35768509abf4df70e992825bffd9328057cf838a78ef1e075ca6d21dcd011cf8",
+  "certificate_id": "7d626bd5-dcb2-4028-8036-9d332b0a8f68",
   "certificate_version": "1.0",
   "config_version": "1.0",
   "data_columns": 7,
   "data_profile_fingerprint": "0433ccff42dae050",
   "data_rows": 3000,
-  "fallback_reason": "first_party_backend_has_no_tunable_hyperparameters",
-  "fallback_used": true,
-  "hp_tuning_claim_scope": "default_parameters; no Bayesian optimization claim",
-  "hp_tuning_completion_ratio": 0.0,
-  "hp_tuning_explanation": "Completed/configured trial ratio is 0/0. Default parameters were selected; no full Bayesian optimization claim is made.",
-  "hp_tuning_search_status": "default",
-  "hyperparameter_validation_passed": false,
-  "issued_at": "2026-06-27T07:20:48Z",
-  "issued_by": "FL-BSA Hyperparameter Tuner",
-  "n_trials": 0,
-  "optimal_hyperparameters": {
-    "algorithm": "native_branch_profile_empirical_sampler",
-    "backend_id": "first_party_evidence_native",
-    "epochs": 0,
-    "numeric_jitter_fraction": null
+  "effective_pac": 5,
+  "fallback_used": false,
+  "guardrails": {
+    "batch_size": 32,
+    "fingerprint": {
+      "max_corr": 0.8808936584289787,
+      "n": 3000.0
+    },
+    "mode": "threshold",
+    "pac": 5,
+    "pac_metadata": {
+      "source": "realism_gates",
+      "value": 5
+    },
+    "profile": {
+      "apply_feature_transforms": true,
+      "branch": "intrinsic",
+      "epochs_multiplier": 1.0,
+      "winsorize_pct": 0.01
+    }
   },
-  "optimization_time_seconds": 0.0,
-  "optimization_trials_completed": 0,
-  "previous_certificate_hash": "ba717750314dc9b5b6031a7aac3e3bf1fe8d94e55354c0cf4254a0d4720c4151",
-  "selected_parameters_validated": false,
+  "hp_tuning_claim_scope": "timeout_bounded_truncated_search; no full Bayesian optimization claim",
+  "hp_tuning_completion_ratio": 0.2,
+  "hp_tuning_explanation": "Completed/configured trial ratio is 4/20. No full Bayesian optimization claim is made because configured trials are incomplete.",
+  "hp_tuning_search_status": "timeout_bounded_truncated",
+  "hyperparameter_validation_passed": true,
+  "issued_at": "2026-06-25T06:39:12Z",
+  "issued_by": "FL-BSA Hyperparameter Tuner",
+  "n_trials": 20,
+  "normalized_batch_size": 30,
+  "optimal_hyperparameters": {
+    "batch_size": 30,
+    "discriminator_decay": 3.912141628549696e-06,
+    "discriminator_dim": [
+      64,
+      64
+    ],
+    "discriminator_lr": 0.0001583703155911876,
+    "embedding_dim": 64,
+    "epochs": 220,
+    "generator_decay": 3.2676417657817645e-06,
+    "generator_dim": [
+      64,
+      128,
+      64
+    ],
+    "generator_lr": 0.0006097839109531517,
+    "guardrails": {
+      "batch_size": 32,
+      "fingerprint": {
+        "max_corr": 0.8808936584289787,
+        "n": 3000.0
+      },
+      "mode": "threshold",
+      "pac": 5,
+      "pac_metadata": {
+        "source": "realism_gates",
+        "value": 5
+      },
+      "profile": {
+        "apply_feature_transforms": true,
+        "branch": "intrinsic",
+        "epochs_multiplier": 1.0,
+        "winsorize_pct": 0.01
+      }
+    },
+    "pac": 5
+  },
+  "optimization_time_seconds": 193.3297041230835,
+  "optimization_trials_completed": 4,
+  "previous_certificate_hash": "09931f780f8003811fd6a5041edd8af0148b13d3aef2101710a2442ad33700c8",
+  "selected_parameters_validated": true,
   "status": "valid_with_limitations",
+  "timeout_seconds": 180,
   "tuner_version": "1.0.0",
-  "tuning_enabled": false,
+  "tuning_enabled": true,
   "tuning_environment": "production",
-  "tuning_method": "default",
+  "tuning_method": "bayesian_optimization_truncated",
   "tuning_successful": false,
-  "validation_warnings": [
-    "first_party_backend_has_no_tunable_hyperparameters"
-  ]
+  "tuning_truncation_reason": "timeout_before_configured_trials_completed",
+  "validation_warnings": []
 }

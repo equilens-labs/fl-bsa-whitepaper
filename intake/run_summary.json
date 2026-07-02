@@ -1,8 +1,8 @@
 {
-  "run_id": "013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+  "run_id": "66f76669-a9b3-42f2-89e7-112e75338d01",
   "split": "wp_evidence",
   "model_id": "gate-wp-42",
-  "generated_at": "2026-06-27T07:21:08.621539+00:00",
+  "generated_at": "2026-06-25T06:43:50.451641+00:00",
   "violations": {
     "air": {
       "count": 1,
@@ -50,31 +50,31 @@
     ],
     "per_attribute": {
       "gender": {
-        "value": 0.75908,
-        "lower_ci": 0.729918,
-        "upper_ci": 0.789407,
+        "value": 0.758345,
+        "lower_ci": 0.729189,
+        "upper_ci": 0.788667,
         "status": "VIOLATES",
         "ci_degenerate": false,
         "ci_excludes_threshold": true,
         "reference_group": "male",
         "protected_group": "female",
         "method": "wilson+delta",
-        "p_value": 5.925343298757943e-44,
-        "p_value_adjusted": 5.925343298757943e-44,
+        "p_value": 3.486614549406748e-44,
+        "p_value_adjusted": 3.486614549406748e-44,
         "p_value_adjustment": "none"
       },
       "race": {
-        "value": 0.881776,
-        "lower_ci": 0.781423,
-        "upper_ci": 0.995018,
+        "value": 0.882972,
+        "lower_ci": 0.782159,
+        "upper_ci": 0.996778,
         "status": "PASSES",
         "ci_degenerate": false,
         "ci_excludes_threshold": false,
         "reference_group": "black",
         "protected_group": "other",
         "method": "wilson+delta",
-        "p_value": 0.040452723325473575,
-        "p_value_adjusted": 0.1618108933018943,
+        "p_value": 0.04337489554247777,
+        "p_value_adjusted": 0.17349958216991107,
         "p_value_adjustment": "holm_bonferroni",
         "display_in_main_pdf": false,
         "policy": {
@@ -155,7 +155,7 @@
     "ci_excludes_threshold": null,
     "ci_degenerate": null
   },
-  "commit_sha": "d2661f2b0f789240264230229630c533dda4fcef",
+  "commit_sha": "a10b6d0e446980594065f49d6c12ffea0384e084",
   "dataset_hash": "sha256:ebceb84310e0702075e0fd6fc31bacfe6046faef2316fd890a208a3b620ae9b0",
   "fairness_reference_groups": {
     "gender": "male",
@@ -180,7 +180,7 @@
   },
   "inference": {
     "method": "bca",
-    "replicates": 2000,
+    "replicates": 500,
     "alpha": 0.05,
     "seed": 42,
     "smoothing": 1e-06,
