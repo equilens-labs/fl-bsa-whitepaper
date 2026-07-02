@@ -15,8 +15,8 @@
       "unique_count": 5
     }
   },
-  "certificate_hash": "1babf1bf1ea96f2ac55786f2de9aea5f1f32631a4efea708e0c0caa9b8d740c0",
-  "certificate_id": "data_profiling_intrinsic_013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+  "certificate_hash": "ebfd5fc4339683f0d83be23e1a88ef8e68c568d37ddca3ff1d0241d26738835b",
+  "certificate_id": "data_profiling_intrinsic_c16cce24-6646-40cc-9b40-ce9ad3d5633a",
   "certificate_type": "data_profiling_certificate",
   "certificate_version": "1.0",
   "data_quality_score": 0.95,
@@ -114,8 +114,8 @@
       "std": 15688.543417942952
     }
   },
-  "pipeline_id": "013b3cb7-a97f-4594-972d-77f09bdc4f0e",
-  "previous_certificate_hash": "0b9f33289e3d45d1458c336e383bea708ffe6b42dfd55ae632bcd0c7389495a3",
+  "pipeline_id": "c16cce24-6646-40cc-9b40-ce9ad3d5633a",
+  "previous_certificate_hash": "7a0ebd717dca295df0a393a8c0cbae061fad11b3557e9de93b2a2201581c9c02",
   "producer_backend_id": "first_party_evidence_native",
   "profile_data_class": "native_generator_profile_data_bearing_state",
   "profile_exportable_as_evidence": false,
@@ -124,6 +124,6 @@
     "gender",
     "race"
   ],
-  "timestamp": "2026-06-27T07:20:48.364485+00:00",
+  "timestamp": "2026-07-02T07:39:28.951529+00:00",
   "training_mode": "empirical_profile"
 }

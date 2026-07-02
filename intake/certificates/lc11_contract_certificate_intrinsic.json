@@ -1,7 +1,7 @@
 {
   "branch_mode": "intrinsic",
-  "certificate_hash": "be9f9b63fff348878242d37be5289b40c479279aed0f9c3778e92abcf701edd9",
-  "certificate_id": "lc11_contract_intrinsic_013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+  "certificate_hash": "253b8f151f3ab0736976905dcd6fb7b8f39943f2d55e6a5687e3629493514492",
+  "certificate_id": "lc11_contract_intrinsic_c16cce24-6646-40cc-9b40-ce9ad3d5633a",
   "certificate_type": "lc11_contract_certificate",
   "certificate_version": "1.0",
   "config_hash": "0b4541d1dc81c9dc7e3b7dae261d16846cee214c1e918075d932c228458830b0",
@@ -166,12 +166,12 @@
   },
   "effective_thresholds": {},
   "mechanism_family": "protected_group_aware_unlabeled_resampling_plus_equal_baseline_post_labeling",
-  "model_certificate_hash": "6fa8ed99cef3acad7efea289ba5e197a13e97b55da808c63d69cece4828fe9e0",
+  "model_certificate_hash": "bb19fe9260c6c4ab609466689ab5c6b891835af9c914187aa52ac4081a0285e0",
   "performance_metrics": {
-    "training_time_minutes": 0.0014428297678629558
+    "training_time_minutes": 0.002158931891123454
   },
-  "pipeline_id": "013b3cb7-a97f-4594-972d-77f09bdc4f0e",
-  "previous_certificate_hash": "6fa8ed99cef3acad7efea289ba5e197a13e97b55da808c63d69cece4828fe9e0",
+  "pipeline_id": "c16cce24-6646-40cc-9b40-ce9ad3d5633a",
+  "previous_certificate_hash": "bb19fe9260c6c4ab609466689ab5c6b891835af9c914187aa52ac4081a0285e0",
   "profile_data_class": "native_generator_profile_data_bearing_state",
   "profile_exportable_as_evidence": false,
   "protected_group_scope": {
@@ -238,9 +238,9 @@
     "use_refactored_calibration": false
   },
   "schema_version": "lc11_contract_certificate.v1",
-  "software_commit": "d2661f2b0f789240264230229630c533dda4fcef",
+  "software_commit": "40cc3705b136a089951bf4773db35c3a2f84d5da",
   "software_version": "0.1.0",
-  "timestamp": "2026-06-27T07:20:48.375668+00:00",
+  "timestamp": "2026-07-02T07:39:28.961770+00:00",
   "tolerance_multiplier_applied": 1.0,
   "training_metadata": {
     "backend_id": "first_party_evidence_native",
@@ -262,7 +262,7 @@
     "records_trained": 3000,
     "training_mode": "empirical_profile"
   },
-  "training_time_minutes": 0.0014428297678629558,
+  "training_time_minutes": 0.002158931891123454,
   "validation_results": {
     "backend_id": "first_party_evidence_native",
     "checks": {
@@ -287,7 +287,7 @@
     "training_convergence": {
       "backend_id": "first_party_evidence_native",
       "branch_mode": "intrinsic",
-      "certificate_hash": "fa2ae7cc1acd00eb988bd64901d503bb7b7cda5f7cfff89f0a642090ef409c22",
+      "certificate_hash": "53ef79c329c352867f4d3e6bfcae246859b5a6c3b15f1c3951ce0f2318afc866",
       "convergence_claim": "not_applicable",
       "convergence_criteria_met": null,
       "convergence_epoch": null,
@@ -321,6 +321,6 @@
   "validation_surface": "first_party_evidence_native_producer",
   "validator": {
     "identity": "IntrinsicBranchValidator",
-    "result_digest": "f0d029bd77b7da3c68f2dfd420b4e782e99c05bc0006acc11260290fe20453d9"
+    "result_digest": "b97b261512463cb58a05b196bd815dda2e0a1c4bbfe844414e2379ec59da1fc6"
   }
 }

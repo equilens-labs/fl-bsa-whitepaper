@@ -6,8 +6,8 @@
     "gender",
     "race"
   ],
-  "certificate_hash": "ba717750314dc9b5b6031a7aac3e3bf1fe8d94e55354c0cf4254a0d4720c4151",
-  "certificate_id": "be217864-7dfb-4f5f-b3a7-8b1f5614e470",
+  "certificate_hash": "6c7d9807e0218d7f92fd7ede638a75ef76826da64d2dc8103ee889a812c5ed20",
+  "certificate_id": "def33a5b-5def-4602-9b7f-fe1426eb730a",
   "certificate_version": "1.0",
   "config_version": "1.0",
   "data_columns": 8,
@@ -20,7 +20,7 @@
   "hp_tuning_explanation": "Completed/configured trial ratio is 0/0. Default parameters were selected; no full Bayesian optimization claim is made.",
   "hp_tuning_search_status": "default",
   "hyperparameter_validation_passed": false,
-  "issued_at": "2026-06-27T07:20:48Z",
+  "issued_at": "2026-07-02T07:39:28Z",
   "issued_by": "FL-BSA Hyperparameter Tuner",
   "n_trials": 0,
   "optimal_hyperparameters": {
@@ -31,7 +31,7 @@
   },
   "optimization_time_seconds": 0.0,
   "optimization_trials_completed": 0,
-  "previous_certificate_hash": "bafb72c625e548dc47a2e9d32196d539db09da5b815c4eb9db8d3be510810240",
+  "previous_certificate_hash": "f04b4a915951745ffacb2de617f36b4d15e3224fd6884b0bededa806b53945cc",
   "selected_parameters_validated": false,
   "status": "valid_with_limitations",
   "tuner_version": "1.0.0",
