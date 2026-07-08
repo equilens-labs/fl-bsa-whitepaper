@@ -1,18 +1,19 @@
 \section{Regulatory Mapping}
 
-\Cref{tab:reg_matrix} reproduces the regulatory mapping used for this synthetic audit run, based on the evidence intake for this whitepaper.
+\Cref{tab:reg_matrix} renders the regulatory mapping rows supplied in the evidence intake for this synthetic audit run.
 
 \begin{table}[h]
 \centering
 \small
-\begin{tabular}{llp{5cm}p{6cm}}
+\begin{tabular}{@{}p{0.16\linewidth}p{0.13\linewidth}p{0.28\linewidth}p{0.28\linewidth}@{}}
 \toprule
-Framework & Citation & Requirement & Control assurance and evidence \\
+Framework & Citation & Requirement & Controls and evidence (this run) \\
 \midrule
 \EUAIAct & Art.~10(3) & Data governance and quality for training, validation and testing data & Dataset quality computed; coverage and missingness thresholds enforced; selection rates and metrics persisted for auditability. Evidence is provided via the provenance manifest and selection-rate summaries. \\
 CFPB/\ECOA & 12 CFR 1002 & Evaluate disparate impact and record selection disparities by protected class & Disparity ratios (AIR-equivalent) and approval-rate gaps are computed from selection rates with deterministic uncertainty (Wilson + delta-method) and small-n safeguards. Race comparisons are pairwise vs a configured reference group with Holm--Bonferroni p-value adjustment. Evidence is provided via metrics tables and the provenance manifest for this run. \\
+FCA Consumer Duty & FCA PRIN 2A & Assess whether synthetic-data screening supports fair-treatment review and avoids masking foreseeable customer harm & AIR, EO, ECE availability, and provenance artefacts are packaged for reviewer assessment. FCA alignment is screening support, not a live conduct-risk determination. Evidence is provided via metrics, group-confusion summaries, and the provenance manifest. \\
 \bottomrule
 \end{tabular}
-\caption{Regulatory requirements and corresponding controls and evidence for this synthetic audit scenario.}
+\caption{Regulatory requirements and corresponding controls and evidence for this synthetic audit scenario, rendered from the intake matrix.}
 \label{tab:reg_matrix}
 \end{table}
