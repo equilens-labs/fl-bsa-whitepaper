@@ -1,8 +1,8 @@
 {
-  "run_id": "013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+  "run_id": "3123918c-d62b-48a7-89d7-9a91f10c82ab",
   "split": "wp_evidence",
   "model_id": "gate-wp-42",
-  "generated_at": "2026-06-27T07:21:08.621539+00:00",
+  "generated_at": "2026-07-07T17:19:05.721666+00:00",
   "violations": {
     "air": {
       "count": 1,
@@ -155,7 +155,7 @@
     "ci_excludes_threshold": null,
     "ci_degenerate": null
   },
-  "commit_sha": "d2661f2b0f789240264230229630c533dda4fcef",
+  "commit_sha": "09f6ca91dc9cf92c143559046e4517eb9576182c",
   "dataset_hash": "sha256:ebceb84310e0702075e0fd6fc31bacfe6046faef2316fd890a208a3b620ae9b0",
   "fairness_reference_groups": {
     "gender": "male",

@@ -3,7 +3,7 @@ seed: 42
 training_protocol:
   hyperparameter_search: not_applicable
   notes: >
-    The rc6 intake certificates identify the first-party evidence-native backend.
+    The stable v5.0.0 intake certificates identify the first-party evidence-native backend.
     CTGAN/WGAN hyperparameters such as epochs, PAC, batch size, and GAN layer
     widths are not applicable for this run.
 branches:

@@ -7,22 +7,22 @@
     "eo_enabled": true,
     "eo_requested": true
   },
-  "code_commit": "d2661f2b0f789240264230229630c533dda4fcef",
-  "commit_sha": "d2661f2b0f789240264230229630c533dda4fcef",
+  "code_commit": "09f6ca91dc9cf92c143559046e4517eb9576182c",
+  "commit_sha": "09f6ca91dc9cf92c143559046e4517eb9576182c",
   "config_hash": "0b4541d1dc81c9dc7e3b7dae261d16846cee214c1e918075d932c228458830b0",
-  "container_digest": "ghcr.io/equilens-labs/fl-bsa-runtime@sha256:525597052da09069f30369b71383b8f87aa6e57152f6e635abc8a8338b2646c7",
+  "container_digest": "ghcr.io/equilens-labs/fl-bsa-runtime@sha256:694452f97143ab5f2121eb5a769979ae3369db1f998d4c3f5b9e064dd737caa3",
   "container_digests": {
-    "api_image_digest": "ghcr.io/equilens-labs/fl-bsa-runtime@sha256:525597052da09069f30369b71383b8f87aa6e57152f6e635abc8a8338b2646c7",
-    "worker_image_digest": "ghcr.io/equilens-labs/fl-bsa-runtime@sha256:525597052da09069f30369b71383b8f87aa6e57152f6e635abc8a8338b2646c7"
+    "api_image_digest": "ghcr.io/equilens-labs/fl-bsa-runtime@sha256:694452f97143ab5f2121eb5a769979ae3369db1f998d4c3f5b9e064dd737caa3",
+    "worker_image_digest": "ghcr.io/equilens-labs/fl-bsa-runtime@sha256:694452f97143ab5f2121eb5a769979ae3369db1f998d4c3f5b9e064dd737caa3"
   },
-  "created": "2026-06-27T07:21:03.846011+00:00",
+  "created": "2026-07-07T17:18:58.665653+00:00",
   "dataset_hash": "sha256:ebceb84310e0702075e0fd6fc31bacfe6046faef2316fd890a208a3b620ae9b0",
   "dataset_hash_algorithm": "sha256",
   "dataset_hash_canonicalization": "CSV parsed with pandas.read_csv and re-serialized with DataFrame.to_csv(index=False) as UTF-8",
   "dataset_hash_path": "original_data.csv",
   "dataset_hash_source": "metrics.dataset_hash",
   "dataset_hash_surface": "canonicalized_input_csv",
-  "end_ts": "2026-06-27T07:21:03.846011+00:00",
+  "end_ts": "2026-07-07T17:18:58.665653+00:00",
   "fairness_policy": {
     "display_race_in_main_pdf": {
       "min_group_n": 300,
@@ -315,14 +315,14 @@
     },
     "branch_references": {
       "amplification": {
-        "certificate_hash": "c9ba2f0f7da24d661f1d1b09661c57ea16dbd8551722993fdfc32cf1ddbc3bc2",
-        "certificate_id": "lc11_contract_amplification_013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+        "certificate_hash": "625795363cdf852be117ce4b5aeba48a77f1f19c5ba8021a76f13f4a8b3e14dd",
+        "certificate_id": "lc11_contract_amplification_3123918c-d62b-48a7-89d7-9a91f10c82ab",
         "certificate_name": "lc11_contract_certificate_amplification",
         "certificate_path": "certificates/lc11_contract_certificate_amplification.json"
       },
       "intrinsic": {
-        "certificate_hash": "be9f9b63fff348878242d37be5289b40c479279aed0f9c3778e92abcf701edd9",
-        "certificate_id": "lc11_contract_intrinsic_013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+        "certificate_hash": "b41a63b04b8c741f1d682e3f7746f5fc1b78e0dbd5772d649e8b3d90f6c7d624",
+        "certificate_id": "lc11_contract_intrinsic_3123918c-d62b-48a7-89d7-9a91f10c82ab",
         "certificate_name": "lc11_contract_certificate_intrinsic",
         "certificate_path": "certificates/lc11_contract_certificate_intrinsic.json"
       }
@@ -680,8 +680,8 @@
       ]
     },
     "selected_branch_reference": {
-      "certificate_hash": "c9ba2f0f7da24d661f1d1b09661c57ea16dbd8551722993fdfc32cf1ddbc3bc2",
-      "certificate_id": "lc11_contract_amplification_013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+      "certificate_hash": "625795363cdf852be117ce4b5aeba48a77f1f19c5ba8021a76f13f4a8b3e14dd",
+      "certificate_id": "lc11_contract_amplification_3123918c-d62b-48a7-89d7-9a91f10c82ab",
       "certificate_name": "lc11_contract_certificate_amplification",
       "certificate_path": "certificates/lc11_contract_certificate_amplification.json"
     },
@@ -783,34 +783,34 @@
       }
     ]
   },
-  "run_id": "013b3cb7-a97f-4594-972d-77f09bdc4f0e",
+  "run_id": "3123918c-d62b-48a7-89d7-9a91f10c82ab",
   "schema_version": "wp-intake.v1",
   "seeds": {
     "bootstrap_seed": 42,
     "rng_seed": 42
   },
-  "software_commit": "d2661f2b0f789240264230229630c533dda4fcef",
+  "software_commit": "09f6ca91dc9cf92c143559046e4517eb9576182c",
   "software_version": "0.1.0",
-  "source_commit": "d2661f2b0f789240264230229630c533dda4fcef",
-  "start_ts": "2026-06-27T07:20:48.153307+00:00",
+  "source_commit": "09f6ca91dc9cf92c143559046e4517eb9576182c",
+  "start_ts": "2026-07-07T17:18:38.818560+00:00",
   "torch_deterministic_mode": "strict",
   "whitepaper_consumer": {
     "event_name": "repository_dispatch",
-    "ingested_at": "2026-06-27T07:21:58.421996+00:00",
+    "ingested_at": "2026-07-07T17:20:24.704184+00:00",
     "producer": {
       "artifact": "wp-intake-bundle-v4",
-      "branch": "main",
+      "branch": "release/v5.0.0-09f6ca91",
       "bundle_filename": "WhitePaper_Intake_Bundle_v4.zip",
-      "bundle_sha256": "5affd86da2dac95b5ebbbfc25a2f6c7f0c01714377cb46048a6fa5da90b6eedb",
+      "bundle_sha256": "f33b55d32a5bb60b63a53fde583463ac5015d59b0d086f89ac972de45cece063",
       "repo": "equilens-labs/fl-bsa",
-      "run_id": "28282242906",
+      "run_id": "28884829824",
       "workflow": "release-evidence.yml"
     },
     "ref": "refs/heads/main",
     "repo": "equilens-labs/fl-bsa-whitepaper",
     "run_attempt": "1",
-    "run_id": "28282380499",
-    "sha": "881e8c99bc75db9c4c82d70b3c22b2dceddfab01",
+    "run_id": "28885237163",
+    "sha": "b95c97f0fdea28defcaa3d95289f15617550fd42",
     "workflow": "pull-wp-intake"
   }
 }
