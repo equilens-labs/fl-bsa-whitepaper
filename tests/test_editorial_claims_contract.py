@@ -1,4 +1,5 @@
 import importlib.util
+import re
 import unittest
 from pathlib import Path
 
@@ -101,6 +102,18 @@ class EditorialClaimsContractTests(unittest.TestCase):
         self.assertIn("{{Equal Credit Opportunity Act} ({Regulation B})}", bib)
         self.assertIn("{{Regulation} ({EU}) 2024/1689", bib)
         self.assertIn("{{Uniform Guidelines on Employee Selection Procedures} (1978)}", bib)
+
+    def test_gender_slice_counts_render_as_integers(self) -> None:
+        table = (ROOT / "includes" / "table_gender_air_slices.tex").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(r"\begin{tabular}{lrrSSSl}", table)
+        for count in ("1451", "1549", "4837", "5163", "4835", "5165"):
+            with self.subTest(count=count):
+                self.assertRegex(table, rf"(^| & ){count}( &|\\\\)")
+                self.assertNotIn(rf"\num{{{count}}}", table)
+        self.assertIsNone(re.search(r"\b\d+\.000\b", table))
 
 
 if __name__ == "__main__":

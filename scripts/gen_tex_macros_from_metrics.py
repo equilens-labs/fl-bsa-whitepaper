@@ -72,6 +72,14 @@ def _fmt_num(x: Any, *, decimals: int = 3) -> str:
     return f"\\num{{{formatted}}}"
 
 
+def _fmt_int_count(x: Any) -> str:
+    try:
+        val = int(x)
+    except Exception:
+        return "TBD"
+    return str(val)
+
+
 _P_VALUE_SMALL_SI_OPTS = "round-mode=figures,round-precision=3"
 _P_VALUE_MEDIUM_SI_OPTS = "round-mode=places,round-precision=4"
 
@@ -244,8 +252,8 @@ def main() -> int:
             slice_rows.append(
                 [
                     _latex_escape(label),
-                    _fmt_num(ref_n, decimals=0),
-                    _fmt_num(prot_n, decimals=0),
+                    _fmt_int_count(ref_n),
+                    _fmt_int_count(prot_n),
                     _fmt_num(pt),
                     _fmt_num(lo),
                     _fmt_num(hi),
@@ -591,7 +599,7 @@ def main() -> int:
     # Slice table (gender only)
     _write_table(
         outdir / "table_gender_air_slices.tex",
-        column_spec="lSSSSSl",
+        column_spec="lrrSSSl",
         empty_span_cols=7,
         header="slice & {$n_{ref}$} & {$n_{prot}$} & {AIR} & {LCI} & {UCI} & {compliance}\\\\",
         rows=slice_rows,
