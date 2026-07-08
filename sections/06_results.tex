@@ -1,37 +1,30 @@
 
 \section{Results}
 \subsection{Fairness}
+\noindent \Cref{tab:gender_air_slices} is the main scenario readout. The historical fixture reports AIR \GenderAIRHistorical{} for \GenderProtectedGroup{} vs \GenderReferenceGroup{}, below the \AirMin{} four-fifths threshold. The amplification (bias-preserving) slice reproduces the same level of disparity at AIR \GenderAIRAmplification{}, showing that the branch preserves rather than launders the bias signal. The intrinsic (de-biased) slice restores the ratio to AIR \GenderAIRIntrinsic{}, which localizes the disparity to the decision labels in this fixture. The result should be read as a positive-control pass for detection and branch separation, not as a customer portfolio finding.
+
 \ifnum\GenderSlicesAvailable>0\relax
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
 \input{includes/table_gender_air_slices}
-\caption{Gender disparity ratio (AIR-equivalent) by data slice. We report the historical baseline (synthetic input fixture; no real borrower data), bias-preserving amplification, and de-biased intrinsic slices for the configured pair (\GenderProtectedGroup{} vs \GenderReferenceGroup{}), with deterministic confidence intervals and counts.}
+\caption{Gender disparity ratio (AIR-equivalent) by data slice. We report the historical baseline (synthetic input fixture; no real borrower data), amplification (bias-preserving), and intrinsic (de-biased) slices for the configured pair (\GenderProtectedGroup{} vs \GenderReferenceGroup{}), with deterministic confidence intervals and counts.}
 \label{tab:gender_air_slices}
 \end{table}
 \fi
 
-\begin{table}[t]
+\begin{table}[htbp]
 \centering
 \input{includes/table_air_summary}
 \caption{Disparity ratios (AIR-equivalent) by protected attribute for the amplification (bias-preserving) synthetic slice. For gender we report the configured pair (\GenderProtectedGroup{} vs \GenderReferenceGroup{}). Race is shown in the main body only when the race small-n display policy is satisfied; otherwise it remains available in the machine-readable intake files. Intervals are deterministic (delta-method on $\log(\mathrm{AIR})$), and p-values are two-sided with small-n safeguards.}
 \label{tab:air_summary}
 \end{table}
 
-\IfFileExists{figures/air_summary.pdf}{%
-\begin{figure}[t]
+\IfFileExists{figures/gender_air_slices.pdf}{%
+\begin{figure}[htbp]
 \centering
-\includegraphics[width=0.6\textwidth]{figures/air_summary.pdf}
-\caption{Amplification-slice disparity ratio (AIR-equivalent) with deterministic 95\% confidence intervals. The dashed line shows the 0.80 threshold.}
-\label{fig:air_summary}
-\end{figure}
-}{}
-
-\IfFileExists{figures/selection_rates.pdf}{%
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.85\textwidth]{figures/selection_rates.pdf}
-\caption{Selection rates by protected attribute for the amplification (bias-preserving) synthetic slice, with 95\% Wilson confidence intervals. Race is shown only when the race small-n display policy is satisfied; otherwise race rows remain available in the machine-readable intake files. These rates underlie the disparity ratios in \Cref{tab:air_summary}.}
-\label{fig:selection_rates}
+\includegraphics[width=0.72\textwidth]{figures/gender_air_slices.pdf}
+\caption{Gender AIR across the historical, amplification (bias-preserving), and intrinsic (de-biased) slices, with deterministic 95\% confidence intervals. The dashed line marks the \AirMin{} four-fifths threshold.}
+\label{fig:gender_air_slices}
 \end{figure}
 }{}
 
@@ -42,7 +35,7 @@
 \begin{table}[htbp]
 \centering
 \input{includes/table_srg_summary}
-\caption{Approval-rate gaps (SRG) by protected attribute on the synthetic audit test split. SRG is defined in \cref{eq:srg} as the protected group selection rate minus the reference group selection rate, with deterministic confidence intervals and two-sided p-values.}
+\caption{Approval-rate gaps (SRG) by protected attribute on the amplification (bias-preserving) slice. SRG is defined in \cref{eq:srg} as the protected group selection rate minus the reference group selection rate, with deterministic confidence intervals and two-sided p-values.}
 \label{tab:srg_summary}
 \end{table}
 
@@ -53,14 +46,14 @@
 \begin{table}[htbp]
 \centering
 \input{includes/table_ece_summary}
-\caption{ECE summary for this run. ECE is defined in \cref{eq:ece}. In this synthetic audit scenario, ECE is not evaluated because no probability scores are available in the intake bundle; calibration compliance is therefore unknown.}
+\caption{Expected calibration error summary for this run. In this synthetic audit scenario, calibration is not evaluated because no probability scores are available in the intake bundle; calibration compliance is therefore unknown.}
 \label{tab:ece_summary}
 \end{table}
 \else
 \noindent\emph{Note.} Calibration (ECE) was not evaluated in this scenario; calibration compliance is therefore unknown in this whitepaper.
 \fi
 
-\noindent\emph{Equalized odds.} Equalized-odds summaries were generated but marked \texttt{NOT\_INFORMATIVE} because the confusion surface is degenerate for this run; they are diagnostic only and are not counted as a fairness pass.
+\noindent\emph{Equalized odds (EO).} EO summaries were generated but marked \texttt{NOT\_INFORMATIVE} because the confusion surface is degenerate for this run, meaning the true-positive and false-positive cells do not support informative group comparisons. They are diagnostic only and are not counted as a fairness pass.
 
 \FloatBarrier
 

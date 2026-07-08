@@ -97,6 +97,15 @@ def _chunk_for_display(value: str, *, chunk_size: int = 8, separator: str = " ")
 
 def _chunk_digest_for_display(value: str, *, chunk_size: int = 8, separator: str = " ") -> str:
     cleaned = value.strip()
+    if "@" in cleaned:
+        image_ref, digest = cleaned.rsplit("@", 1)
+        match = _DIGEST_PREFIX_RE.match(digest)
+        if match:
+            return (
+                f"{image_ref}@{match.group('prefix')}"
+                f"{_chunk_for_display(match.group('body'), chunk_size=chunk_size, separator=separator)}"
+            )
+        return cleaned
     match = _DIGEST_PREFIX_RE.match(cleaned)
     if match:
         return f"{match.group('prefix')}{_chunk_for_display(match.group('body'), chunk_size=chunk_size, separator=separator)}"
