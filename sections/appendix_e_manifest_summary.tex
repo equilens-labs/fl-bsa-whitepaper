@@ -29,3 +29,5 @@ Field & Value \\
 \caption{Key provenance fields for this synthetic audit run, including seeds, hashes, image digests, capabilities, and inference configuration.}
 \label{tab:manifest_summary}
 \end{table}
+
+\noindent\emph{Interval-source note.} The \texttt{inference\_method} and \texttt{inference\_replicates} fields preserve bootstrap/BCa annex or back-compat provenance from the manifest. The headline AIR and SRG intervals in this paper are read from \texttt{intake/metrics\_uncertainty.json} and use deterministic Wilson and delta-method calculations; bootstrap/BCa settings are not the headline interval source for this run.
