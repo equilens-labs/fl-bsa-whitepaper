@@ -7,10 +7,12 @@ Inputs (default paths):
   - intake/selection_rates.csv
   - intake/metrics_long.csv
   - intake/metrics_uncertainty.json (preferred for v4 SoT)
+  - intake/fairness_slices.json
 
 Outputs (PDF figures under figures/):
   - selection_rates.pdf  (selection rates by attribute with 95% CIs)
   - air_summary.pdf      (AIR per attribute with 95% CIs and threshold line)
+  - gender_air_slices.pdf (historical / amplification / intrinsic gender AIR)
 """
 
 from __future__ import annotations
@@ -53,6 +55,15 @@ def _maybe_set_style() -> None:
         pass
 
 
+def _load_json(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
 def _generate_selection_rates_fig(
     selection_rates: pd.DataFrame, metrics_long: pd.DataFrame, out_path: Path
 ) -> None:
@@ -91,7 +102,7 @@ def _generate_selection_rates_fig(
 
     n_attr = len(present)
     fig, axes = plt.subplots(
-        1, n_attr, figsize=(4.0 * n_attr, 3.0), sharey=True, squeeze=False
+        1, n_attr, figsize=(3.6 * n_attr, 2.8), sharey=True, squeeze=False
     )
     axes_row = axes[0]
 
@@ -126,8 +137,7 @@ def _generate_selection_rates_fig(
         ax.grid(True, axis="x", linestyle=":", linewidth=0.5)
 
     axes_row[0].set_ylabel("Group")
-    fig.suptitle("Selection rates by protected attribute", fontsize=10)
-    fig.tight_layout(rect=[0, 0, 1, 0.94])
+    fig.tight_layout()
     fig.savefig(out_path)
     plt.close(fig)
 
@@ -222,7 +232,7 @@ def _generate_selection_rates_fig_from_uncertainty(
 
     n_attr = len(present)
     fig, axes = plt.subplots(
-        1, n_attr, figsize=(4.0 * n_attr, 3.0), sharey=True, squeeze=False
+        1, n_attr, figsize=(3.6 * n_attr, 2.8), sharey=True, squeeze=False
     )
     axes_row = axes[0]
 
@@ -255,8 +265,7 @@ def _generate_selection_rates_fig_from_uncertainty(
         ax.grid(True, axis="x", linestyle=":", linewidth=0.5)
 
     axes_row[0].set_ylabel("Group")
-    fig.suptitle("Selection rates by protected attribute", fontsize=10)
-    fig.tight_layout(rect=[0, 0, 1, 0.94])
+    fig.tight_layout()
     fig.savefig(out_path)
     plt.close(fig)
 
@@ -397,6 +406,83 @@ def _generate_air_fig_from_uncertainty(uncertainty: dict, out_path: Path) -> Non
     plt.close(fig)
 
 
+def _generate_gender_air_slices_fig(fairness_slices: dict, out_path: Path) -> None:
+    try:
+        import matplotlib.pyplot as plt  # type: ignore[import]
+    except Exception:
+        return
+
+    slices = fairness_slices.get("slices")
+    if not isinstance(slices, dict) or not slices:
+        return
+
+    ordered = [
+        ("historical", "Historical"),
+        ("amplification", "Amplification\n(bias-preserving)"),
+        ("intrinsic", "Intrinsic\n(de-biased)"),
+    ]
+    rows: list[dict[str, object]] = []
+    for key, label in ordered:
+        slice_data = slices.get(key)
+        if not isinstance(slice_data, dict):
+            continue
+        air = slice_data.get("air")
+        if not isinstance(air, dict):
+            continue
+        ci = air.get("ci95") or [None, None]
+        rows.append(
+            {
+                "label": label,
+                "value": air.get("point"),
+                "ci_low": ci[0] if len(ci) > 0 else None,
+                "ci_high": ci[1] if len(ci) > 1 else None,
+            }
+        )
+
+    df = pd.DataFrame(rows).dropna(subset=["value", "ci_low", "ci_high"])
+    if df.empty:
+        return
+
+    threshold = float(fairness_slices.get("air_threshold") or 0.8)
+    x_pos = range(len(df))
+    y = df["value"].to_numpy(dtype=float)
+    lo = df["ci_low"].to_numpy(dtype=float)
+    hi = df["ci_high"].to_numpy(dtype=float)
+    err_low = y - lo
+    err_high = hi - y
+
+    fig, ax = plt.subplots(figsize=(5.1, 3.1))
+    ax.errorbar(
+        x_pos,
+        y,
+        yerr=[err_low, err_high],
+        fmt="o",
+        capsize=4,
+        color="black",
+        ecolor="black",
+        elinewidth=0.9,
+        markersize=4.5,
+    )
+    ax.axhline(
+        threshold,
+        linestyle="--",
+        color="#a33a3a",
+        linewidth=0.9,
+        label=f"{threshold:.2f} threshold",
+    )
+    ax.set_xticks(list(x_pos))
+    ax.set_xticklabels(df["label"].tolist())
+    ax.set_ylabel("Adverse Impact Ratio (AIR)")
+    y_min = max(0.0, min(float(lo.min()), threshold) - 0.08)
+    y_max = max(float(hi.max()), threshold, 1.0) + 0.08
+    ax.set_ylim(y_min, y_max)
+    ax.grid(True, axis="y", linestyle=":", linewidth=0.5)
+    ax.legend(fontsize=8, loc="lower right")
+    fig.tight_layout()
+    fig.savefig(out_path)
+    plt.close(fig)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate plots from intake CSVs")
     parser.add_argument(
@@ -410,6 +496,11 @@ def main() -> int:
         help="Path to selection_rates.csv",
     )
     parser.add_argument(
+        "--fairness-slices",
+        default="intake/fairness_slices.json",
+        help="Path to fairness_slices.json",
+    )
+    parser.add_argument(
         "--metrics",
         default="intake/metrics_long.csv",
         help="Path to metrics_long.csv",
@@ -421,16 +512,22 @@ def main() -> int:
 
     selection_path = Path(args.selection)
     metrics_path = Path(args.metrics)
+    fairness_slices_path = Path(args.fairness_slices)
     outdir = Path(args.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
 
-    uncertainty_path = Path(args.uncertainty)
-    uncertainty: dict[str, object] = {}
-    if uncertainty_path.exists():
-        try:
-            uncertainty = json.loads(uncertainty_path.read_text(encoding="utf-8"))
-        except Exception:
-            uncertainty = {}
+    # If matplotlib is not available, skip plot generation gracefully.
+    try:
+        import matplotlib.pyplot  # type: ignore[import]  # noqa: F401
+    except Exception:
+        return 0
+
+    _maybe_set_style()
+
+    uncertainty = _load_json(Path(args.uncertainty))
+    fairness_slices = _load_json(fairness_slices_path)
+    if fairness_slices:
+        _generate_gender_air_slices_fig(fairness_slices, outdir / "gender_air_slices.pdf")
 
     if not selection_path.exists() or not metrics_path.exists():
         # Deterministic SoT plots can still be generated without metrics_long.csv
@@ -440,14 +537,6 @@ def main() -> int:
             )
             _generate_air_fig_from_uncertainty(uncertainty, outdir / "air_summary.pdf")
         return 0
-
-    # If matplotlib is not available, skip plot generation gracefully.
-    try:
-        import matplotlib.pyplot  # type: ignore[import]  # noqa: F401
-    except Exception:
-        return 0
-
-    _maybe_set_style()
 
     sel = pd.read_csv(selection_path)
     mlong = pd.read_csv(metrics_path)

@@ -2,4 +2,13 @@
 \section{Reproducibility}
 Every table in this paper is tied to a run identifier and a manifest. The manifest records the dataset hash, code commit, container image digests, random number generator seed, hardware description, and start/end timestamps, as summarised in Appendix~E.
 
+\subsection{How to verify this bundle}
+\begin{enumerate}[leftmargin=*]
+\item Check \path{intake/manifest.json} for the FL-BSA code commit, run identifier, dataset hash, image digests, seeds, and \path{customer_evidence_eligible=false} posture.
+\item Check \path{intake/fairness_slices.json} and \path{intake/metrics_uncertainty.json}; the historical, amplification, and intrinsic AIR values in \Cref{tab:gender_air_slices,fig:gender_air_slices} are rendered from those files.
+\item Regenerate derived TeX and figures with \texttt{make macros plots}; this rewrites \path{includes/metrics_macros.tex}, \path{includes/provenance_macros.tex}, and the PDF figures from the checked-in intake.
+\item Rebuild with \texttt{make pdf}. When the public publication profile is enabled, confirm that the rendered PDF still carries the demo/evaluation watermark.
+\item Inspect \path{intake/pack_intent.json} and \path{intake/certificates/*.json} before relying on signatures; this whitepaper bundle is intentionally unsigned review evidence, while GOLD evidence bundles carry certificate signatures when that mode is enabled.
+\end{enumerate}
+
 In addition, the whitepaper intake bundle includes an unsigned certificate chain (JSON) for auditability and tamper-evidence; \path{intake/pack_intent.json} records \path{certificate_signing_expected=false}. When certificate signing is enabled for GOLD evidence bundles, certificates are ECDSA P-256 signed and record signature material in fields such as \path{certificate_signature}, \path{signature_algorithm}, and \path{public_key_fingerprint}. For cryptographically verifiable certificate signatures, reviewers should use the GOLD evidence bundles and certificate-chain outputs rather than this whitepaper intake bundle.

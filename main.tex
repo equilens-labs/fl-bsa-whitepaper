@@ -23,20 +23,26 @@
   pdftitle={Equilens - Synthetic Audit and Fairness Evaluation for FL-BSA},
   pdfauthor={Equilens},
   pdfsubject={Synthetic Audit and Fairness Evaluation for FL-BSA},
-  pdfkeywords={FL-BSA, fairness, synthetic audit, AIR, SRG, EU AI Act, ECOA, CFPB}
+  pdfkeywords={FL-BSA, fairness, synthetic audit, AIR, SRG, EU AI Act, ECOA, CFPB},
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  citecolor=blue!50!black,
+  urlcolor=blue!50!black
 }
 \usepackage[capitalise]{cleveref}
 \usepackage[numbers]{natbib}
 \usepackage{url}
 \setlength{\headheight}{24pt}
 \addtolength{\topmargin}{-4pt}
+\makeatletter
+\setlength{\@fptop}{0pt}
+\makeatother
 
 \sisetup{
   detect-all,
   round-mode=places,
   round-precision=3,
-  round-pad=false,
-  round-integer-to-decimal=false,
+  round-pad=true,
   table-number-alignment=center
 }
 
@@ -95,14 +101,14 @@
 \maketitle
 
 \begin{abstract}
-We present a review-oriented, statistically rigorous evaluation of Equilens' Fair Lending Bias-Simulation Appliance (FL-BSA), a self-hosted fair-outcomes evidence appliance for regulated credit decisions. The paper formalises core selection-rate fairness estimands---including a disparity ratio (AIR-equivalent) and approval-rate gaps---and reports deterministic uncertainty using Wilson confidence intervals for group rates and a delta-method confidence interval for the AIR ratio. We describe the data-privacy and provenance boundaries, and demonstrate the framework on a synthetic fair-lending audit scenario, surfacing threshold exceptions (when present) with quantified uncertainty suitable for governance and regulatory review. Calibration (ECE) is not evaluated in this scenario.
+We present a review-oriented, statistically rigorous evaluation of Equilens' Fair Lending Bias-Simulation Appliance (FL-BSA), a self-hosted fair-outcomes evidence appliance for regulated credit decisions. The paper formalises core selection-rate fairness estimands---including the Adverse Impact Ratio (AIR) and approval-rate gaps---and reports deterministic uncertainty using Wilson confidence intervals for group rates and a delta-method confidence interval for AIR. We describe the data-privacy and provenance boundaries, and demonstrate the framework on a synthetic fair-lending audit scenario, surfacing threshold exceptions when present with quantified uncertainty suitable for governance and regulatory review. Calibration is out of scope for this scenario.
 \end{abstract}
 
 \input{sections/01_executive_summary}
-\input{sections/02_problem_estimands}
-\input{sections/03_methods}
 \input{sections/04_model_algorithm}
 \input{sections/05_evaluation}
+\input{sections/02_problem_estimands}
+\input{sections/03_methods}
 \input{sections/06_results}
 \input{sections/07_compliance}
 \input{sections/08_security_privacy}
