@@ -440,13 +440,13 @@ Key artifacts (gender_bias example)
   - Example: `/data/projects/fl-bsa/artifacts/gold/20251007T101329Z/02_gender_bias/synthetic_validation_certificate.json`
 - Evidence bundle (encrypted/plain): `/data/projects/fl-bsa/artifacts/gold/20251007T101329Z/02_gender_bias/downloads/evidence.zip(.enc)`
 
-Section 3 Aggregated CSVs (generated from this run)
-- Dataset summaries: `tasks/FUTURE/Whitepaper/dataset_summary_20251007T101329Z.csv`
+Section 3 Aggregated CSVs (historical pre-v5 run; retained in archive only)
+- Dataset summaries: `intake/archive/legacy-pre-v5/dataset_summary_20251007T101329Z.csv`
   - Columns: dataset_id, split, n, positive_rate, timeframe_start, timeframe_end, geography, notes
   - n uses synthetic_rows from metrics_api.json; notes capture DI and PASS/FAIL per scenario
-- Group summaries: `tasks/FUTURE/Whitepaper/group_summary_20251007T101329Z.csv`
+- Group summaries: `intake/archive/legacy-pre-v5/group_summary_20251007T101329Z.csv`
   - Groups: gender:{male,female}, race:{white,black,hispanic,asian,other}; positive_rate from selection rates; fpr/fnr left blank (no labels available). n is intentionally left blank to avoid mixing input coverage counts with synthetic population counts.
-- Feature missingness: `tasks/FUTURE/Whitepaper/feature_missingness_20251007T101329Z.csv`
+- Feature missingness: `intake/archive/legacy-pre-v5/feature_missingness_20251007T101329Z.csv`
   - Computed directly from each scenario’s `dataset.csv`; split column encodes scenario name; this is row‑level‑free (only aggregate missingness fractions)
 
 Chain and signing evidence
@@ -458,14 +458,18 @@ Notes
 - Group counts from `dataset_quality.coverage` in metrics_api.json
  - Security scenario race AIR computed from per‑group selection rates (asian vs best group) ≈ 0.78 (< 0.80) — claim updated accordingly
 
-Artifacts Provided (Reviewer Pack)
-- `tasks/FUTURE/Whitepaper/metrics_long.csv` — per-metric values with 95% CIs and n by run/split/group (selection rates; SPD/DI for gender)
-- `tasks/FUTURE/Whitepaper/runs.json` — run manifests with dataset hash, code commit, timestamps, software version
-- `tasks/FUTURE/Whitepaper/manifest.json` — reproducibility bundle index (per-run)
-- `tasks/FUTURE/Whitepaper/model_hyperparams.yaml` — chosen hyperparameters per branch + search ranges
-- `tasks/FUTURE/Whitepaper/SAP.md` — filled from template with thresholds, CI method (BCa/Wilson), replicates (2,000)
-- `tasks/FUTURE/Whitepaper/governance_contacts.csv` — roles for MRM, Compliance, Security, Legal (placeholders)
-- `tasks/FUTURE/Whitepaper/privacy_audit_checklist.md` — filled checklist with SBOM/CVE references
-- `tasks/FUTURE/Whitepaper/licenses_inventory.csv` — third‑party components (from poetry.lock)
-- `tasks/FUTURE/Whitepaper/regulatory_matrix.csv` — framework→requirement→control→evidence mapping with owners/status
-- `tasks/FUTURE/Whitepaper/claims_to_substantiate.md` — final claims list
+Artifacts Provided (Current Intake Surface)
+- `intake/metrics_long.csv` — per-metric values with 95% CIs and n by run/split/group (selection rates; SPD/DI for gender)
+- `intake/manifest.json` — reproducibility bundle index (per-run)
+- `intake/model_hyperparams.yaml` — chosen hyperparameters per branch + search ranges
+- `docs/SAP.md` — thresholds, CI methods, and statistical-analysis posture
+- `intake/governance_contacts.csv` — roles for MRM, Compliance, Security, Legal (placeholders)
+- `intake/privacy_audit_checklist.md` — filled checklist with SBOM/CVE references
+- `intake/licenses_inventory.csv` — third-party components
+- `intake/regulatory_matrix.csv` — framework to requirement to control to evidence mapping with owners/status
+
+Historical predecessor claim lists and pre-v5 summary CSVs are preserved under
+`intake/archive/legacy-pre-v5/` for traceability only; they are not the current reviewer-pack
+inventory or current claims list.
+Historical predecessor run manifests are likewise archived at
+`intake/archive/legacy-pre-v5/runs.json` and are not part of the current intake surface.
