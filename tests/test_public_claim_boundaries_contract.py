@@ -74,8 +74,19 @@ class PublicClaimBoundariesContractTests(unittest.TestCase):
         archived_claims = (
             ROOT / "intake" / "archive" / "legacy-pre-v5" / "claims_to_substantiate.md"
         ).read_text(encoding="utf-8")
-        self.assertIn("Last updated:** 2025-10-07", archived_claims)
+        self.assertIn("Evidence/run vintage:** 2025-10-07", archived_claims)
+        self.assertIn("Last substantive claim edit:** 2026-05-19", archived_claims)
+        self.assertIn("Archived:** 2026-07-09", archived_claims)
         self.assertIn("retained for historical traceability only", archived_claims)
+
+        historical_compilation = (
+            ROOT / "docs" / "WhitePaper_Intake_Compiled.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("Historical Pre-v5 Compilation", historical_compilation)
+        self.assertIn("retained for traceability only", historical_compilation)
+        self.assertIn("intake/pack_intent.json", historical_compilation)
+        self.assertIn("intake/metrics_uncertainty.json", historical_compilation)
+        self.assertNotIn("Artifacts Provided (Current Intake Surface)", historical_compilation)
 
     def test_differential_privacy_is_explicitly_not_claimed(self) -> None:
         manifest = json.loads((ROOT / "intake" / "manifest.json").read_text())

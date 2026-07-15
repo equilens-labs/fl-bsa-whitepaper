@@ -1,12 +1,23 @@
-# White Paper Intake — Completed Compilation (FL‑BSA)
+# White Paper Intake — Historical Pre-v5 Compilation (FL‑BSA)
 
-Last updated: 2025‑10‑07
+Evidence/run vintage: 2025‑10‑07
+Historical intake archived: 2026‑07‑09
+Document boundary annotation updated: 2026‑07‑15
+
+Historical notice — This pre-v5 compilation is retained for traceability only. It is not the
+current v5 architecture, evidence inventory, claim register, or publication-approval record. For
+the current v5 intake boundary, start with `intake/pack_intent.json`,
+`intake/metrics_uncertainty.json`, `intake/manifest.json`, and the unsigned certificates under
+`intake/certificates/`.
 
 Status Notice — Pre‑Production
 - This whitepaper intake and attached run evidence are produced from a pre‑production (gold‑gate) environment. Outputs may contain issues and are subject to change.
 - Not for external distribution without final review and sign‑off. Results are provided for evaluation/validation only and do not constitute legal or regulatory advice.
 
-This document consolidates all requested inputs from the White Paper Intake (RFI + templates) using authoritative sources in this repository. It is regulator‑ready and links to concrete evidence, code locations, and processes. Dataset‑dependent artifacts (aggregated CSVs) are specified with schemas and generation commands but require client data to populate.
+This document historically consolidated requested inputs from the White Paper Intake (RFI +
+templates). It is not a current regulator-ready representation. Dataset-dependent artifacts
+(aggregated CSVs) were specified with schemas and generation commands but required client data to
+populate.
 
 ---
 
@@ -458,15 +469,13 @@ Notes
 - Group counts from `dataset_quality.coverage` in metrics_api.json
  - Security scenario race AIR computed from per‑group selection rates (asian vs best group) ≈ 0.78 (< 0.80) — claim updated accordingly
 
-Artifacts Provided (Current Intake Surface)
-- `intake/metrics_long.csv` — per-metric values with 95% CIs and n by run/split/group (selection rates; SPD/DI for gender)
-- `intake/manifest.json` — reproducibility bundle index (per-run)
-- `intake/model_hyperparams.yaml` — chosen hyperparameters per branch + search ranges
-- `docs/SAP.md` — thresholds, CI methods, and statistical-analysis posture
-- `intake/governance_contacts.csv` — roles for MRM, Compliance, Security, Legal (placeholders)
-- `intake/privacy_audit_checklist.md` — filled checklist with SBOM/CVE references
-- `intake/licenses_inventory.csv` — third-party components
-- `intake/regulatory_matrix.csv` — framework to requirement to control to evidence mapping with owners/status
+2026 Archival Annotation — Current v5 Intake Entry Points
+- `intake/pack_intent.json` — current intake-only scope and unsigned-certificate expectation
+- `intake/metrics_uncertainty.json` — deterministic fairness-uncertainty source of truth
+- `intake/manifest.json` — reproducibility and producer provenance
+- `intake/certificates/` — current unsigned intake certificates, governed by `pack_intent.json`
+- `intake/fairness_slices.json`, `intake/selection_rates.csv`, and `intake/run_summary.json` — current run-level reviewer surfaces
+- `config/sap.yaml` — statistical-analysis plan consumed by the build
 
 Historical predecessor claim lists and pre-v5 summary CSVs are preserved under
 `intake/archive/legacy-pre-v5/` for traceability only; they are not the current reviewer-pack

@@ -1,6 +1,8 @@
 # Claims to Substantiate (Archived Pre-v5 Draft)
 
-**Last updated:** 2025-10-07
+**Evidence/run vintage:** 2025-10-07
+**Last substantive claim edit:** 2026-05-19
+**Archived:** 2026-07-09
 
 Archive stamp: retained for historical traceability only. This file is not the current stable
 `v5.0.0` claim list, current intake basis, current certificate-signing posture, or current
