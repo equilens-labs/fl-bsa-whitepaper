@@ -71,7 +71,7 @@
         65 +  
         66 +  ```
         67 +  intake/
-        68 +  ├── manifest_gate_wp.json    # Run provenance (ece_enabled: false)
+        68 +  ├── archive/legacy-pre-v5/manifest_gate_wp.json    # Historical run provenance (ece_enabled: false)
         69 +  ├── metrics_long.csv         # 28 rows, no ECE entries
         70 +  ├── selection_rates.csv      # Selection counts per group
         71 +  └── group_confusion.csv      # TP/FP/TN/FN per group
@@ -79,7 +79,7 @@
         73 +  
         74 +  ### 2.3 Manifest Confirmation
         75 +  
-        76 +  From `intake/manifest_gate_wp.json`:
+        76 +  From historical archive file `intake/archive/legacy-pre-v5/manifest_gate_wp.json`:
         77 +  ```json
         78 +  {
         79 +    "capabilities": {
@@ -332,7 +332,7 @@
        325 +  
        326 +  | File | SHA-256 (first 16 chars) |
        327 +  |------|--------------------------|
-       328 +  | manifest_gate_wp.json | (from run_id: d1248f4c...) |
+       328 +  | archive/legacy-pre-v5/manifest_gate_wp.json | (from run_id: d1248f4c...) |
        329 +  | Dataset hash | 7fbc4c8b4d24b217... |
        330 +  | Code commit | a4c0f9a58be60898... |
        331 +  
