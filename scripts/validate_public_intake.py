@@ -128,6 +128,8 @@ _CI_RUNTIME_PROVENANCE_SCHEMA = {
         "digest_ref": "",
         "api_digest_ref": "",
         "worker_digest_ref": "",
+        "image_build_sha": "",
+        "build_disposition": "",
         "runtime_input_projection": {"algorithm": "", "sha256": ""},
     },
     "claims": {"bounded_runtime_contract_verified": False, "full_ci_proven": False},
@@ -139,6 +141,16 @@ _CI_RUNTIME_MANIFEST_LOCATIONS = {
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+_CI_RUNTIME_BUILD_DISPOSITIONS = {
+    "built_for_source",
+    "reused_exact_sha_tag_matching_projection",
+    "reused_exact_sha_tag_projection_equivalent",
+    "reused_main_profile_latest_matching_projection",
+}
+_CI_RUNTIME_SAME_SOURCE_DISPOSITIONS = {
+    "built_for_source",
+    "reused_exact_sha_tag_matching_projection",
+}
 
 
 class _UniqueKeySafeLoader(yaml.SafeLoader):
@@ -367,7 +379,7 @@ def _validate_ci_runtime_provenance(value: Any, location: str) -> None:
     """Validate the reviewed, bounded product-CI provenance extension."""
 
     root = _require_exact_keys(value, set(_CI_RUNTIME_PROVENANCE_SCHEMA), location)
-    if root.get("schema_version") != "wp.ci_runtime_provenance.v1":
+    if root.get("schema_version") != "wp.ci_runtime_provenance.v2":
         raise DisclosureError(f"{location} has an unreviewed schema version")
 
     source_schema = _CI_RUNTIME_PROVENANCE_SCHEMA["source_ci"]
@@ -434,6 +446,32 @@ def _validate_ci_runtime_provenance(value: Any, location: str) -> None:
     ):
         raise DisclosureError(
             f"{location}.runtime_image has malformed or inconsistent digest identity"
+        )
+    image_build_sha = runtime.get("image_build_sha")
+    build_disposition = runtime.get("build_disposition")
+    if (
+        not isinstance(image_build_sha, str)
+        or not _SHA_RE.fullmatch(image_build_sha)
+        or build_disposition not in _CI_RUNTIME_BUILD_DISPOSITIONS
+    ):
+        raise DisclosureError(
+            f"{location}.runtime_image has malformed or unreviewed build provenance"
+        )
+    source_head_sha = source["head_sha"]
+    if (
+        build_disposition in _CI_RUNTIME_SAME_SOURCE_DISPOSITIONS
+        and image_build_sha != source_head_sha
+    ):
+        raise DisclosureError(
+            f"{location}.runtime_image build provenance does not match the source CI head"
+        )
+    if (
+        build_disposition == "reused_exact_sha_tag_projection_equivalent"
+        and image_build_sha == source_head_sha
+    ):
+        raise DisclosureError(
+            f"{location}.runtime_image projection-equivalent reuse does not identify "
+            "a distinct image build source"
         )
     projection = _require_exact_keys(
         runtime.get("runtime_input_projection"),

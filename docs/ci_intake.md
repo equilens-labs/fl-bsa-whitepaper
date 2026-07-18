@@ -148,8 +148,24 @@ this repository before the corresponding private data can cross the boundary.
 The validator itself carries three narrow reviewed empty-baseline/additive schemas: broken
 correlation rows and range-violation rows may reference only column names already disclosed by
 the tracked certificate, and `ci_runtime_provenance` may appear in either manifest only with the
-exact bounded product-CI run/artifact/runtime-digest/projection shape. That CI block must keep
-`full_ci_proven=false`; it cannot be used to widen the evidence or publication claim boundary.
+exact `wp.ci_runtime_provenance.v2` bounded product-CI
+run/artifact/runtime-digest/projection shape. Version 2 is the first producer-consumer shape that
+persists runtime build-source identity; the incomplete pre-producer version-1 shape is not
+accepted. Its `runtime_image` object
+also records the full lowercase 40-hex `image_build_sha` from the image configuration's source
+label and one exact `build_disposition`:
+
+- `built_for_source` and `reused_exact_sha_tag_matching_projection` require
+  `image_build_sha == source_ci.head_sha`;
+- `reused_exact_sha_tag_projection_equivalent` requires a distinct image build source,
+  `image_build_sha != source_ci.head_sha`; and
+- `reused_main_profile_latest_matching_projection` permits either relationship because the
+  moving profile alias may already point to the source build or to an input-equivalent build.
+
+Missing, malformed, duplicate, or unknown fields and incoherent SHA/disposition pairs fail
+closed. This records which already-verified runtime image was exercised; it does not make an
+equivalent-input image the same source build. The CI block must keep `full_ci_proven=false`; it
+cannot be used to widen the evidence or publication claim boundary.
 
 The consumer stages a complete replacement for the producer-managed surfaces:
 

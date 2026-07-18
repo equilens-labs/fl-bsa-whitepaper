@@ -151,6 +151,10 @@ API-verified and bounded polling must observe successful completion before stamp
 bundle members pass explicit filename plus content/schema public-disclosure validation; the raw private-producer ZIP is never
 re-uploaded from this public repository. Producer-managed paths are replaced while the explicit
 repository-owned intake files and `intake/archive/` tree are preserved.
+When product CI supplies the optional bounded runtime-provenance block, the public validator also
+requires the image configuration's full source SHA and an exact build/reuse disposition, with the
+source-SHA relationship enforced for each disposition. See `docs/ci_intake.md`; this metadata does
+not change the bounded evidence or publication claim.
 
 ---
 

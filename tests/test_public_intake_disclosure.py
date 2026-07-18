@@ -40,11 +40,17 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
 
     @staticmethod
     def _ci_runtime_provenance(
-        head_sha: str = "a" * 40, digest: str = "sha256:" + "c" * 64
+        head_sha: str = "a" * 40,
+        digest: str = "sha256:" + "c" * 64,
+        *,
+        image_build_sha: str | None = None,
+        build_disposition: str = "built_for_source",
     ) -> dict:
         digest_ref = f"ghcr.io/equilens-labs/fl-bsa-runtime@{digest}"
+        if image_build_sha is None:
+            image_build_sha = head_sha
         return {
-            "schema_version": "wp.ci_runtime_provenance.v1",
+            "schema_version": "wp.ci_runtime_provenance.v2",
             "source_ci": {
                 "repository": "equilens-labs/fl-bsa",
                 "workflow": ".github/workflows/ci-comprehensive.yml",
@@ -63,6 +69,8 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
                 "digest_ref": digest_ref,
                 "api_digest_ref": digest_ref,
                 "worker_digest_ref": digest_ref,
+                "image_build_sha": image_build_sha,
+                "build_disposition": build_disposition,
                 "runtime_input_projection": {
                     "algorithm": "git-ls-tree-z-sha256.v1",
                     "sha256": "d" * 64,
@@ -88,6 +96,150 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
             )
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
             DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_reviewed_runtime_build_dispositions_pass(self) -> None:
+        cases = (
+            ("built_for_source", False),
+            ("reused_exact_sha_tag_matching_projection", False),
+            ("reused_exact_sha_tag_projection_equivalent", True),
+            ("reused_main_profile_latest_matching_projection", False),
+            ("reused_main_profile_latest_matching_projection", True),
+        )
+        for disposition, distinct_build_sha in cases:
+            with (
+                self.subTest(
+                    disposition=disposition, distinct_build_sha=distinct_build_sha
+                ),
+                tempfile.TemporaryDirectory() as tmp,
+            ):
+                bundle = self._bundle(Path(tmp))
+                manifest_path = bundle / "provenance" / "manifest.json"
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                head_sha = manifest["commit_sha"]
+                image_build_sha = "e" * 40 if distinct_build_sha else head_sha
+                manifest["ci_runtime_provenance"] = self._ci_runtime_provenance(
+                    head_sha,
+                    manifest["container_digest"].rsplit("@", 1)[1],
+                    image_build_sha=image_build_sha,
+                    build_disposition=disposition,
+                )
+                manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+                DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_incomplete_runtime_provenance_v1_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = self._bundle(Path(tmp))
+            manifest_path = bundle / "provenance" / "manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            provenance = self._ci_runtime_provenance(manifest["commit_sha"])
+            provenance["schema_version"] = "wp.ci_runtime_provenance.v1"
+            manifest["ci_runtime_provenance"] = provenance
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(
+                DISCLOSURE.DisclosureError, "unreviewed schema version"
+            ):
+                DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_runtime_build_provenance_fields_are_required(self) -> None:
+        for field in ("image_build_sha", "build_disposition"):
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as tmp:
+                bundle = self._bundle(Path(tmp))
+                manifest_path = bundle / "provenance" / "manifest.json"
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                provenance = self._ci_runtime_provenance(manifest["commit_sha"])
+                del provenance["runtime_image"][field]
+                manifest["ci_runtime_provenance"] = provenance
+                manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+                with self.assertRaisesRegex(
+                    DISCLOSURE.DisclosureError, "exact reviewed fields"
+                ):
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_runtime_image_build_sha_must_be_full_lowercase_sha(self) -> None:
+        for image_build_sha in ("A" * 40, "a" * 39, "g" * 40):
+            with (
+                self.subTest(image_build_sha=image_build_sha),
+                tempfile.TemporaryDirectory() as tmp,
+            ):
+                bundle = self._bundle(Path(tmp))
+                manifest_path = bundle / "provenance" / "manifest.json"
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                manifest["ci_runtime_provenance"] = self._ci_runtime_provenance(
+                    manifest["commit_sha"], image_build_sha=image_build_sha
+                )
+                manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+                with self.assertRaisesRegex(
+                    DISCLOSURE.DisclosureError,
+                    "malformed or unreviewed build provenance",
+                ):
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_unknown_runtime_build_disposition_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = self._bundle(Path(tmp))
+            manifest_path = bundle / "provenance" / "manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["ci_runtime_provenance"] = self._ci_runtime_provenance(
+                manifest["commit_sha"], build_disposition="unreviewed_reuse_mode"
+            )
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(
+                DISCLOSURE.DisclosureError,
+                "malformed or unreviewed build provenance",
+            ):
+                DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_runtime_build_disposition_enforces_source_sha_coherence(self) -> None:
+        cases = (
+            ("built_for_source", "e" * 40, "does not match the source CI head"),
+            (
+                "reused_exact_sha_tag_matching_projection",
+                "e" * 40,
+                "does not match the source CI head",
+            ),
+            (
+                "reused_exact_sha_tag_projection_equivalent",
+                None,
+                "does not identify a distinct image build source",
+            ),
+        )
+        for disposition, image_build_sha, expected in cases:
+            with (
+                self.subTest(disposition=disposition),
+                tempfile.TemporaryDirectory() as tmp,
+            ):
+                bundle = self._bundle(Path(tmp))
+                manifest_path = bundle / "provenance" / "manifest.json"
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                manifest["ci_runtime_provenance"] = self._ci_runtime_provenance(
+                    manifest["commit_sha"],
+                    image_build_sha=image_build_sha,
+                    build_disposition=disposition,
+                )
+                manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+                with self.assertRaisesRegex(DISCLOSURE.DisclosureError, expected):
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_duplicate_runtime_build_disposition_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = self._bundle(Path(tmp))
+            manifest_path = bundle / "provenance" / "manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["ci_runtime_provenance"] = self._ci_runtime_provenance(
+                manifest["commit_sha"]
+            )
+            candidate = json.dumps(manifest)
+            needle = '"build_disposition": "built_for_source"'
+            duplicate = (
+                '"build_disposition": "built_for_source", '
+                '"build_disposition": "reused_main_profile_latest_matching_projection"',
+            )
+            self.assertEqual(candidate.count(needle), 1)
+            manifest_path.write_text(
+                candidate.replace(needle, "".join(duplicate)), encoding="utf-8"
+            )
+            with self.assertRaisesRegex(DISCLOSURE.DisclosureError, "duplicate key"):
+                DISCLOSURE.validate_bundle(bundle, ROOT)
 
     def test_ci_runtime_provenance_attempt_mismatch_is_redacted(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -145,6 +297,7 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
                 provenance = self._ci_runtime_provenance(manifest["commit_sha"])
                 if mutation == "head":
                     provenance["source_ci"]["head_sha"] = "e" * 40
+                    provenance["runtime_image"]["image_build_sha"] = "e" * 40
                 else:
                     manifest["container_digest"] = (
                         "ghcr.io/equilens-labs/fl-bsa-runtime@sha256:" + "e" * 64
