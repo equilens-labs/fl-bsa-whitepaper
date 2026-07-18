@@ -1,24 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
-OUTDIR="dist/arxiv"
-rm -rf "$OUTDIR"
-mkdir -p "$OUTDIR"
 
-# Copy core sources (tolerate optional files)
-cp -v main.tex "$OUTDIR"/
-if [ -f .latexmkrc ]; then cp -v .latexmkrc "$OUTDIR"/; fi
+source_date_epoch="${SOURCE_DATE_EPOCH:-}"
+if [ -z "$source_date_epoch" ]; then
+  source_date_epoch="$(git log -1 --format=%ct HEAD)"
+fi
+if [[ ! "$source_date_epoch" =~ ^[0-9]+$ ]]; then
+  echo "SOURCE_DATE_EPOCH must be a positive integer; got ${source_date_epoch@Q}." >&2
+  exit 1
+fi
 
-for dir in sections includes figures bib; do
-  if [ -d "$dir" ]; then
-    cp -vr "$dir" "$OUTDIR"/
-  fi
-done
-
-# Keep .bbl if present; arXiv can also run bibtex, but include for safety
-if [ -f main.bbl ]; then cp -v main.bbl "$OUTDIR"/; fi
-
-# Zip
-mkdir -p dist
-cd dist
-zip -r whitepaper_arxiv_source.zip arxiv
-echo "Wrote dist/whitepaper_arxiv_source.zip"
+python3 scripts/package_arxiv_source.py \
+  --repo-root . \
+  --output dist/whitepaper_arxiv_source.zip \
+  --source-date-epoch "$source_date_epoch"

@@ -1,3 +1,8 @@
+% Suppress volatile engine metadata; SOURCE_DATE_EPOCH binds the remaining
+% reproducible-build timestamp inputs to the checked-out source commit.
+\ifdefined\pdfinfoomitdate\pdfinfoomitdate=1\fi
+\ifdefined\pdftrailerid\pdftrailerid{}\fi
+\ifdefined\pdfsuppressptexinfo\pdfsuppressptexinfo=15\fi
 
 \documentclass[11pt]{article}
 

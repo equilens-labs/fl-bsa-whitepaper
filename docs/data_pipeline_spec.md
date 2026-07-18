@@ -232,13 +232,23 @@ run_id,split,model_id,attribute,group,selected,n
 
 The `.github/workflows/pull-wp-intake.yml` workflow can:
 1. Trigger on producer CI completion (`repository_dispatch`)
-2. Download the intake bundle artifact from producer (`wp-intake-bundle-v4` from `wp-evidence-nightly.yml`, with legacy fallback to `wp-reviewer-pack-v4`)
-3. Copy to `intake/`
+2. Download the requested intake bundle artifact from producer (`wp-intake-bundle-v4` from
+   `wp-evidence-nightly.yml`; the unattested `wp-reviewer-pack-v4` compatibility artifact must be
+   requested explicitly and is never an automatic fallback)
+3. API-verify and bounded-poll the exact producer run/head, reject non-allowlisted private bundle
+   members, stage the managed intake/certificate/config files, and replace those surfaces while
+   preserving the six explicit repository-owned intake files plus `intake/archive/`
 4. Regenerate macros, figures, and PDF
 5. Upload PDF artifact
-6. Open or update an intake snapshot PR containing `intake/`, `config/`, generated `includes/`, and generated `figures/`
+6. Persist the source snapshot: routine nightly input goes to the append-only
+   `chore/wp-intake-nightly` history; release-evidence input goes to a workflow-write-once per-run
+   branch with a best-effort PR. No branch-protection/ruleset immutability is claimed.
 
-This workflow is intended to keep the PDF build reproducible and up to date with the producer's latest evidence run. The PR is the durable source snapshot; the workflow PDF artifact is only a convenience output.
+This workflow keeps the PDF build reproducible and up to date with the producer's latest
+evidence run. The persisted Git snapshot is the durable source record; the PR and workflow PDF
+artifact are reviewer conveniences. The raw private-producer ZIP is not re-uploaded from this
+public repository. See `docs/ci_intake.md` for the exact branch lifecycle,
+idempotency, and stable-v5 compatibility-anchor contract.
 
 ---
 

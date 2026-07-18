@@ -50,6 +50,158 @@ def _load_sap_thresholds(path: Path) -> Dict[str, float]:
         return {"air_min": 0.80, "eo_gap_max": 0.05, "ece_max": 0.02}
 
 
+def _strict_load_json(path: Path, label: str) -> Dict[str, Any]:
+    if not path.is_file():
+        raise ValueError(f"required {label} file is missing: {path}")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"required {label} file is malformed: {path}") from exc
+    if not isinstance(payload, dict):
+        raise ValueError(f"required {label} payload must be a JSON object: {path}")
+    return payload
+
+
+def _strict_load_yaml(path: Path, label: str) -> Dict[str, Any]:
+    if not path.is_file():
+        raise ValueError(f"required {label} file is missing: {path}")
+    try:
+        payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, yaml.YAMLError) as exc:
+        raise ValueError(f"required {label} file is malformed: {path}") from exc
+    if not isinstance(payload, dict):
+        raise ValueError(f"required {label} payload must be a YAML mapping: {path}")
+    return payload
+
+
+def _strict_finite_number(value: Any, location: str) -> float:
+    if isinstance(value, bool):
+        raise ValueError(f"{location} must be a finite number")
+    try:
+        number = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{location} must be a finite number") from exc
+    if not math.isfinite(number):
+        raise ValueError(f"{location} must be a finite number")
+    return number
+
+
+def _strict_nonempty_string(value: Any, location: str) -> str:
+    if (
+        not isinstance(value, str)
+        or not value.strip()
+        or value.strip().lower() == "not_available"
+    ):
+        raise ValueError(f"{location} must be a non-empty available value")
+    return value
+
+
+def _strict_validate_manifest(manifest: Dict[str, Any]) -> None:
+    schema = _strict_nonempty_string(manifest.get("schema_version"), "manifest.schema_version")
+    if not schema.startswith("wp-intake."):
+        raise ValueError("manifest.schema_version must identify a wp-intake schema")
+
+    inference = manifest.get("inference")
+    if not isinstance(inference, dict):
+        raise ValueError("manifest.inference must be an object")
+    _strict_nonempty_string(inference.get("method"), "manifest.inference.method")
+    replicates = inference.get("replicates")
+    if isinstance(replicates, bool) or not isinstance(replicates, int) or replicates <= 0:
+        raise ValueError("manifest.inference.replicates must be a positive integer")
+    alpha = _strict_finite_number(inference.get("alpha"), "manifest.inference.alpha")
+    if not 0 < alpha < 1:
+        raise ValueError("manifest.inference.alpha must be in (0, 1)")
+    smoothing = _strict_finite_number(
+        inference.get("smoothing"), "manifest.inference.smoothing"
+    )
+    if smoothing < 0:
+        raise ValueError("manifest.inference.smoothing must be non-negative")
+
+    commit = _strict_nonempty_string(
+        manifest.get("code_commit") or manifest.get("commit_sha"),
+        "manifest.code_commit",
+    )
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise ValueError("manifest.code_commit must be a lowercase 40-hex commit")
+    _strict_nonempty_string(manifest.get("run_id"), "manifest.run_id")
+    dataset_hash = _strict_nonempty_string(
+        manifest.get("dataset_hash"), "manifest.dataset_hash"
+    )
+    if not re.fullmatch(r"sha256:[0-9a-f]{64}", dataset_hash):
+        raise ValueError("manifest.dataset_hash must be a sha256 digest")
+    config_hash = _strict_nonempty_string(
+        manifest.get("config_hash"), "manifest.config_hash"
+    )
+    if not re.fullmatch(r"[0-9a-f]{64}", config_hash):
+        raise ValueError("manifest.config_hash must be a lowercase 64-hex digest")
+
+    digests = manifest.get("container_digests")
+    if not isinstance(digests, dict):
+        raise ValueError("manifest.container_digests must be an object")
+    digest_pattern = re.compile(r"^\S+@sha256:[0-9a-f]{64}$")
+    for field in ("api_image_digest", "worker_image_digest"):
+        digest = _strict_nonempty_string(
+            digests.get(field), f"manifest.container_digests.{field}"
+        )
+        if not digest_pattern.fullmatch(digest):
+            raise ValueError(
+                f"manifest.container_digests.{field} must be an immutable OCI digest reference"
+            )
+
+    seeds = manifest.get("seeds")
+    if not isinstance(seeds, dict):
+        raise ValueError("manifest.seeds must be an object")
+    for field in ("rng_seed", "bootstrap_seed"):
+        value = seeds.get(field)
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise ValueError(f"manifest.seeds.{field} must be an integer")
+
+    capabilities = manifest.get("capabilities")
+    if not isinstance(capabilities, dict):
+        raise ValueError("manifest.capabilities must be an object")
+    for field in ("eo_enabled", "ece_enabled"):
+        if not isinstance(capabilities.get(field), bool):
+            raise ValueError(f"manifest.capabilities.{field} must be a boolean")
+
+
+def _strict_validate_sap(sap: Dict[str, Any]) -> None:
+    thresholds = sap.get("thresholds")
+    if not isinstance(thresholds, dict):
+        raise ValueError("sap.thresholds must be a mapping")
+    for field in ("air_min", "tpr_gap_max", "ece_max"):
+        value = _strict_finite_number(thresholds.get(field), f"sap.thresholds.{field}")
+        if not 0 <= value <= 1:
+            raise ValueError(f"sap.thresholds.{field} must be in [0, 1]")
+
+
+def _strict_validate_metrics_csv(path: Path) -> None:
+    if not path.is_file():
+        raise ValueError(f"required metrics CSV file is missing: {path}")
+    try:
+        with path.open("r", encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle, strict=True)
+            if reader.fieldnames is None:
+                raise ValueError("metrics CSV is missing a header")
+            required = {"metric", "ci_degenerate"}
+            if not required.issubset(reader.fieldnames):
+                raise ValueError("metrics CSV is missing required columns")
+            if next(reader, None) is None:
+                raise ValueError("metrics CSV must contain at least one row")
+    except (OSError, UnicodeError, csv.Error) as exc:
+        raise ValueError(f"required metrics CSV file is malformed: {path}") from exc
+
+
+def _strict_validate_inputs(
+    manifest_path: Path, sap_path: Path, metrics_path: Path
+) -> Dict[str, Any]:
+    manifest = _strict_load_json(manifest_path, "manifest")
+    sap = _strict_load_yaml(sap_path, "SAP")
+    _strict_validate_manifest(manifest)
+    _strict_validate_sap(sap)
+    _strict_validate_metrics_csv(metrics_path)
+    return manifest
+
+
 def _truthy_int(val: Any) -> int:
     if isinstance(val, bool):
         return 1 if val else 0
@@ -315,6 +467,16 @@ def main() -> int:
         help="Output .tex file with \\newcommand macros",
     )
     ap.add_argument(
+        "--metrics",
+        default="intake/metrics_long.csv",
+        help="Metrics CSV used for ECE and degeneracy flags",
+    )
+    ap.add_argument(
+        "--strict",
+        action="store_true",
+        help="Reject missing, malformed, or incomplete publication inputs before writing output",
+    )
+    ap.add_argument(
         "--quiet",
         action="store_true",
         help="Suppress informational stdout messages",
@@ -324,9 +486,15 @@ def main() -> int:
     manifest_path = Path(args.manifest)
     sap_path = Path(args.sap)
     out_path = Path(args.out)
-    metrics_path = Path("intake/metrics_long.csv")
+    metrics_path = Path(args.metrics)
 
-    manifest = _load_json(manifest_path) if manifest_path.exists() else {}
+    if args.strict:
+        try:
+            manifest = _strict_validate_inputs(manifest_path, sap_path, metrics_path)
+        except ValueError as exc:
+            ap.error(str(exc))
+    else:
+        manifest = _load_json(manifest_path) if manifest_path.exists() else {}
     _emit_macros(
         manifest, sap_path, out_path, metrics_path=metrics_path, quiet=args.quiet
     )
