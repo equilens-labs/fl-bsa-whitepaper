@@ -24,6 +24,25 @@ from pathlib import Path
 import pandas as pd
 
 
+_PDF_METADATA = {
+    "Creator": "Equilens FL-BSA whitepaper",
+    "Producer": "Equilens FL-BSA whitepaper",
+    "CreationDate": None,
+    "ModDate": None,
+}
+_EXPECTED_FIGURES = (
+    "air_summary.pdf",
+    "gender_air_slices.pdf",
+    "selection_rates.pdf",
+)
+
+
+def _save_pdf(fig: object, out_path: Path) -> None:
+    """Write stable PDF bytes for an identical figure and Matplotlib runtime."""
+
+    fig.savefig(out_path, metadata=_PDF_METADATA)  # type: ignore[attr-defined]
+
+
 def _maybe_set_style() -> None:
     try:
         import matplotlib.pyplot as plt  # type: ignore[import]
@@ -62,6 +81,14 @@ def _load_json(path: Path) -> dict:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return {}
+
+
+def _missing_required_figures(outdir: Path) -> list[str]:
+    return [
+        name
+        for name in _EXPECTED_FIGURES
+        if not (outdir / name).is_file() or (outdir / name).stat().st_size == 0
+    ]
 
 
 def _generate_selection_rates_fig(
@@ -138,7 +165,7 @@ def _generate_selection_rates_fig(
 
     axes_row[0].set_ylabel("Group")
     fig.tight_layout()
-    fig.savefig(out_path)
+    _save_pdf(fig, out_path)
     plt.close(fig)
 
 
@@ -266,7 +293,7 @@ def _generate_selection_rates_fig_from_uncertainty(
 
     axes_row[0].set_ylabel("Group")
     fig.tight_layout()
-    fig.savefig(out_path)
+    _save_pdf(fig, out_path)
     plt.close(fig)
 
 
@@ -324,7 +351,7 @@ def _generate_air_fig(metrics_long: pd.DataFrame, out_path: Path) -> None:
     ax.grid(True, axis="y", linestyle=":", linewidth=0.5)
     ax.legend(fontsize=8)
     fig.tight_layout()
-    fig.savefig(out_path)
+    _save_pdf(fig, out_path)
     plt.close(fig)
 
 
@@ -402,7 +429,7 @@ def _generate_air_fig_from_uncertainty(uncertainty: dict, out_path: Path) -> Non
     ax.grid(True, axis="y", linestyle=":", linewidth=0.5)
     ax.legend(fontsize=8)
     fig.tight_layout()
-    fig.savefig(out_path)
+    _save_pdf(fig, out_path)
     plt.close(fig)
 
 
@@ -479,7 +506,7 @@ def _generate_gender_air_slices_fig(fairness_slices: dict, out_path: Path) -> No
     ax.grid(True, axis="y", linestyle=":", linewidth=0.5)
     ax.legend(fontsize=8, loc="lower right")
     fig.tight_layout()
-    fig.savefig(out_path)
+    _save_pdf(fig, out_path)
     plt.close(fig)
 
 
@@ -508,6 +535,11 @@ def main() -> int:
     parser.add_argument(
         "--outdir", default="figures", help="Output directory for figures"
     )
+    parser.add_argument(
+        "--require-all",
+        action="store_true",
+        help="Fail unless every reviewed publication figure is freshly generated",
+    )
     args = parser.parse_args()
 
     selection_path = Path(args.selection)
@@ -515,11 +547,16 @@ def main() -> int:
     fairness_slices_path = Path(args.fairness_slices)
     outdir = Path(args.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
+    if args.require_all:
+        for name in _EXPECTED_FIGURES:
+            (outdir / name).unlink(missing_ok=True)
 
     # If matplotlib is not available, skip plot generation gracefully.
     try:
         import matplotlib.pyplot  # type: ignore[import]  # noqa: F401
     except Exception:
+        if args.require_all:
+            parser.error("matplotlib is required to regenerate publication figures")
         return 0
 
     _maybe_set_style()
@@ -536,6 +573,11 @@ def main() -> int:
                 uncertainty, outdir / "selection_rates.pdf"
             )
             _generate_air_fig_from_uncertainty(uncertainty, outdir / "air_summary.pdf")
+        if args.require_all:
+            parser.error(
+                "required publication figures were not freshly generated: "
+                + ", ".join(_missing_required_figures(outdir))
+            )
         return 0
 
     sel = pd.read_csv(selection_path)
@@ -549,6 +591,13 @@ def main() -> int:
     else:
         _generate_selection_rates_fig(sel, mlong, outdir / "selection_rates.pdf")
         _generate_air_fig(mlong, outdir / "air_summary.pdf")
+    if args.require_all:
+        missing = _missing_required_figures(outdir)
+        if missing:
+            parser.error(
+                "required publication figures were not freshly generated: "
+                + ", ".join(missing)
+            )
     return 0
 
 

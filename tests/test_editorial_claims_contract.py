@@ -90,6 +90,9 @@ class EditorialClaimsContractTests(unittest.TestCase):
         self.assertIn("--fairness-slices", source)
         self.assertIn("gender_air_slices.pdf", source)
         self.assertIn("Adverse Impact Ratio (AIR)", source)
+        self.assertIn('"CreationDate": None', source)
+        self.assertIn('"ModDate": None', source)
+        self.assertEqual(5, source.count("_save_pdf(fig, out_path)"))
         self.assertNotIn("fig.suptitle", source)
         self.assertLess(
             source.index("\n    _maybe_set_style()\n"),

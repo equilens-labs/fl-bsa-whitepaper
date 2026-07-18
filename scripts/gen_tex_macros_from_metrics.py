@@ -28,6 +28,231 @@ from typing import Any
 import pandas as pd
 import yaml
 
+
+def _strict_load_json(path: Path, label: str) -> dict[str, Any]:
+    if not path.is_file():
+        raise ValueError(f"required {label} file is missing: {path}")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"required {label} file is malformed: {path}") from exc
+    if not isinstance(payload, dict):
+        raise ValueError(f"required {label} payload must be a JSON object: {path}")
+    return payload
+
+
+def _strict_load_yaml(path: Path, label: str) -> dict[str, Any]:
+    if not path.is_file():
+        raise ValueError(f"required {label} file is missing: {path}")
+    try:
+        payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, yaml.YAMLError) as exc:
+        raise ValueError(f"required {label} file is malformed: {path}") from exc
+    if not isinstance(payload, dict):
+        raise ValueError(f"required {label} payload must be a YAML mapping: {path}")
+    return payload
+
+
+def _strict_finite_number(value: Any, location: str) -> float:
+    if isinstance(value, bool):
+        raise ValueError(f"{location} must be a finite number")
+    try:
+        number = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{location} must be a finite number") from exc
+    if not math.isfinite(number):
+        raise ValueError(f"{location} must be a finite number")
+    return number
+
+
+def _strict_nonempty_string(value: Any, location: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{location} must be a non-empty string")
+    return value
+
+
+def _strict_metric_block(value: Any, location: str) -> None:
+    if not isinstance(value, dict):
+        raise ValueError(f"{location} must be an object")
+    _strict_finite_number(value.get("point"), f"{location}.point")
+    ci95 = value.get("ci95")
+    if not isinstance(ci95, list) or len(ci95) != 2:
+        raise ValueError(f"{location}.ci95 must contain exactly two values")
+    lower = _strict_finite_number(ci95[0], f"{location}.ci95[0]")
+    upper = _strict_finite_number(ci95[1], f"{location}.ci95[1]")
+    if lower > upper:
+        raise ValueError(f"{location}.ci95 must be ordered lower-to-upper")
+    p_value = _strict_finite_number(value.get("p_value"), f"{location}.p_value")
+    if not 0 <= p_value <= 1:
+        raise ValueError(f"{location}.p_value must be in [0, 1]")
+
+
+def _strict_validate_uncertainty(payload: dict[str, Any]) -> None:
+    if payload.get("schema_version") != "fairness_uncertainty.v1":
+        raise ValueError("uncertainty.schema_version must be fairness_uncertainty.v1")
+    uncertainty = payload.get("fairness_uncertainty")
+    if not isinstance(uncertainty, dict):
+        raise ValueError("uncertainty.fairness_uncertainty must be an object")
+
+    gender = uncertainty.get("gender")
+    if not isinstance(gender, dict):
+        raise ValueError("uncertainty.fairness_uncertainty.gender must be an object")
+    _strict_nonempty_string(
+        gender.get("reference_group"),
+        "uncertainty.fairness_uncertainty.gender.reference_group",
+    )
+    _strict_nonempty_string(
+        gender.get("protected_group"),
+        "uncertainty.fairness_uncertainty.gender.protected_group",
+    )
+    _strict_metric_block(
+        gender.get("air"), "uncertainty.fairness_uncertainty.gender.air"
+    )
+    _strict_metric_block(
+        gender.get("srg"), "uncertainty.fairness_uncertainty.gender.srg"
+    )
+
+    race = uncertainty.get("race")
+    if not isinstance(race, dict):
+        raise ValueError("uncertainty.fairness_uncertainty.race must be an object")
+    _strict_nonempty_string(
+        race.get("reference_group"),
+        "uncertainty.fairness_uncertainty.race.reference_group",
+    )
+    if not isinstance(race.get("display_in_main_pdf"), bool):
+        raise ValueError(
+            "uncertainty.fairness_uncertainty.race.display_in_main_pdf must be boolean"
+        )
+    worst_case_pair = _strict_nonempty_string(
+        race.get("worst_case_pair"),
+        "uncertainty.fairness_uncertainty.race.worst_case_pair",
+    )
+    pairs = race.get("pairs")
+    if not isinstance(pairs, dict) or not pairs:
+        raise ValueError("uncertainty.fairness_uncertainty.race.pairs must be non-empty")
+    if worst_case_pair not in pairs or not isinstance(pairs[worst_case_pair], dict):
+        raise ValueError("uncertainty race worst_case_pair must name a pair object")
+    _strict_metric_block(
+        pairs[worst_case_pair].get("air"),
+        "uncertainty.fairness_uncertainty.race.pairs[worst_case_pair].air",
+    )
+    _strict_metric_block(
+        pairs[worst_case_pair].get("srg"),
+        "uncertainty.fairness_uncertainty.race.pairs[worst_case_pair].srg",
+    )
+    observed = race.get("observed")
+    if not isinstance(observed, dict):
+        raise ValueError("uncertainty.fairness_uncertainty.race.observed must be an object")
+    if _strict_finite_number(
+        observed.get("min_group_n"),
+        "uncertainty.fairness_uncertainty.race.observed.min_group_n",
+    ) <= 0:
+        raise ValueError("uncertainty race observed.min_group_n must be positive")
+    min_group_pct = _strict_finite_number(
+        observed.get("min_group_pct"),
+        "uncertainty.fairness_uncertainty.race.observed.min_group_pct",
+    )
+    if not 0 < min_group_pct <= 1:
+        raise ValueError("uncertainty race observed.min_group_pct must be in (0, 1]")
+
+
+def _strict_validate_slices(payload: dict[str, Any]) -> None:
+    if payload.get("schema_version") != "fairness_slices.v1":
+        raise ValueError("slices.schema_version must be fairness_slices.v1")
+    _strict_nonempty_string(payload.get("reference_group"), "slices.reference_group")
+    _strict_nonempty_string(payload.get("protected_group"), "slices.protected_group")
+    slices = payload.get("slices")
+    if not isinstance(slices, dict):
+        raise ValueError("slices.slices must be an object")
+    for branch in ("historical", "amplification", "intrinsic"):
+        entry = slices.get(branch)
+        location = f"slices.slices.{branch}"
+        if not isinstance(entry, dict):
+            raise ValueError(f"{location} must be an object")
+        counts = entry.get("counts")
+        if not isinstance(counts, dict):
+            raise ValueError(f"{location}.counts must be an object")
+        for count_name in ("ref_n", "prot_n"):
+            count = _strict_finite_number(
+                counts.get(count_name), f"{location}.counts.{count_name}"
+            )
+            if count <= 0 or not count.is_integer():
+                raise ValueError(f"{location}.counts.{count_name} must be a positive integer")
+        _strict_metric_block(entry.get("air"), f"{location}.air")
+
+    for section, fields in (
+        ("bias_preservation", ("abs_delta_air", "rel_delta_air")),
+        ("improvement", ("abs_uplift_air", "rel_uplift_air")),
+    ):
+        values = payload.get(section)
+        if not isinstance(values, dict):
+            raise ValueError(f"slices.{section} must be an object")
+        for field in fields:
+            _strict_finite_number(values.get(field), f"slices.{section}.{field}")
+
+
+def _strict_validate_sap(payload: dict[str, Any]) -> None:
+    thresholds = payload.get("thresholds")
+    if not isinstance(thresholds, dict):
+        raise ValueError("sap.thresholds must be a mapping")
+    for field in ("air_min", "tpr_gap_max", "fpr_gap_max", "ece_max"):
+        value = _strict_finite_number(thresholds.get(field), f"sap.thresholds.{field}")
+        if not 0 <= value <= 1:
+            raise ValueError(f"sap.thresholds.{field} must be in [0, 1]")
+
+
+def _strict_validate_metrics_csv(path: Path) -> None:
+    if not path.is_file():
+        raise ValueError(f"required metrics CSV file is missing: {path}")
+    try:
+        metrics = pd.read_csv(path)
+    except (OSError, UnicodeError, pd.errors.ParserError, pd.errors.EmptyDataError) as exc:
+        raise ValueError(f"required metrics CSV file is malformed: {path}") from exc
+    required_columns = {
+        "run_id",
+        "split",
+        "model_id",
+        "metric",
+        "group",
+        "value",
+        "lower_ci",
+        "upper_ci",
+        "n",
+        "method",
+        "ci_degenerate",
+    }
+    if not required_columns.issubset(metrics.columns):
+        raise ValueError("metrics CSV is missing required columns")
+    if metrics.empty:
+        raise ValueError("metrics CSV must contain at least one row")
+    for field in ("value", "lower_ci", "upper_ci", "n"):
+        try:
+            values = pd.to_numeric(metrics[field], errors="raise")
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"metrics CSV column {field} must be numeric") from exc
+        if not values.map(math.isfinite).all():
+            raise ValueError(f"metrics CSV column {field} must contain finite values")
+        if field == "n" and (
+            (values <= 0).any()
+            or not values.map(lambda value: float(value).is_integer()).all()
+        ):
+            raise ValueError("metrics CSV column n must contain positive integers")
+
+
+def _strict_validate_inputs(
+    uncertainty_path: Path,
+    slices_path: Path,
+    metrics_path: Path,
+    sap_path: Path,
+) -> None:
+    uncertainty = _strict_load_json(uncertainty_path, "uncertainty")
+    slices = _strict_load_json(slices_path, "fairness slices")
+    sap = _strict_load_yaml(sap_path, "SAP")
+    _strict_validate_uncertainty(uncertainty)
+    _strict_validate_slices(slices)
+    _strict_validate_sap(sap)
+    _strict_validate_metrics_csv(metrics_path)
+
 def _load_yaml(path: Path) -> dict[str, Any]:
     try:
         return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
@@ -142,12 +367,29 @@ def main() -> int:
     ap.add_argument("--metrics", default="intake/metrics_long.csv")
     ap.add_argument("--sap", default="config/sap.yaml")
     ap.add_argument("--outdir", default="includes")
+    ap.add_argument(
+        "--strict",
+        action="store_true",
+        help="Reject missing, malformed, or incomplete publication inputs before writing outputs",
+    )
     args = ap.parse_args()
+
+    uncertainty_path = Path(args.uncertainty)
+    slices_path = Path(args.slices)
+    metrics_path = Path(args.metrics)
+    sap_path = Path(args.sap)
+    if args.strict:
+        try:
+            _strict_validate_inputs(
+                uncertainty_path, slices_path, metrics_path, sap_path
+            )
+        except ValueError as exc:
+            ap.error(str(exc))
 
     outdir = Path(args.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
 
-    sap = _load_yaml(Path(args.sap))
+    sap = _load_yaml(sap_path)
     thr = sap.get("thresholds") if isinstance(sap, dict) else {}
     thr = thr if isinstance(thr, dict) else {}
     air_thr = float(thr.get("air_min", 0.80))
@@ -201,7 +443,6 @@ def main() -> int:
     gender_fidelity_abs: Any = None
     gender_fidelity_rel: Any = None
 
-    slices_path = Path(args.slices)
     slices_payload = _load_json(slices_path) if slices_path.exists() else {}
     if (
         isinstance(slices_payload, dict)
@@ -282,7 +523,6 @@ def main() -> int:
         gender_fidelity_abs = bp.get("abs_delta_air")
         gender_fidelity_rel = bp.get("rel_delta_air")
 
-    uncertainty_path = Path(args.uncertainty)
     uncertainty = _load_json(uncertainty_path) if uncertainty_path.exists() else {}
     fu = uncertainty.get("fairness_uncertainty") if isinstance(uncertainty, dict) else None
 
@@ -417,7 +657,6 @@ def main() -> int:
     # Legacy ECE parsing (from metrics_long.csv) so the calibration section can
     # truthfully show “not evaluated” when ECE is absent.
     ece = pd.DataFrame()
-    metrics_path = Path(args.metrics)
     if metrics_path.exists():
         try:
             m = pd.read_csv(metrics_path)
@@ -580,9 +819,9 @@ def main() -> int:
         for _, r in ece.iterrows():
             ece_rows.append(
                 [
-                    str(r.get("run_id", "")),
-                    str(r.get("model_id", "")),
-                    str(r.get("split", "")),
+                    _latex_escape(str(r.get("run_id", ""))),
+                    _latex_escape(str(r.get("model_id", ""))),
+                    _latex_escape(str(r.get("split", ""))),
                     _fmt_num(r.get("value", "")),
                     _fmt_num(r.get(ci_low_col, "")),
                     _fmt_num(r.get(ci_high_col, "")),

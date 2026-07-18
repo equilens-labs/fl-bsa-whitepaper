@@ -1,121 +1,225 @@
-# Intake Pull CI — Cross‑Repo Automation
+# Intake Pull CI — Cross-Repo Automation
 
-This repo can automatically pull the whitepaper intake bundle produced by the main `fl-bsa` repo, rebuild the whitepaper, and persist the exact intake snapshot in git history.
+This repository consumes the whitepaper intake bundle produced by
+`equilens-labs/fl-bsa`, rebuilds the paper, and preserves the exact source state in Git.
+Transient Actions artifacts are useful review outputs, but they are not the durability
+boundary.
 
-## Reviewer-Visible Evidence SLA
+## Persistence contract
 
-The durable nightly reviewer surface is branch/artifact-only:
+The workflow writes a `flbsa.whitepaper_intake_snapshot.v2` record to
+`intake/whitepaper_snapshot.json` before it persists a source tree. The record binds the producer
+repository, workflow, branch, run ID/attempt, artifact name/ID/API digest, product commit,
+bundle filename and SHA-256 to the whitepaper base commit. It also fixes the public claim
+boundary to:
 
-- The canonical audit anchor is the persisted branch named
-  `chore/wp-intake-<producer-sha>-<producer-run-id>`.
-- The reviewer-visible artifacts are the workflow artifacts uploaded by `pull-wp-intake`,
-  including `whitepaper-pdf-from-intake`, `arxiv-source-from-intake`, and
-  `intake-bundle-used`.
-- Snapshot PR creation is best-effort convenience, not a release or nightly SLA. If GitHub
-  Actions cannot create or approve pull requests because of org or enterprise policy, the
-  workflow must still push the branch, upload artifacts, add a job-summary notice, and upload
-  the `intake-pr-soft-fail` sentinel artifact.
+- `customer_evidence_eligible=false`
+- `customer_evidence_disposition=characterization_only`
+- `publication_status=candidate_not_published`
 
-`WP_INTAKE_PR_TOKEN` remains an optional enhancement for teams that want automatic snapshot
-PRs. It is not required for the release-evidence contract while the branch/artifact-only SLA is
-in force.
+All intake persistence runs share the `pull-wp-intake-persistence` concurrency group and do
+not cancel an in-progress predecessor. This serializes reads and writes to the rolling branch.
 
-## Triggers (three options)
+Routine `wp-evidence-nightly.yml` inputs use one branch:
+`chore/wp-intake-nightly`. Each changed snapshot is committed with both the current default
+branch commit and the previous rolling head as parents. The previous head therefore remains
+reachable, while repeated runs with the same snapshot ID and tree are no-ops. Routine runs do
+not create per-run branches or PRs.
 
-1. repository_dispatch (preferred)
-- In `fl-bsa` CI, dispatch an event to this repo after a successful run that uploads the intake-bundle artifact.
-- Example curl (run in fl‑bsa CI with a repo token):
-```
+`release-evidence.yml` inputs use workflow-write-once branches named
+`chore/wp-intake-<producer-sha12>-<producer-run-id>`. An exact replay is a no-op. If that branch
+already exists with different content, the workflow fails instead of rewriting it. A release
+snapshot PR is best-effort reviewer convenience; the write-once branch is the durable workflow
+anchor. These branches currently have no branch-protection/ruleset guarantee: a repository
+administrator can move or delete them. The snapshot ID, source-tree comparison, and workflow's
+no-rewrite rule detect ordinary replay drift but do not turn the branch into an immutable Git
+object or policy boundary.
+Only the specific GitHub policy error that prevents Actions from creating or approving PRs is
+soft-failed and recorded in the job summary plus the `intake-pr-soft-fail` artifact. Other
+branch, push, or PR failures remain hard failures.
+
+The workflow never force-pushes a persistence branch. This migration also does not delete or
+rewrite historical `chore/wp-intake-*` branches.
+
+## Triggers
+
+### Producer dispatch (preferred)
+
+After uploading an intake artifact, trusted producer automation dispatches the exact producer
+run:
+
+```bash
 curl -X POST \
   -H "Accept: application/vnd.github+json" \
   -H "Authorization: Bearer ${GH_TOKEN}" \
-  https://api.github.com/repos/<owner>/<whitepaper-repo>/dispatches \
+  https://api.github.com/repos/equilens-labs/fl-bsa-whitepaper/dispatches \
   -d '{
         "event_type":"wp-intake-ready",
         "client_payload":{
           "producer_repo":"equilens-labs/fl-bsa",
           "workflow_file":"wp-evidence-nightly.yml",
           "branch":"main",
-          "artifact_name":"wp-intake-bundle-v4",
-          "producer_run_id":"",
+          "artifact_name":"wp-intake-bundle-v4-<run-attempt>",
+          "producer_run_id":"<exact-run-id>",
+          "producer_run_attempt":"<exact-run-attempt>",
+          "artifact_id":"<exact-actions-artifact-id>",
+          "artifact_digest":"sha256:<exact-actions-artifact-digest>",
           "persist_intake_pr":"true"
         }
       }'
 ```
-- This repo listens for `repository_dispatch` with type `wp-intake-ready` and downloads the bundle artifact.
-- The workflow only accepts `equilens-labs/fl-bsa` as the producer repository, and only
-  `release-evidence.yml` / `wp-evidence-nightly.yml` as producer workflows.
 
-2. Scheduled pull
-- A daily cron (`0 6 * * *`) attempts to pull the latest intake bundle from `equilens-labs/fl-bsa` (default workflow/file/branch).
+The accepted producers are deliberately narrow:
 
-3. On-demand pull
-- Dispatch `wp-intake-ready` from trusted producer automation, or from an operator token with write access, when an exact run must be rebuilt outside the schedule.
-- The artifact-consuming workflow intentionally has no `workflow_dispatch` trigger. That prevents manually supplied artifacts from being unpacked into the repository and avoids GitHub Advanced Security artifact-poisoning findings.
-- Leave `persist_intake_pr=true` for release evidence. Set it to `false` only for local/debug rebuilds where a transient PDF artifact is intentionally enough.
-- For tagged releases and other audit-sensitive exact-run rebuilds, include `producer_run_id` in the `wp-intake-ready` payload. This avoids branch-head drift while keeping artifact selectors out of ad-hoc manual inputs.
+- repository: `equilens-labs/fl-bsa`
+- workflows: `wp-evidence-nightly.yml` or `release-evidence.yml`
+- artifacts: attempt-qualified, attested `wp-intake-bundle-v4-<run-attempt>`; the historical
+  unqualified name is accepted only for first-attempt runs; unattested `wp-reviewer-pack-v4` is
+  restricted to explicit first-attempt legacy compatibility (never an automatic fallback)
 
-## Authentication (private producers)
+`persist_intake_pr` is retained as a compatibility payload name. It now controls snapshot
+persistence. For nightly input, persistence means the rolling history branch and no PR. For
+release input, it means the workflow-write-once branch plus a best-effort PR. Set it to `false` only for
+an intentionally transient local/debug rebuild.
 
-If `fl-bsa` is private, add a secret `PRODUCER_TOKEN` in this repo. Prefer a GitHub App installation token, or a fine-grained PAT scoped only to `equilens-labs/fl-bsa` with:
+For release and other audit-sensitive rebuilds, the producer dispatches the run ID, run attempt,
+artifact ID, and API digest so the consumer cannot drift to a newer branch-head run or a retained
+artifact from another attempt. The consumer independently resolves all four values, verifies the
+outer Actions ZIP against the API digest/size, and records them in the snapshot.
 
-- Actions: read
-- Contents: read
+### Scheduled pull
 
-The workflow fails fast when `PRODUCER_TOKEN` is missing for a cross-repo private producer. It does not silently fall back to this repo's `GITHUB_TOKEN`, because GitHub masks private cross-repo authorization failures as `404 Not Found`.
+The daily `0 6 * * *` schedule resolves the latest successful `wp-evidence-nightly.yml` run on
+`main`, reads its API-verified run attempt, derives
+`wp-intake-bundle-v4-<run-attempt>`, then applies the same validation and rolling-history policy.
+For transition compatibility only, an attempt-1 run with no qualified artifact may select one
+unique attested `wp-intake-bundle-v4`. There is no scheduled fallback for later attempts or to
+the unattested reviewer pack.
 
-Rotate the token on the same cadence as other CI cross-repo credentials, and remove it when the producer repository is no longer private or when this intake path is retired.
+The consuming workflow intentionally has no `workflow_dispatch` input for arbitrary producer
+artifacts. Exact on-demand rebuilds use the trusted `wp-intake-ready` dispatch instead.
 
-If automatic intake snapshot PR creation is desired, add a separate `WP_INTAKE_PR_TOKEN`
-secret in this repo. Prefer a GitHub App installation token, or a fine-grained PAT scoped
-only to `equilens-labs/fl-bsa-whitepaper` with:
+## Authentication
 
-- Contents: write
-- Pull requests: write
+For a private producer, configure `PRODUCER_TOKEN` as a GitHub App installation token or
+fine-grained PAT scoped only to `equilens-labs/fl-bsa` with Actions read, Contents read, and
+Attestations read. The last permission is required to verify the downloaded bundle's GitHub
+attestation. The workflow fails if cross-repository authorization is absent; it does not silently
+substitute the whitepaper repository's token. Do not grant Packages, administration, or write
+access to this read-only producer credential.
 
-Rotate `WP_INTAKE_PR_TOKEN` on the same cadence as `PRODUCER_TOKEN`. Remove it when the
-organization allows GitHub Actions to create pull requests with this repo's default token
-or when the persisted intake branch is sufficient without automatic PR creation.
+`WP_INTAKE_PR_TOKEN` is optional and only affects release-snapshot PR creation. If used, scope it
+to `equilens-labs/fl-bsa-whitepaper` with Contents write and Pull requests write. The default
+Actions token remains sufficient for the durable branch when repository policy permits branch
+writes.
 
-## What happens after pull
+Rotate both credentials on the normal CI credential cadence. Never put a token or its contents
+in a dispatch payload, artifact, snapshot record, or tracked file.
+
+## Consumption and validation
 
 The workflow downloads `WhitePaper_Intake_Bundle_v4.zip`, verifies its GitHub artifact
-attestation against `equilens-labs/fl-bsa`, unpacks it, and syncs the relevant contents into
-this repo. For pre-rename producer runs, it falls back to `WhitePaper_Reviewer_Pack_v4.zip` /
-`wp-reviewer-pack-v4` so older evidence can still be replayed; the legacy fallback emits a
-workflow warning because those archive bundles predate the intake attestation contract.
-- `intake/selection_rates.csv`
-- `intake/fairness_slices.json` (gender AIR by slice: historical/amplification/intrinsic)
-- `intake/metrics_uncertainty.json` (v4 SoT for the PDF)
-- `intake/metrics_long.csv` (legacy/annex/back-compat)
-- `intake/group_confusion.csv` (if present)
+attestation against `equilens-labs/fl-bsa`, and accepts the unattested legacy reviewer pack only
+when the dispatch explicitly selects it, with a warning and a valid `wp.pack_intent.v1` boundary.
+It never falls back from a missing primary artifact. Duplicate same-named artifacts fail as
+ambiguous. It validates the `wp-intake.v1`
+provenance schema and `fairness_uncertainty.v1` metrics schema. Before download, every selected
+run ID (discovered or dispatched) is resolved through the Actions API and must be numeric, match
+the exact workflow path, approved event, source repository, and branch policy, and reach
+`completed/success` within a bounded 20-minute poll. Nightly intake is restricted to `main`;
+release intake is restricted to an exact semantic release branch whose suffix and corresponding
+Git tag both resolve to the run head.
+After unpacking, the bundle product commit and every recorded commit alias must equal that
+API-verified run head SHA.
+
+Before extraction, the consumer rejects duplicate, unsafe, oversized, or unexpected archive
+members. Only the reviewed intake CSV/JSON names, reviewed certificate JSON names,
+`config/sap.yaml`, optional `config/fairness_config.yaml`, and `provenance/manifest.json` may cross
+the private-producer/public-consumer boundary. In particular, `privacy/**`, `metadata/**`, logs,
+Markdown, and unreviewed future names fail closed.
+
+After safe extraction, `scripts/validate_public_intake.py` enforces the content half of the
+disclosure boundary. JSON/YAML keys and types must be a subset of the reviewed tracked public
+files; CSV headers must match their tracked public counterparts exactly. Duplicate structured
+keys, new fields/columns, high-confidence credentials, email addresses, user-home paths, private
+IP addresses, sensitive identity fields, control characters, and oversized values fail closed.
+A legitimate producer schema expansion therefore requires a reviewed public baseline change in
+this repository before the corresponding private data can cross the boundary.
+The validator itself carries three narrow reviewed empty-baseline/additive schemas: broken
+correlation rows and range-violation rows may reference only column names already disclosed by
+the tracked certificate, and `ci_runtime_provenance` may appear in either manifest only with the
+exact bounded product-CI run/artifact/runtime-digest/projection shape. That CI block must keep
+`full_ci_proven=false`; it cannot be used to widen the evidence or publication claim boundary.
+
+The consumer stages a complete replacement for the producer-managed surfaces:
+
+- `intake/*.csv` and `intake/*.json`
 - `intake/certificates/*.json`
-- `intake/manifest.json` (from `provenance/manifest.json` in the bundle)
-- `config/sap.yaml` (copied from the bundle)
+- `intake/manifest.json` from `provenance/manifest.json`
+- `config/sap.yaml` and, when present, `config/fairness_config.yaml`
 
-Then it regenerates LaTeX macros and figures through the strict generator scripts, builds the
-PDF and arXiv source, and uploads them as workflow artifacts. The workflow intentionally does
-not call the tolerant Makefile targets because those targets preserve local development
-convenience by swallowing generator failures.
+It removes omitted producer-managed files so they cannot survive from an older bundle. The six
+explicit repository-owned top-level intake files (`*_TEMPLATE.csv`, governance contacts, license
+inventory, model hyperparameters, and privacy checklist) plus the `intake/archive/` traceability
+tree are copied into the stage and are never sourced from the incoming bundle.
 
-The workflow also stamps `intake/manifest.json` with `whitepaper_consumer`, recording the
-consumer repository, run ID, run attempt, commit SHA, workflow, event, ingestion timestamp,
-producer artifact selectors, `bundle_filename`, and `bundle_sha256` used for the rebuild. If
-the incoming bundle SHA-256 matches the already committed snapshot, the workflow preserves the
-existing consumer stamp so daily cron runs do not open timestamp-only PR churn.
+The committed `whitepaper_consumer` stamp is deterministic. Actions already retains execution
+timestamps and attempts, so those run observations are not copied into the source tree. The
+stamp records the whitepaper base commit plus the exact producer selectors and bundle digest.
+It also records the API-verified run head SHA, which must equal the bundle product commit. This
+prevents timestamp-only Git churn and lets an exact replay compare both snapshot ID and tree.
 
-When `persist_intake_pr=true`, the workflow opens or updates a branch named `chore/wp-intake-<producer-sha>-<producer-run-id>` with the synced `intake/`, `config/`, generated `includes/`, and generated `figures/` changes. This branch is the canonical reproducibility anchor for the PDF source snapshot; the transient `whitepaper-pdf-from-intake` artifact is not the only copy of the evidence state.
+Strict generators rebuild macros and figures, LaTeX compiles the PDF, and CI verifies the
+`DEMO / EVALUATION ONLY` text marker. The workflow uploads generated
+`whitepaper-pdf-from-intake` and `arxiv-source-from-intake` candidates, but it never re-uploads the
+raw private producer ZIP. The Git snapshot is the long-lived reproducibility surface.
 
-The snapshot PR is a best-effort reviewer convenience layered on top of the persisted branch.
-If GitHub rejects PR creation or update because the default Actions token cannot create or
-approve pull requests, the workflow writes a `$GITHUB_STEP_SUMMARY` notice and uploads an
-`intake-pr-soft-fail` sentinel artifact. Other PR-management failures still fail the workflow.
+## Stable-v5 compatibility anchor
 
-The intake branch is the audit anchor for FL-BSA `reports/wp-audit.md` CR-9: the whitepaper
-source repo must preserve the exact intake/config/macro/figure state that produced the PDF,
-instead of relying only on expiring transient workflow artifacts.
+`baselines/stable-v5-characterization.json` is the repository-owned durable anchor for the
+stable-v5 characterization intake. It pins:
 
-## Notes
+- producer release-evidence run, product commit and original attested bundle SHA-256;
+- the whitepaper intake commit and exact `intake` / `config` Git tree object IDs;
+- the pinned manifest and pack-intent hashes and their non-evidence-grade boundary;
+- a descriptor-selected publication-input projection that includes the repository-owned
+  `intake/model_hyperparams.yaml` consumed by TeX generation and excludes `intake/archive/`; and
+- the deterministic compatibility exporter script and expected export digest.
 
-- repository_dispatch does not pass secrets; it only carries a small JSON payload for repo/workflow selection. The actual download uses this repo’s token/secret.
-- If the producer artifact cannot be downloaded (missing token, private repo access, or neither new nor legacy artifact name exists), the job fails fast.
+Validate or export it from a full whitepaper checkout:
+
+```bash
+python3 scripts/intake_anchor.py validate \
+  --anchor baselines/stable-v5-characterization.json \
+  --repo-root .
+
+python3 scripts/intake_anchor.py export \
+  --anchor baselines/stable-v5-characterization.json \
+  --repo-root . \
+  --output dist/WhitePaper_Intake_Bundle_v4.zip
+```
+
+The compatibility ZIP is reconstructed from the pinned whitepaper Git objects with stored
+(uncompressed) members so its bytes do not depend on a zlib implementation. Its digest is
+recorded under `export.expected_sha256`; it is intentionally distinct from the original
+producer-attested bundle digest under `producer.bundle_sha256`. The reconstruction is a durable
+replay surface, not a claim that the original Actions artifact was republished.
+
+The historical evidence anchor remains whitepaper commit
+`a451eae4284c4c592783f108e206e5ba1c0e5747` and its whole `intake` / `config` tree OIDs. A
+publication candidate is checked against `publication_inputs.paths` and the projection digest,
+not against whole-tree equality. Consequently PR #26's archival move at
+`e93a0fef4c88d7cb4c2c38df6f7dd26a11b75837` changes the recorded current intake-tree OID while
+retaining the exact stable-v5 publication-input digest. A selected current input change still
+fails closed.
+
+Producer-side consumers must fetch the descriptor, `scripts/intake_anchor.py`, and the frozen
+exporter named by `export.script` from the same reviewed whitepaper commit. They verify the
+frozen exporter hash recorded in the descriptor, fetch enough Git history to resolve
+`consumer.intake_commit`, run `validate`, and only then run `export`. A future baseline that
+needs different export behavior gets a new exporter path; it must not rewrite the stable-v5
+exporter. This replaces any bounded "latest N releases" scan. Private-repository access requires
+whitepaper Contents read permission. A moving branch name or an unverified downloaded ZIP is
+not an equivalent anchor.
+
+See `docs/stable_v5_publication.md` for the PDF/arXiv candidate and publication boundary.

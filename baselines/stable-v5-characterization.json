@@ -1,0 +1,118 @@
+{
+  "anchor_id": "stable-v5-characterization",
+  "claims": {
+    "customer_evidence_disposition": "characterization_only",
+    "customer_evidence_eligible": false,
+    "publication_status": "candidate_not_published"
+  },
+  "consumer": {
+    "config_tree_git_oid": "86d51b0ee92662bf6470ca0120d41022161423bd",
+    "intake_commit": "a451eae4284c4c592783f108e206e5ba1c0e5747",
+    "intake_tree_git_oid": "1131128a8882b8112089c60ebd5eff4aa4a1a6b8",
+    "manifest_sha256": "60ced620171ed4ec86ece50974930c4ccd84c6a20fe5859f19953c75eba3b6ff",
+    "pack_intent_sha256": "c451b52a0cdefbe73eacda0d1250ddfdcf66678b5402efc76c57887f67c578b1",
+    "repo": "equilens-labs/fl-bsa-whitepaper"
+  },
+  "export": {
+    "entries": [
+      {
+        "source": "intake/certificates",
+        "target": "certificates"
+      },
+      {
+        "source": "config",
+        "target": "config"
+      },
+      {
+        "source": "intake/air_status.json",
+        "target": "intake/air_status.json"
+      },
+      {
+        "source": "intake/ece_status.json",
+        "target": "intake/ece_status.json"
+      },
+      {
+        "source": "intake/eo_status.json",
+        "target": "intake/eo_status.json"
+      },
+      {
+        "source": "intake/fairness_slices.json",
+        "target": "intake/fairness_slices.json"
+      },
+      {
+        "source": "intake/group_confusion.csv",
+        "target": "intake/group_confusion.csv"
+      },
+      {
+        "source": "intake/manifest.json",
+        "target": "intake/manifest.json"
+      },
+      {
+        "source": "intake/metrics_long.csv",
+        "target": "intake/metrics_long.csv"
+      },
+      {
+        "source": "intake/metrics_uncertainty.json",
+        "target": "intake/metrics_uncertainty.json"
+      },
+      {
+        "source": "intake/pack_intent.json",
+        "target": "intake/pack_intent.json"
+      },
+      {
+        "source": "intake/regulatory_matrix.csv",
+        "target": "intake/regulatory_matrix.csv"
+      },
+      {
+        "source": "intake/run_summary.json",
+        "target": "intake/run_summary.json"
+      },
+      {
+        "source": "intake/selection_rates.csv",
+        "target": "intake/selection_rates.csv"
+      },
+      {
+        "source": "intake/manifest.json",
+        "target": "provenance/manifest.json"
+      }
+    ],
+    "expected_sha256": "42bcdcc72043a9ddd70f1821cf88b2c9963d34bd8f4444ee3b4093ed34276060",
+    "filename": "WhitePaper_Intake_Bundle_v4.zip",
+    "format": "whitepaper_intake_bundle_v4_compat",
+    "script": "scripts/stable_v5_export.py",
+    "script_sha256": "b05dd5af4f61280ada904f52c8afc18e41ab28be930ea30355884b9f47401a78"
+  },
+  "producer": {
+    "artifact": "wp-intake-bundle-v4",
+    "branch": "release/v5.0.0-09f6ca91",
+    "bundle_filename": "WhitePaper_Intake_Bundle_v4.zip",
+    "bundle_sha256": "f33b55d32a5bb60b63a53fde583463ac5015d59b0d086f89ac972de45cece063",
+    "product_sha": "09f6ca91dc9cf92c143559046e4517eb9576182c",
+    "release_tag": "v5.0.0",
+    "repo": "equilens-labs/fl-bsa",
+    "run_id": "28884829824",
+    "workflow": "release-evidence.yml"
+  },
+  "publication_inputs": {
+    "algorithm": "git-object-projection-sha256.v1",
+    "expected_sha256": "7ee3709869d398eb3e2aa548a47b361fc74d5a61cfb7619c2eb03fc8b0de2f1d",
+    "paths": [
+      "config",
+      "intake/air_status.json",
+      "intake/certificates",
+      "intake/ece_status.json",
+      "intake/eo_status.json",
+      "intake/fairness_slices.json",
+      "intake/group_confusion.csv",
+      "intake/manifest.json",
+      "intake/metrics_long.csv",
+      "intake/metrics_uncertainty.json",
+      "intake/model_hyperparams.yaml",
+      "intake/pack_intent.json",
+      "intake/regulatory_matrix.csv",
+      "intake/run_summary.json",
+      "intake/selection_rates.csv"
+    ]
+  },
+  "schema_version": "flbsa.whitepaper_intake_anchor.v1"
+}

@@ -6,41 +6,120 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  release:
-    types: [ published ]
   workflow_dispatch:
+    inputs:
+      draft_release_tag:
+        description: Optional existing semantic tag whose draft release should receive verified assets
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: latex-build-${{ inputs.draft_release_tag || github.ref }}
+  cancel-in-progress: false
+  queue: max
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      source_commit: ${{ steps.source.outputs.commit }}
+      run_attempt: ${{ github.run_attempt }}
+      pdf_artifact_id: ${{ steps.upload_pdf.outputs.artifact-id }}
+      pdf_artifact_digest: ${{ steps.upload_pdf.outputs.artifact-digest }}
+      arxiv_artifact_id: ${{ steps.upload_arxiv.outputs.artifact-id }}
+      arxiv_artifact_digest: ${{ steps.upload_arxiv.outputs.artifact-digest }}
+      stable_candidate_artifact_id: ${{ steps.upload_stable_candidate.outputs.artifact-id }}
+      stable_candidate_artifact_digest: ${{ steps.upload_stable_candidate.outputs.artifact-digest }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          # Stable-v5 validation resolves the pinned historical intake commit/tree.
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.draft_release_tag || github.sha }}
+      - name: Record exact source commit
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          commit="$(git rev-parse HEAD)"
+          test "$(git rev-parse "${commit}^{commit}")" = "$commit"
+          echo "BUILD_COMMIT=${commit}" >> "$GITHUB_ENV"
+          echo "commit=${commit}" >> "$GITHUB_OUTPUT"
+      - name: Bind draft staging to the exact dispatch tag
+        if: github.event_name == 'workflow_dispatch' && inputs.draft_release_tag != ''
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.draft_release_tag }}
+          DISPATCH_REF: ${{ github.ref }}
+          DISPATCH_HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || \
+             [ "$DISPATCH_REF" != "refs/tags/${RELEASE_TAG}" ] || \
+             [ "$DISPATCH_HEAD_SHA" != "$BUILD_COMMIT" ]; then
+            echo "Draft staging must be dispatched with --ref set to the exact semantic release tag." >&2
+            exit 1
+          fi
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.11'
       - name: Install Python deps
         run: |
-          python -m pip install --upgrade pip
-          pip install pandas pyyaml
-      - name: Run workflow contract tests
-        run: |
-          make test
-      - name: Generate TeX macros (tolerate missing intake/)
-        run: |
-          make macros
-      - name: Enable public demo watermark
-        run: |
-          mkdir -p includes
-          printf '\\drafttrue\n' > includes/publication_profile.local.tex
+          set -euo pipefail
+          test "$(uname -m)" = "x86_64"
+          python -m pip install --require-hashes -r requirements-ci-linux-x86_64.lock
       - name: Ensure pdftotext available
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends poppler-utils
+      - name: Run workflow contract tests
+        run: |
+          make test
+      - name: Generate TeX macros from pinned intake (strict)
+        run: |
+          set -euo pipefail
+          python scripts/gen_tex_macros_from_metrics.py \
+            --strict \
+            --metrics intake/metrics_long.csv \
+            --sap config/sap.yaml \
+            --outdir includes
+          python scripts/gen_tex_preamble_from_manifest.py \
+            --strict \
+            --manifest intake/manifest.json \
+            --sap config/sap.yaml \
+            --out includes/provenance_macros.tex
+          python scripts/gen_tex_hyperparams_from_yaml.py \
+            --strict \
+            --config intake/model_hyperparams.yaml \
+            --outdir includes
+      - name: Enable public demo watermark
+        run: |
+          mkdir -p includes
+          printf '\\drafttrue\n' > includes/publication_profile.local.tex
+      - name: Set reproducible source epoch
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "SOURCE_DATE_EPOCH=$(git show -s --format=%ct HEAD)" >> "$GITHUB_ENV"
+          echo "FORCE_SOURCE_DATE=1" >> "$GITHUB_ENV"
+          echo "TZ=UTC" >> "$GITHUB_ENV"
       - name: Compile LaTeX
-        uses: xu-cheng/latex-action@v3
+        uses: xu-cheng/latex-action@e2f99d4b3685b0da93f97e1b86ad8fab81105098 # v3.3.0
         with:
           root_file: main.tex
+          docker_image: ghcr.io/xu-cheng/texlive-full@sha256:d9bfb267e3e3f5e0820ca86e867ee59ebb133fc29561bb28677d9b5a1a9e84ff
+          pre_compile: |
+            export SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
+            export FORCE_SOURCE_DATE=1
+            export TZ=UTC
+            test "$SOURCE_DATE_EPOCH" -gt 0
+            test "$FORCE_SOURCE_DATE" = 1
+            test "$TZ" = UTC
           latexmk_use_xelatex: false
       - name: Assert public demo watermark in PDF
         run: |
@@ -56,22 +135,652 @@ jobs:
           mkdir -p dist
           cp main.pdf dist/whitepaper.pdf
       - name: Upload PDF artifact
-        uses: actions/upload-artifact@v4
+        id: upload_pdf
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: whitepaper-pdf
+          name: whitepaper-pdf-${{ github.run_attempt }}
           path: main.pdf
       - name: Package arXiv source
         run: |
           bash scripts/arxiv_pack.sh
+      - name: Build stable-v5 compatibility intake
+        if: github.event_name == 'workflow_dispatch' && (inputs.draft_release_tag == '' || inputs.draft_release_tag == 'v5.0.0')
+        run: |
+          python -S scripts/intake_anchor.py export \
+            --anchor baselines/stable-v5-characterization.json \
+            --repo-root . \
+            --output dist/stable-v5-intake-compatibility.zip
+      - name: Write stable-v5 publication manifest
+        if: github.event_name == 'workflow_dispatch' && (inputs.draft_release_tag == '' || inputs.draft_release_tag == 'v5.0.0')
+        run: |
+          set -euo pipefail
+          if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+            git status --short >&2
+            echo "Tracked publication sources changed during the build; refusing to label them as the checked-out commit." >&2
+            exit 1
+          fi
+          python scripts/build_publication_manifest.py \
+            --whitepaper-commit "$BUILD_COMMIT" \
+            --publication-status candidate_not_published \
+            --compatibility-intake dist/stable-v5-intake-compatibility.zip
       - name: Upload arXiv source
-        uses: actions/upload-artifact@v4
+        id: upload_arxiv
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: arxiv-source
+          name: arxiv-source-${{ github.run_attempt }}
           path: dist/whitepaper_arxiv_source.zip
-      - name: Attach artifacts to release
-        if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v1
+      - name: Upload stable-v5 publication candidate
+        id: upload_stable_candidate
+        if: github.event_name == 'workflow_dispatch' && (inputs.draft_release_tag == '' || inputs.draft_release_tag == 'v5.0.0')
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          files: |
-            dist/whitepaper.pdf
-            dist/whitepaper_arxiv_source.zip
+          name: stable-v5-publication-candidate-${{ github.run_attempt }}
+          path: |
+            dist/publication-manifest.json
+            dist/stable-v5-intake-compatibility.zip
+
+  release-assets:
+    if: github.event_name == 'workflow_dispatch' && inputs.draft_release_tag != ''
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Require a full same-attempt draft-staging run
+        shell: bash
+        env:
+          SOURCE_RUN_ATTEMPT: ${{ needs.build.outputs.run_attempt }}
+          CURRENT_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$SOURCE_RUN_ATTEMPT" =~ ^[1-9][0-9]*$ ]] || \
+             [[ ! "$CURRENT_RUN_ATTEMPT" =~ ^[1-9][0-9]*$ ]] || \
+             [ "$SOURCE_RUN_ATTEMPT" != "$CURRENT_RUN_ATTEMPT" ]; then
+            echo "Draft staging requires a full re-run of all jobs or a new exact-tag dispatch; partial failed-job re-runs are refused." >&2
+            exit 1
+          fi
+      - name: Download PDF candidate
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: whitepaper-pdf-${{ needs.build.outputs.run_attempt }}
+          path: release-assets/pdf
+      - name: Download arXiv candidate
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: arxiv-source-${{ needs.build.outputs.run_attempt }}
+          path: release-assets/arxiv
+      - name: Download stable-v5 publication candidate
+        if: inputs.draft_release_tag == 'v5.0.0'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: stable-v5-publication-candidate-${{ needs.build.outputs.run_attempt }}
+          path: release-assets/stable-v5
+      - name: Assemble release assets
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.draft_release_tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp release-assets/pdf/main.pdf dist/whitepaper.pdf
+          cp release-assets/arxiv/whitepaper_arxiv_source.zip dist/whitepaper_arxiv_source.zip
+          if [ "$RELEASE_TAG" = "v5.0.0" ]; then
+            cp release-assets/stable-v5/publication-manifest.json dist/publication-manifest.json
+            cp release-assets/stable-v5/stable-v5-intake-compatibility.zip dist/stable-v5-intake-compatibility.zip
+            verify_candidate_artifact() {
+              local key="$1"
+              local path="$2"
+              local expected_name="$3"
+              local name
+              local expected_sha
+              local expected_size
+              local actual_sha
+              local actual_size
+              name="$(jq -er --arg key "$key" '.artifacts[$key].name' dist/publication-manifest.json)"
+              expected_sha="$(jq -er --arg key "$key" '.artifacts[$key].sha256' dist/publication-manifest.json)"
+              expected_size="$(jq -er --arg key "$key" '.artifacts[$key].size_bytes' dist/publication-manifest.json)"
+              actual_sha="$(sha256sum "$path" | cut -d' ' -f1)"
+              actual_size="$(stat -c '%s' "$path")"
+              if [ "$name" != "$expected_name" ] || \
+                 [[ ! "$expected_sha" =~ ^[0-9a-f]{64}$ ]] || \
+                 [[ ! "$expected_size" =~ ^[1-9][0-9]*$ ]] || \
+                 [ "$actual_sha" != "$expected_sha" ] || \
+                 [ "$actual_size" != "$expected_size" ]; then
+                echo "Downloaded ${key} candidate is not byte-bound to publication-manifest.json." >&2
+                exit 1
+              fi
+            }
+            verify_candidate_artifact pdf dist/whitepaper.pdf whitepaper.pdf
+            verify_candidate_artifact arxiv_source dist/whitepaper_arxiv_source.zip whitepaper_arxiv_source.zip
+            verify_candidate_artifact compatibility_intake dist/stable-v5-intake-compatibility.zip stable-v5-intake-compatibility.zip
+          fi
+      - name: Validate exact source artifact identities
+        shell: bash
+        env:
+          SOURCE_RUN_ATTEMPT: ${{ needs.build.outputs.run_attempt }}
+          PDF_ARTIFACT_ID: ${{ needs.build.outputs.pdf_artifact_id }}
+          PDF_ARTIFACT_DIGEST: ${{ needs.build.outputs.pdf_artifact_digest }}
+          ARXIV_ARTIFACT_ID: ${{ needs.build.outputs.arxiv_artifact_id }}
+          ARXIV_ARTIFACT_DIGEST: ${{ needs.build.outputs.arxiv_artifact_digest }}
+          STABLE_CANDIDATE_ARTIFACT_ID: ${{ needs.build.outputs.stable_candidate_artifact_id }}
+          STABLE_CANDIDATE_ARTIFACT_DIGEST: ${{ needs.build.outputs.stable_candidate_artifact_digest }}
+          RELEASE_TAG: ${{ inputs.draft_release_tag }}
+        run: |
+          set -euo pipefail
+          normalize_digest() {
+            local value="$1"
+            if [[ "$value" =~ ^[0-9a-f]{64}$ ]]; then
+              printf 'sha256:%s\n' "$value"
+            elif [[ "$value" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+              printf '%s\n' "$value"
+            else
+              return 1
+            fi
+          }
+          if [[ ! "$SOURCE_RUN_ATTEMPT" =~ ^[1-9][0-9]*$ ]] || \
+             [[ ! "$PDF_ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]] || \
+             [[ ! "$ARXIV_ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Build job did not expose positive run-attempt-bound artifact IDs." >&2
+            exit 1
+          fi
+          pdf_digest="$(normalize_digest "$PDF_ARTIFACT_DIGEST")" || {
+            echo "Build job exposed a malformed PDF artifact digest." >&2
+            exit 1
+          }
+          arxiv_digest="$(normalize_digest "$ARXIV_ARTIFACT_DIGEST")" || {
+            echo "Build job exposed a malformed arXiv artifact digest." >&2
+            exit 1
+          }
+          echo "SOURCE_PDF_ARTIFACT_DIGEST=${pdf_digest}" >> "$GITHUB_ENV"
+          echo "SOURCE_ARXIV_ARTIFACT_DIGEST=${arxiv_digest}" >> "$GITHUB_ENV"
+          if [ "$RELEASE_TAG" = "v5.0.0" ]; then
+            if [[ ! "$STABLE_CANDIDATE_ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]]; then
+              echo "Build job did not expose the stable-v5 candidate artifact ID." >&2
+              exit 1
+            fi
+            stable_digest="$(normalize_digest "$STABLE_CANDIDATE_ARTIFACT_DIGEST")" || {
+              echo "Build job exposed a malformed stable-v5 candidate artifact digest." >&2
+              exit 1
+            }
+            echo "SOURCE_STABLE_CANDIDATE_ARTIFACT_DIGEST=${stable_digest}" >> "$GITHUB_ENV"
+          fi
+      - name: Stage or byte-verify draft release assets and receipt
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.draft_release_tag }}
+          EXPECTED_BUILD_COMMIT: ${{ needs.build.outputs.source_commit }}
+          SOURCE_RUN_ATTEMPT: ${{ needs.build.outputs.run_attempt }}
+          SOURCE_PDF_ARTIFACT_ID: ${{ needs.build.outputs.pdf_artifact_id }}
+          SOURCE_ARXIV_ARTIFACT_ID: ${{ needs.build.outputs.arxiv_artifact_id }}
+          SOURCE_STABLE_CANDIDATE_ARTIFACT_ID: ${{ needs.build.outputs.stable_candidate_artifact_id }}
+        run: |
+          set -euo pipefail
+          verify_dir="$(mktemp -d "${RUNNER_TEMP}/release-asset-verify.XXXXXX")"
+          trap 'rm -rf "$verify_dir"' EXIT
+
+          release_json() {
+            local pages
+            local count
+            local payload
+            pages="$(gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/releases?per_page=100")"
+            count="$(jq --arg tag "$RELEASE_TAG" '[.[][] | select(.tag_name == $tag)] | length' <<<"$pages")"
+            if [ "$count" -ne 1 ]; then
+              echo "Expected exactly one draft release for ${RELEASE_TAG}; found ${count}." >&2
+              return 1
+            fi
+            payload="$(jq -c --arg tag "$RELEASE_TAG" '[.[][] | select(.tag_name == $tag)][0]' <<<"$pages")"
+            if ! jq -e \
+              --arg tag "$RELEASE_TAG" \
+              '.tag_name == $tag and .draft == true and .published_at == null and (.immutable != true)' \
+              <<<"$payload" >/dev/null; then
+              jq '{id, tag_name, draft, published_at, immutable}' <<<"$payload" >&2
+              echo "Release ${RELEASE_TAG} must remain an unpublished, mutable draft while assets are staged." >&2
+              return 1
+            fi
+            printf '%s\n' "$payload"
+          }
+
+          release_assets_json() {
+            local release_id="$1"
+            gh api --paginate --slurp \
+              "repos/${GITHUB_REPOSITORY}/releases/${release_id}/assets?per_page=100"
+          }
+
+          resolve_tag_commit() {
+            local tag="$1"
+            local object
+            local object_type
+            local object_sha
+            object="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${tag}")"
+            object_type="$(jq -r '.object.type // ""' <<<"$object")"
+            object_sha="$(jq -r '.object.sha // ""' <<<"$object")"
+            for _peel in 1 2 3 4 5 6 7 8; do
+              if [ "$object_type" = "commit" ]; then
+                if [[ ! "$object_sha" =~ ^[0-9a-f]{40}$ ]]; then
+                  echo "Release tag ${tag} resolved to a malformed commit ID." >&2
+                  return 1
+                fi
+                printf '%s\n' "$object_sha"
+                return 0
+              fi
+              if [ "$object_type" != "tag" ] || [[ ! "$object_sha" =~ ^[0-9a-f]{40}$ ]]; then
+                echo "Release tag ${tag} has an unsupported Git object chain." >&2
+                return 1
+              fi
+              object="$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${object_sha}")"
+              object_type="$(jq -r '.object.type // ""' <<<"$object")"
+              object_sha="$(jq -r '.object.sha // ""' <<<"$object")"
+            done
+            echo "Release tag ${tag} did not peel to a commit within the bounded depth." >&2
+            return 1
+          }
+
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "draft_release_tag must be an exact semantic tag; got ${RELEASE_TAG@Q}." >&2
+            exit 1
+          fi
+          if [[ ! "$EXPECTED_BUILD_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Build job did not expose an exact source commit." >&2
+            exit 1
+          fi
+          release="$(release_json)"
+          tag_commit="$(resolve_tag_commit "$RELEASE_TAG")"
+          if [ "$tag_commit" != "$EXPECTED_BUILD_COMMIT" ]; then
+            echo "Draft release tag ${RELEASE_TAG} resolves to ${tag_commit}, not built commit ${EXPECTED_BUILD_COMMIT}." >&2
+            exit 1
+          fi
+
+          publish_or_verify() {
+            local path="$1"
+            local name
+            local expected
+            local payload
+            local assets
+            local count
+            local release_id
+            local asset_id
+            local downloaded
+            local actual
+            name="$(basename "$path")"
+            expected="$(sha256sum "$path" | cut -d' ' -f1)"
+            payload="$(release_json)"
+            release_id="$(jq -r '.id | tostring' <<<"$payload")"
+            if [[ ! "$release_id" =~ ^[1-9][0-9]*$ ]]; then
+              echo "Draft release ${RELEASE_TAG} has a malformed release ID." >&2
+              exit 1
+            fi
+            assets="$(release_assets_json "$release_id")"
+            count="$(jq --arg name "$name" '[.[][] | select(.name == $name)] | length' <<<"$assets")"
+            if [ "$count" -gt 1 ]; then
+              echo "Release ${RELEASE_TAG} has duplicate ${name} assets; refusing ambiguous publication." >&2
+              exit 1
+            fi
+            if [ "$count" -eq 0 ]; then
+              gh release upload "$RELEASE_TAG" "$path" --repo "$GITHUB_REPOSITORY"
+              payload="$(release_json)"
+              assets="$(release_assets_json "$release_id")"
+            fi
+            count="$(jq --arg name "$name" '[.[][] | select(.name == $name)] | length' <<<"$assets")"
+            if [ "$count" -ne 1 ]; then
+              echo "Draft release ${RELEASE_TAG} has ${count} ${name} assets after staging; refusing ambiguity." >&2
+              exit 1
+            fi
+            asset_id="$(jq -r --arg name "$name" '[.[][] | select(.name == $name)][0].id // empty' <<<"$assets")"
+            if [[ ! "$asset_id" =~ ^[1-9][0-9]*$ ]]; then
+              echo "Unable to resolve release asset ${name} after upload." >&2
+              exit 1
+            fi
+            downloaded="${verify_dir}/${name}"
+            gh api \
+              -H "Accept: application/octet-stream" \
+              "repos/${GITHUB_REPOSITORY}/releases/assets/${asset_id}" > "$downloaded"
+            actual="$(sha256sum "$downloaded" | cut -d' ' -f1)"
+            if [ "$actual" != "$expected" ]; then
+              echo "Existing release asset ${name} is not byte-identical: expected=${expected} actual=${actual}." >&2
+              exit 1
+            fi
+            echo "Release asset ${name} verified at SHA-256 ${actual}."
+          }
+
+          publish_or_verify dist/whitepaper.pdf
+          publish_or_verify dist/whitepaper_arxiv_source.zip
+
+          if [ "$RELEASE_TAG" = "v5.0.0" ]; then
+            publish_or_verify dist/stable-v5-intake-compatibility.zip
+            release="$(release_json)"
+            export RELEASE_ID="$(jq -r '.id' <<<"$release")"
+            export RELEASE_URL="$(jq -r '.html_url' <<<"$release")"
+            export RELEASE_CREATED_AT="$(jq -r '.created_at' <<<"$release")"
+            export EXPECTED_BUILD_COMMIT
+            receipt_assets="$(release_assets_json "$RELEASE_ID")"
+            receipt_count="$(jq '[.[][] | select(.name == "stable-v5-publication-receipt.json")] | length' <<<"$receipt_assets")"
+            if [ "$receipt_count" -gt 1 ]; then
+              echo "Draft release ${RELEASE_TAG} has duplicate publication receipts." >&2
+              exit 1
+            elif [ "$receipt_count" -eq 1 ]; then
+              receipt_asset_id="$(jq -r '[.[][] | select(.name == "stable-v5-publication-receipt.json")][0].id // empty' <<<"$receipt_assets")"
+              if [[ ! "$receipt_asset_id" =~ ^[1-9][0-9]*$ ]]; then
+                echo "Existing publication receipt has a malformed asset ID." >&2
+                exit 1
+              fi
+              gh api \
+                -H "Accept: application/octet-stream" \
+                "repos/${GITHUB_REPOSITORY}/releases/assets/${receipt_asset_id}" \
+                > dist/stable-v5-publication-receipt.json
+              export RECEIPT_ALREADY_STAGED=true
+            else
+              export RECEIPT_ALREADY_STAGED=false
+            fi
+            python - <<'PY'
+          import json
+          import os
+          import re
+          import subprocess
+          from pathlib import Path
+
+          def unique_json_object(pairs):
+              result = {}
+              for key, value in pairs:
+                  if key in result:
+                      raise ValueError("JSON object contains duplicate keys")
+                  result[key] = value
+              return result
+
+          def parse_unique_json(text, label):
+              try:
+                  payload = json.loads(
+                      text,
+                      object_pairs_hook=unique_json_object,
+                  )
+              except (json.JSONDecodeError, ValueError) as exc:
+                  raise SystemExit(f"{label} is not valid unique-key JSON") from exc
+              if not isinstance(payload, dict):
+                  raise SystemExit(f"{label} must be a JSON object")
+              return payload
+
+          def load_unique_json(path, label):
+              try:
+                  text = path.read_text(encoding="utf-8")
+              except (OSError, UnicodeError) as exc:
+                  raise SystemExit(f"{label} cannot be read") from exc
+              return parse_unique_json(text, label)
+
+          def github_api_json(endpoint, label):
+              completed = subprocess.run(
+                  ["gh", "api", endpoint],
+                  check=False,
+                  capture_output=True,
+                  text=True,
+              )
+              if completed.returncode != 0:
+                  raise SystemExit(f"unable to verify {label} through the GitHub API")
+              return parse_unique_json(completed.stdout, label)
+
+          def github_api_pages(endpoint, label):
+              completed = subprocess.run(
+                  ["gh", "api", "--paginate", "--slurp", endpoint],
+                  check=False,
+                  capture_output=True,
+                  text=True,
+              )
+              if completed.returncode != 0:
+                  raise SystemExit(f"unable to verify {label} through the GitHub API")
+              try:
+                  payload = json.loads(
+                      completed.stdout,
+                      object_pairs_hook=unique_json_object,
+                  )
+              except (json.JSONDecodeError, ValueError) as exc:
+                  raise SystemExit(f"{label} is not valid unique-key JSON") from exc
+              if not isinstance(payload, list) or not all(
+                  isinstance(page, dict) for page in payload
+              ):
+                  raise SystemExit(f"{label} must be paginated JSON objects")
+              return payload
+
+          candidate_path = Path("dist/publication-manifest.json")
+          receipt_path = Path("dist/stable-v5-publication-receipt.json")
+          candidate = load_unique_json(candidate_path, "publication candidate")
+          if candidate.get("schema_version") != "flbsa.whitepaper_publication_candidate.v1":
+              raise SystemExit("publication candidate has an unexpected schema")
+          if candidate.get("publication_status") != "candidate_not_published":
+              raise SystemExit("publication candidate has an unexpected pre-attachment status")
+          if candidate.get("whitepaper", {}).get("commit") != os.environ["EXPECTED_BUILD_COMMIT"]:
+              raise SystemExit("publication candidate does not name the draft release tag commit")
+          if os.environ["RECEIPT_ALREADY_STAGED"] == "true":
+              receipt = load_unique_json(receipt_path, "existing publication receipt")
+              if receipt.get("schema_version") != "flbsa.whitepaper_publication_receipt.v1":
+                  raise SystemExit("existing publication receipt has an unexpected schema")
+              if receipt.get("publication_status") != "github_draft_release_assets_staged_characterization_only":
+                  raise SystemExit("existing publication receipt has an unexpected status")
+              expected_receipt_keys = set(candidate) | {"release_receipt", "source_workflow"}
+              if set(receipt) != expected_receipt_keys:
+                  raise SystemExit("existing publication receipt has unreviewed fields")
+              for key, candidate_value in candidate.items():
+                  if key in {"schema_version", "publication_status"}:
+                      continue
+                  if receipt.get(key) != candidate_value:
+                      raise SystemExit(
+                          f"existing publication receipt no longer matches candidate field {key}"
+                      )
+              release_receipt = receipt.get("release_receipt") or {}
+              expected_release_receipt_keys = {
+                  "repo",
+                  "release_id",
+                  "release_url",
+                  "release_created_at",
+                  "tag",
+                  "tag_commit",
+                  "draft",
+                  "published_at",
+                  "asset_bytes_verified",
+              }
+              if (
+                  not isinstance(release_receipt, dict)
+                  or set(release_receipt) != expected_release_receipt_keys
+                  or release_receipt.get("repo") != os.environ["GITHUB_REPOSITORY"]
+                  or type(release_receipt.get("release_id")) is not int
+                  or release_receipt.get("release_id") != int(os.environ["RELEASE_ID"])
+                  or release_receipt.get("release_url") != os.environ["RELEASE_URL"]
+                  or release_receipt.get("release_created_at")
+                  != os.environ["RELEASE_CREATED_AT"]
+                  or release_receipt.get("tag") != os.environ["RELEASE_TAG"]
+                  or release_receipt.get("tag_commit") != os.environ["EXPECTED_BUILD_COMMIT"]
+                  or release_receipt.get("draft") is not True
+                  or release_receipt.get("published_at") is not None
+                  or release_receipt.get("asset_bytes_verified") is not True
+              ):
+                  raise SystemExit("existing publication receipt release binding is invalid")
+              source = receipt.get("source_workflow")
+              if not isinstance(source, dict):
+                  raise SystemExit("existing publication receipt source workflow is invalid")
+              source_attempt = source.get("run_attempt")
+              artifacts = source.get("artifacts") or {}
+              expected_source_keys = {
+                  "repository",
+                  "workflow",
+                  "run_id",
+                  "run_attempt",
+                  "source_commit",
+                  "artifacts",
+              }
+              expected_names = {
+                  "whitepaper_pdf": f"whitepaper-pdf-{source_attempt}",
+                  "arxiv_source": f"arxiv-source-{source_attempt}",
+                  "stable_v5_publication_candidate": (
+                      f"stable-v5-publication-candidate-{source_attempt}"
+                  ),
+              }
+              if (
+                  set(source) != expected_source_keys
+                  or source.get("repository") != os.environ["GITHUB_REPOSITORY"]
+                  or source.get("workflow") != ".github/workflows/latex.yml"
+                  or type(source.get("run_id")) is not int
+                  or source.get("run_id", 0) <= 0
+                  or type(source_attempt) is not int
+                  or source_attempt <= 0
+                  or source.get("source_commit") != os.environ["EXPECTED_BUILD_COMMIT"]
+                  or not isinstance(artifacts, dict)
+                  or set(artifacts) != set(expected_names)
+              ):
+                  raise SystemExit("existing publication receipt source workflow is invalid")
+              source_run = github_api_json(
+                  (
+                      f"repos/{os.environ['GITHUB_REPOSITORY']}/actions/runs/"
+                      f"{source['run_id']}/attempts/{source_attempt}"
+                  ),
+                  "existing publication receipt source run",
+              )
+              source_repository = source_run.get("repository")
+              source_run_path = source_run.get("path")
+              expected_source_run_paths = {
+                  ".github/workflows/latex.yml",
+                  f".github/workflows/latex.yml@{os.environ['RELEASE_TAG']}",
+              }
+              if (
+                  source_run.get("id") != source["run_id"]
+                  or source_run.get("run_attempt") != source_attempt
+                  or source_run_path not in expected_source_run_paths
+                  or source_run.get("head_sha") != os.environ["EXPECTED_BUILD_COMMIT"]
+                  or source_run.get("event") != "workflow_dispatch"
+                  or source_run.get("status") != "completed"
+                  or not isinstance(source_repository, dict)
+                  or source_repository.get("full_name")
+                  != os.environ["GITHUB_REPOSITORY"]
+              ):
+                  raise SystemExit(
+                      "existing publication receipt source run is not an exact "
+                      "completed workflow attempt"
+                  )
+              source_job_pages = github_api_pages(
+                  (
+                      f"repos/{os.environ['GITHUB_REPOSITORY']}/actions/runs/"
+                      f"{source['run_id']}/attempts/{source_attempt}/jobs?per_page=100"
+                  ),
+                  "existing publication receipt source jobs",
+              )
+              source_jobs = []
+              for page in source_job_pages:
+                  page_jobs = page.get("jobs")
+                  if not isinstance(page_jobs, list) or not all(
+                      isinstance(job, dict) for job in page_jobs
+                  ):
+                      raise SystemExit(
+                          "existing publication receipt source jobs have an invalid API shape"
+                      )
+                  source_jobs.extend(page_jobs)
+              build_jobs = [job for job in source_jobs if job.get("name") == "build"]
+              if len(build_jobs) != 1:
+                  raise SystemExit(
+                      "existing publication receipt does not resolve one source build job"
+                  )
+              source_build = build_jobs[0]
+              source_build_id = source_build.get("id")
+              if (
+                  type(source_build_id) is not int
+                  or source_build_id <= 0
+                  or source_build.get("run_id") != source["run_id"]
+                  or source_build.get("run_attempt") != source_attempt
+                  or source_build.get("workflow_name") != "latex-build"
+                  or source_build.get("head_sha")
+                  != os.environ["EXPECTED_BUILD_COMMIT"]
+                  or source_build.get("status") != "completed"
+                  or source_build.get("conclusion") != "success"
+              ):
+                  raise SystemExit(
+                      "existing publication receipt source build was not successful"
+                  )
+              for key, expected_name in expected_names.items():
+                  identity = artifacts.get(key) or {}
+                  if (
+                      not isinstance(identity, dict)
+                      or set(identity) != {"id", "name", "digest"}
+                      or type(identity.get("id")) is not int
+                      or identity.get("id", 0) <= 0
+                      or identity.get("name") != expected_name
+                      or not re.fullmatch(
+                          r"sha256:[0-9a-f]{64}", str(identity.get("digest") or "")
+                      )
+                  ):
+                      raise SystemExit(
+                          f"existing publication receipt artifact identity is invalid for {key}"
+                      )
+                  api_artifact = github_api_json(
+                      (
+                          f"repos/{os.environ['GITHUB_REPOSITORY']}/actions/artifacts/"
+                          f"{identity['id']}"
+                      ),
+                      f"existing publication receipt artifact {key}",
+                  )
+                  workflow_run = api_artifact.get("workflow_run")
+                  artifact_size = api_artifact.get("size_in_bytes")
+                  if (
+                      api_artifact.get("id") != identity["id"]
+                      or api_artifact.get("name") != expected_name
+                      or api_artifact.get("digest") != identity["digest"]
+                      or api_artifact.get("expired") is not False
+                      or type(artifact_size) is not int
+                      or artifact_size <= 0
+                      or not isinstance(workflow_run, dict)
+                      or workflow_run.get("id") != source["run_id"]
+                      or workflow_run.get("head_sha")
+                      != os.environ["EXPECTED_BUILD_COMMIT"]
+                  ):
+                      raise SystemExit(
+                          f"existing publication receipt artifact is not API-bound for {key}"
+                      )
+              print("Existing exact-attempt publication receipt verified; preserving original bytes")
+              raise SystemExit(0)
+
+          receipt = candidate
+          receipt["schema_version"] = "flbsa.whitepaper_publication_receipt.v1"
+          receipt["publication_status"] = "github_draft_release_assets_staged_characterization_only"
+          receipt["release_receipt"] = {
+              "repo": os.environ["GITHUB_REPOSITORY"],
+              "release_id": os.environ["RELEASE_ID"],
+              "release_url": os.environ["RELEASE_URL"],
+              "release_created_at": os.environ["RELEASE_CREATED_AT"],
+              "tag": os.environ["RELEASE_TAG"],
+              "tag_commit": os.environ["EXPECTED_BUILD_COMMIT"],
+              "draft": True,
+              "published_at": None,
+              "asset_bytes_verified": True,
+          }
+          receipt["source_workflow"] = {
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "workflow": ".github/workflows/latex.yml",
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["SOURCE_RUN_ATTEMPT"]),
+              "source_commit": os.environ["EXPECTED_BUILD_COMMIT"],
+              "artifacts": {
+                  "whitepaper_pdf": {
+                      "id": int(os.environ["SOURCE_PDF_ARTIFACT_ID"]),
+                      "name": f"whitepaper-pdf-{os.environ['SOURCE_RUN_ATTEMPT']}",
+                      "digest": os.environ["SOURCE_PDF_ARTIFACT_DIGEST"],
+                  },
+                  "arxiv_source": {
+                      "id": int(os.environ["SOURCE_ARXIV_ARTIFACT_ID"]),
+                      "name": f"arxiv-source-{os.environ['SOURCE_RUN_ATTEMPT']}",
+                      "digest": os.environ["SOURCE_ARXIV_ARTIFACT_DIGEST"],
+                  },
+                  "stable_v5_publication_candidate": {
+                      "id": int(os.environ["SOURCE_STABLE_CANDIDATE_ARTIFACT_ID"]),
+                      "name": (
+                          "stable-v5-publication-candidate-"
+                          f"{os.environ['SOURCE_RUN_ATTEMPT']}"
+                      ),
+                      "digest": os.environ["SOURCE_STABLE_CANDIDATE_ARTIFACT_DIGEST"],
+                  },
+              },
+          }
+          receipt_path.write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+          )
+          PY
+            publish_or_verify dist/stable-v5-publication-receipt.json
+          fi
+
+          release="$(release_json)"
+          echo "All requested assets are byte-verified on draft release ${RELEASE_TAG}; publication remains an explicit operator action."

@@ -17,32 +17,39 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: pull-wp-intake-${{ github.event_name == 'repository_dispatch' && github.event.client_payload.producer_run_id || github.run_id }}
+  # All persistence targets are serialized. This is required for the append-only
+  # nightly history branch and also makes exact-run replays idempotent.
+  group: pull-wp-intake-persistence
   cancel-in-progress: false
+  queue: max
 
 jobs:
   fetch-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.11'
 
       - name: Install Python deps (for macro/plot generation)
         run: |
-          python -m pip install --upgrade pip
-          pip install pandas pyyaml matplotlib
+          set -euo pipefail
+          test "$(uname -m)" = "x86_64"
+          python -m pip install --require-hashes -r requirements-ci-linux-x86_64.lock
 
       - name: Download intake bundle from producer
         env:
           PRODUCER_REPO: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.producer_repo || 'equilens-labs/fl-bsa' }}
           PRODUCER_WORKFLOW: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'wp-evidence-nightly.yml' }}
-          PRODUCER_ARTIFACT: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_name || 'wp-intake-bundle-v4' }}
+          PRODUCER_ARTIFACT: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_name || '' }}
           PRODUCER_BRANCH: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.branch || 'main' }}
           PRODUCER_RUN_ID: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.producer_run_id || '' }}
+          PRODUCER_RUN_ATTEMPT: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.producer_run_attempt || '' }}
+          PRODUCER_ARTIFACT_ID: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_id || '' }}
+          PRODUCER_ARTIFACT_DIGEST: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_digest || '' }}
           PRODUCER_TOKEN: ${{ secrets.PRODUCER_TOKEN }}
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -64,9 +71,30 @@ jobs:
               ;;
           esac
           case "$PRODUCER_ARTIFACT" in
+            '')
+              if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
+                echo "repository_dispatch must select an exact producer artifact name." >&2
+                exit 1
+              fi
+              ;;
             wp-intake-bundle-v4|wp-reviewer-pack-v4) ;;
+            wp-intake-bundle-v4-*)
+              if [[ ! "$PRODUCER_ARTIFACT" =~ ^wp-intake-bundle-v4-[1-9][0-9]*$ ]]; then
+                echo "Malformed run-attempt-qualified artifact_name=${PRODUCER_ARTIFACT}." >&2
+                exit 1
+              fi
+              ;;
             *)
-              echo "Unsupported artifact_name=${PRODUCER_ARTIFACT}; expected wp-intake-bundle-v4 or wp-reviewer-pack-v4." >&2
+              echo "Unsupported artifact_name=${PRODUCER_ARTIFACT}; expected wp-intake-bundle-v4, its run-attempt-qualified form, or explicit wp-reviewer-pack-v4 compatibility input." >&2
+              exit 1
+              ;;
+          esac
+          case "${PRODUCER_WORKFLOW}:${PRODUCER_BRANCH}" in
+            wp-evidence-nightly.yml:main) ;;
+            release-evidence.yml:release/v[0-9]*.[0-9]*.[0-9]*-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]) ;;
+            *)
+              echo "Unapproved producer workflow/branch pair: ${PRODUCER_WORKFLOW}@${PRODUCER_BRANCH}." >&2
+              echo "Nightly intake is restricted to main; release intake requires release/vMAJOR.MINOR.PATCH-SHA8." >&2
               exit 1
               ;;
           esac
@@ -97,47 +125,274 @@ jobs:
             exit 1
           fi
 
-          if ! artifact_rows="$(gh api --paginate \
-            "repos/${PRODUCER_REPO}/actions/runs/${run_id}/artifacts" \
-            --jq '.artifacts[] | [.name, (.expired | tostring)] | @tsv')"; then
+          if [[ ! "$run_id" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Producer run ID must be a positive numeric GitHub Actions run ID; got ${run_id@Q}." >&2
+            exit 1
+          fi
+
+          expected_workflow_path=".github/workflows/${PRODUCER_WORKFLOW}"
+          run_json=""
+          for ((attempt=1; attempt<=81; attempt++)); do
+            if ! run_json="$(gh api "repos/${PRODUCER_REPO}/actions/runs/${run_id}")"; then
+              echo "Unable to resolve ${PRODUCER_REPO} run ${run_id}; check token scopes and run visibility." >&2
+              exit 1
+            fi
+            if ! jq -e \
+              --arg run_id "$run_id" \
+              --arg producer_repo "$PRODUCER_REPO" \
+              --arg workflow_path "$expected_workflow_path" \
+              --arg branch "$PRODUCER_BRANCH" \
+              '(.id | tostring) == $run_id and
+               .head_repository.full_name == $producer_repo and
+               ((.path // "") | split("@")[0]) == $workflow_path and
+               .head_branch == $branch and
+               ((.head_sha // "") | test("^[0-9a-f]{40}$"))' \
+              <<<"$run_json" >/dev/null; then
+              jq '{id, status, conclusion, path, head_branch, head_sha}' <<<"$run_json" >&2
+              echo "Producer run ${run_id} does not match the required workflow, branch, and head-SHA contract." >&2
+              exit 1
+            fi
+
+            run_event="$(jq -r '.event // ""' <<<"$run_json")"
+            case "${PRODUCER_WORKFLOW}:${run_event}" in
+              wp-evidence-nightly.yml:schedule|wp-evidence-nightly.yml:workflow_dispatch|release-evidence.yml:workflow_dispatch) ;;
+              *)
+                jq '{id, event, path, head_branch, head_sha, head_repository: .head_repository.full_name}' <<<"$run_json" >&2
+                echo "Producer run ${run_id} has an unapproved workflow/event pair." >&2
+                exit 1
+                ;;
+            esac
+
+            run_status="$(jq -r '.status' <<<"$run_json")"
+            run_conclusion="$(jq -r '.conclusion // ""' <<<"$run_json")"
+            if [ "$run_status" = "completed" ]; then
+              if [ "$run_conclusion" != "success" ]; then
+                jq '{id, status, conclusion, path, head_branch, head_sha}' <<<"$run_json" >&2
+                echo "Producer run ${run_id} completed without success; refusing its artifact." >&2
+                exit 1
+              fi
+              break
+            fi
+            case "$run_status" in
+              queued|in_progress|requested|waiting|pending) ;;
+              *)
+                echo "Producer run ${run_id} has unsupported status ${run_status@Q}." >&2
+                exit 1
+                ;;
+            esac
+            if [ "$attempt" -eq 81 ]; then
+              echo "Producer run ${run_id} did not complete successfully within the 20-minute bounded wait." >&2
+              exit 1
+            fi
+            echo "Producer run ${run_id} is ${run_status}; waiting for exact-run completion (${attempt}/81)."
+            sleep 15
+          done
+          run_head_sha="$(jq -r '.head_sha' <<<"$run_json")"
+          run_attempt="$(jq -r '.run_attempt | tostring' <<<"$run_json")"
+          run_started_at="$(jq -r '.run_started_at // ""' <<<"$run_json")"
+          if [[ ! "$run_attempt" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Producer run ${run_id} has a missing or malformed run_attempt=${run_attempt@Q}." >&2
+            exit 1
+          fi
+          if [[ ! "$run_started_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]]; then
+            echo "Producer run ${run_id} has malformed run_started_at=${run_started_at@Q}." >&2
+            exit 1
+          fi
+          if [ -z "$PRODUCER_ARTIFACT" ]; then
+            PRODUCER_ARTIFACT="wp-intake-bundle-v4-${run_attempt}"
+            echo "Scheduled intake derived exact artifact ${PRODUCER_ARTIFACT} from verified run attempt ${run_attempt}."
+          fi
+          case "$PRODUCER_ARTIFACT" in
+            wp-intake-bundle-v4)
+              if [ "$run_attempt" != "1" ]; then
+                echo "Unqualified primary artifacts are accepted only for first-attempt legacy runs; attempt ${run_attempt} requires wp-intake-bundle-v4-${run_attempt}." >&2
+                exit 1
+              fi
+              ;;
+            wp-intake-bundle-v4-*)
+              if [ "$PRODUCER_ARTIFACT" != "wp-intake-bundle-v4-${run_attempt}" ]; then
+                echo "Artifact ${PRODUCER_ARTIFACT} is not qualified for verified run attempt ${run_attempt}." >&2
+                exit 1
+              fi
+              ;;
+            wp-reviewer-pack-v4)
+              if [ "$run_attempt" != "1" ]; then
+                echo "Legacy reviewer-pack compatibility is restricted to first-attempt runs." >&2
+                exit 1
+              fi
+              ;;
+          esac
+          if [ -n "$PRODUCER_RUN_ATTEMPT" ] && [ "$PRODUCER_RUN_ATTEMPT" != "$run_attempt" ]; then
+            echo "Dispatched producer run attempt ${PRODUCER_RUN_ATTEMPT} does not match API attempt ${run_attempt}." >&2
+            exit 1
+          fi
+          if [ "$PRODUCER_WORKFLOW" = "release-evidence.yml" ]; then
+            release_suffix="-${run_head_sha:0:8}"
+            release_tag="${PRODUCER_BRANCH#release/}"
+            release_tag="${release_tag%$release_suffix}"
+            if [[ ! "$release_tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Unable to derive a semantic release tag from ${PRODUCER_BRANCH} and ${run_head_sha}." >&2
+              exit 1
+            fi
+            if ! tag_object="$(gh api "repos/${PRODUCER_REPO}/git/ref/tags/${release_tag}")"; then
+              echo "Unable to resolve producer release tag ${release_tag}." >&2
+              exit 1
+            fi
+            tag_object_type="$(jq -r '.object.type // ""' <<<"$tag_object")"
+            release_tag_sha="$(jq -r '.object.sha // ""' <<<"$tag_object")"
+            for _peel in 1 2 3 4 5 6 7 8; do
+              if [ "$tag_object_type" = "commit" ]; then
+                break
+              fi
+              if [ "$tag_object_type" != "tag" ] || [[ ! "$release_tag_sha" =~ ^[0-9a-f]{40}$ ]]; then
+                echo "Producer tag ${release_tag} has an unsupported Git object chain." >&2
+                exit 1
+              fi
+              tag_object="$(gh api "repos/${PRODUCER_REPO}/git/tags/${release_tag_sha}")"
+              tag_object_type="$(jq -r '.object.type // ""' <<<"$tag_object")"
+              release_tag_sha="$(jq -r '.object.sha // ""' <<<"$tag_object")"
+            done
+            if [ "$tag_object_type" != "commit" ] || [[ ! "$release_tag_sha" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "Producer tag ${release_tag} did not peel to a commit within the bounded depth." >&2
+              exit 1
+            fi
+            if [ "$release_tag_sha" != "$run_head_sha" ]; then
+              echo "Producer release tag ${release_tag} resolves to ${release_tag_sha}, not run head ${run_head_sha}." >&2
+              exit 1
+            fi
+          fi
+
+          if ! artifacts_json="$(gh api --paginate --slurp \
+            "repos/${PRODUCER_REPO}/actions/runs/${run_id}/artifacts?per_page=100")"; then
             echo "Unable to list artifacts for ${PRODUCER_REPO} run ${run_id}; check token scopes and producer run visibility." >&2
             exit 1
           fi
 
-          artifact_candidates=("$PRODUCER_ARTIFACT")
-          if [ "$PRODUCER_ARTIFACT" = "wp-intake-bundle-v4" ]; then
-            artifact_candidates+=("wp-reviewer-pack-v4")
+          if [ "$GITHUB_EVENT_NAME" = "schedule" ] && \
+             [ "$run_attempt" = "1" ] && \
+             [ "$PRODUCER_ARTIFACT" = "wp-intake-bundle-v4-1" ]; then
+            qualified_count="$(jq '[.[].artifacts[] | select(.name == "wp-intake-bundle-v4-1")] | length' <<<"$artifacts_json")"
+            unqualified_count="$(jq '[.[].artifacts[] | select(.name == "wp-intake-bundle-v4")] | length' <<<"$artifacts_json")"
+            if [ "$qualified_count" -eq 0 ] && [ "$unqualified_count" -gt 0 ]; then
+              PRODUCER_ARTIFACT="wp-intake-bundle-v4"
+              echo "Scheduled intake selected the attested first-attempt transition artifact wp-intake-bundle-v4; reviewer-pack fallback remains forbidden."
+            fi
           fi
 
-          selected_artifact=""
-          for artifact in "${artifact_candidates[@]}"; do
-            artifact_row="$(awk -v name="$artifact" 'BEGIN { FS = "\t" } $1 == name { print; exit }' <<<"$artifact_rows" || true)"
-            if [ -z "$artifact_row" ]; then
-              echo "::warning title=Producer artifact missing::${artifact} is not present in ${PRODUCER_REPO} run ${run_id}; trying next candidate."
-              continue
-            fi
-            artifact_expired="$(cut -f2 <<<"$artifact_row")"
-            if [ "$artifact_expired" = "true" ]; then
-              echo "::warning title=Producer artifact expired::${artifact} in ${PRODUCER_REPO} run ${run_id} is expired; trying next candidate."
-              continue
-            fi
-
-            echo "Downloading ${artifact} from ${PRODUCER_REPO} run ${run_id}"
-            gh run download "$run_id" \
-              -R "$PRODUCER_REPO" \
-              -n "$artifact" \
-              -D wp-bundle
-            selected_artifact="$artifact"
-            break
-          done
-
-          if [ -z "$selected_artifact" ]; then
-            echo "None of the candidate intake artifacts were downloadable: ${artifact_candidates[*]}" >&2
+          artifact_match_count="$(jq --arg name "$PRODUCER_ARTIFACT" '[.[].artifacts[] | select(.name == $name)] | length' <<<"$artifacts_json")"
+          if [ "$artifact_match_count" -gt 1 ]; then
+            echo "Producer run ${run_id} has duplicate ${PRODUCER_ARTIFACT} artifacts; refusing ambiguous intake." >&2
             exit 1
           fi
+          if [ "$artifact_match_count" -eq 0 ]; then
+            echo "Requested producer artifact ${PRODUCER_ARTIFACT} is not present in ${PRODUCER_REPO} run ${run_id}." >&2
+            if [ "$PRODUCER_ARTIFACT" = "wp-intake-bundle-v4" ]; then
+              echo "The unattested wp-reviewer-pack-v4 compatibility path must be requested explicitly; it is never an automatic fallback." >&2
+            fi
+            exit 1
+          fi
+          artifact_json="$(jq -c --arg name "$PRODUCER_ARTIFACT" '[.[].artifacts[] | select(.name == $name)][0]' <<<"$artifacts_json")"
+          artifact_expired="$(jq -r '.expired | tostring' <<<"$artifact_json")"
+          if [ "$artifact_expired" = "true" ]; then
+            echo "Requested producer artifact ${PRODUCER_ARTIFACT} in ${PRODUCER_REPO} run ${run_id} is expired." >&2
+            exit 1
+          fi
+          artifact_id="$(jq -r '.id | tostring' <<<"$artifact_json")"
+          artifact_digest="$(jq -r '.digest // ""' <<<"$artifact_json")"
+          artifact_size="$(jq -r '.size_in_bytes | tostring' <<<"$artifact_json")"
+          artifact_created_at="$(jq -r '.created_at // ""' <<<"$artifact_json")"
+          if [[ ! "$artifact_id" =~ ^[1-9][0-9]*$ ]] || \
+             [[ ! "$artifact_digest" =~ ^sha256:[0-9a-f]{64}$ ]] || \
+             [[ ! "$artifact_size" =~ ^[1-9][0-9]*$ ]]; then
+            jq '{id, name, digest, size_in_bytes, expired, workflow_run}' <<<"$artifact_json" >&2
+            echo "Selected producer artifact has incomplete identity metadata." >&2
+            exit 1
+          fi
+          if [[ ! "$artifact_created_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || \
+             [[ "$artifact_created_at" < "$run_started_at" ]]; then
+            echo "Artifact ${artifact_id} creation ${artifact_created_at@Q} predates or cannot be bound to current attempt start ${run_started_at@Q}." >&2
+            exit 1
+          fi
+          if ! jq -e \
+            --arg run_id "$run_id" \
+            --arg run_head_sha "$run_head_sha" \
+            --arg branch "$PRODUCER_BRANCH" \
+            '(.workflow_run.id | tostring) == $run_id and
+             .workflow_run.head_sha == $run_head_sha and
+             .workflow_run.head_branch == $branch' \
+            <<<"$artifact_json" >/dev/null; then
+            jq '{id, name, digest, workflow_run}' <<<"$artifact_json" >&2
+            echo "Selected artifact metadata is not bound to the verified producer run." >&2
+            exit 1
+          fi
+          if [ -n "$PRODUCER_ARTIFACT_ID" ] && [ "$PRODUCER_ARTIFACT_ID" != "$artifact_id" ]; then
+            echo "Dispatched artifact ID ${PRODUCER_ARTIFACT_ID} does not match API artifact ${artifact_id}." >&2
+            exit 1
+          fi
+          if [ -n "$PRODUCER_ARTIFACT_DIGEST" ] && [ "$PRODUCER_ARTIFACT_DIGEST" != "$artifact_digest" ]; then
+            echo "Dispatched artifact digest ${PRODUCER_ARTIFACT_DIGEST} does not match API digest ${artifact_digest}." >&2
+            exit 1
+          fi
+          if [ "$PRODUCER_ARTIFACT" = "wp-reviewer-pack-v4" ]; then
+            echo "::warning title=Explicit legacy compatibility path::wp-reviewer-pack-v4 is unattested and is accepted only because this exact legacy artifact name was requested."
+          fi
+
+          echo "Downloading artifact ${artifact_id} (${PRODUCER_ARTIFACT}) from ${PRODUCER_REPO} run ${run_id} attempt ${run_attempt}"
+          artifact_archive="$(mktemp "${RUNNER_TEMP}/producer-artifact.XXXXXX.zip")"
+          gh api "repos/${PRODUCER_REPO}/actions/artifacts/${artifact_id}/zip" > "$artifact_archive"
+          downloaded_digest="sha256:$(sha256sum "$artifact_archive" | cut -d' ' -f1)"
+          downloaded_size="$(stat -c '%s' "$artifact_archive")"
+          if [ "$downloaded_digest" != "$artifact_digest" ] || [ "$downloaded_size" != "$artifact_size" ]; then
+            echo "Downloaded artifact bytes do not match API identity: expected=${artifact_digest}/${artifact_size} actual=${downloaded_digest}/${downloaded_size}." >&2
+            exit 1
+          fi
+          if [ "$PRODUCER_ARTIFACT" = "wp-reviewer-pack-v4" ]; then
+            expected_bundle_filename="WhitePaper_Reviewer_Pack_v4.zip"
+          else
+            expected_bundle_filename="WhitePaper_Intake_Bundle_v4.zip"
+          fi
+          export ARTIFACT_ARCHIVE="$artifact_archive"
+          export EXPECTED_BUNDLE_FILENAME="$expected_bundle_filename"
+          python - <<'PY'
+          import os
+          import stat
+          import zipfile
+
+          archive_path = os.environ["ARTIFACT_ARCHIVE"]
+          expected = os.environ["EXPECTED_BUNDLE_FILENAME"]
+          with zipfile.ZipFile(archive_path) as archive:
+              infos = archive.infolist()
+              if len(infos) != 1 or infos[0].filename != expected:
+                  raise SystemExit(
+                      "producer Actions artifact must contain exactly the expected root bundle "
+                      f"{expected!r}; received {len(infos)} redacted member(s)"
+                  )
+              info = infos[0]
+              mode = info.external_attr >> 16
+              file_type = stat.S_IFMT(mode)
+              if (
+                  info.is_dir()
+                  or file_type not in (0, stat.S_IFREG)
+                  or (info.flag_bits & 0x1)
+              ):
+                  raise SystemExit("producer Actions artifact bundle member is not a regular file")
+              if info.file_size <= 0 or info.file_size > 20 * 1024 * 1024:
+                  raise SystemExit("producer Actions artifact bundle member has an unsafe size")
+              bad_member = archive.testzip()
+              if bad_member is not None:
+                  raise SystemExit(f"producer Actions artifact CRC validation failed: {bad_member}")
+          PY
+          unzip -q "$artifact_archive" -d wp-bundle
+          rm -f "$artifact_archive"
           echo "SELECTED_PRODUCER_REPO=${PRODUCER_REPO}" >> "$GITHUB_ENV"
-          echo "SELECTED_PRODUCER_ARTIFACT=${selected_artifact}" >> "$GITHUB_ENV"
+          echo "SELECTED_PRODUCER_WORKFLOW=${PRODUCER_WORKFLOW}" >> "$GITHUB_ENV"
+          echo "SELECTED_PRODUCER_BRANCH=${PRODUCER_BRANCH}" >> "$GITHUB_ENV"
+          echo "SELECTED_PRODUCER_HEAD_SHA=${run_head_sha}" >> "$GITHUB_ENV"
+          echo "SELECTED_PRODUCER_ARTIFACT=${PRODUCER_ARTIFACT}" >> "$GITHUB_ENV"
+          echo "SELECTED_PRODUCER_ARTIFACT_ID=${artifact_id}" >> "$GITHUB_ENV"
+          echo "SELECTED_PRODUCER_ARTIFACT_DIGEST=${artifact_digest}" >> "$GITHUB_ENV"
           echo "SELECTED_PRODUCER_RUN_ID=${run_id}" >> "$GITHUB_ENV"
+          echo "SELECTED_PRODUCER_RUN_ATTEMPT=${run_attempt}" >> "$GITHUB_ENV"
 
       - name: Unpack intake bundle
         env:
@@ -148,7 +403,6 @@ jobs:
           bundle_path="$(find wp-bundle -maxdepth 5 \( -name 'WhitePaper_Intake_Bundle_v4.zip' -o -name 'WhitePaper_Reviewer_Pack_v4.zip' \) -print -quit || true)"
           if [ -z "$bundle_path" ]; then
             echo "Bundle zip not found under wp-bundle/" >&2
-            find wp-bundle -maxdepth 5 -type f -print >&2 || true
             exit 1
           fi
           bundle_filename="$(basename "$bundle_path")"
@@ -159,23 +413,139 @@ jobs:
           if [ -n "${PRODUCER_TOKEN:-}" ]; then
             export GH_TOKEN="$PRODUCER_TOKEN"
           fi
-          if [ "${SELECTED_PRODUCER_ARTIFACT:-}" = "wp-intake-bundle-v4" ]; then
-            gh attestation verify "$bundle_path" --repo "${SELECTED_PRODUCER_REPO:-equilens-labs/fl-bsa}"
-          else
-            echo "::warning title=Legacy intake bundle::${bundle_filename} predates WP intake attestations; replaying for archive compatibility only."
-          fi
+          case "${SELECTED_PRODUCER_ARTIFACT:-}" in
+            wp-intake-bundle-v4|wp-intake-bundle-v4-[1-9][0-9]*)
+              gh attestation verify "$bundle_path" --repo "${SELECTED_PRODUCER_REPO:-equilens-labs/fl-bsa}"
+              ;;
+            wp-reviewer-pack-v4)
+              echo "::warning title=Legacy intake bundle::${bundle_filename} predates WP intake attestations; replaying for archive compatibility only."
+              ;;
+            *)
+              echo "Unexpected selected producer artifact ${SELECTED_PRODUCER_ARTIFACT:-missing}." >&2
+              exit 1
+              ;;
+          esac
+
+          export BUNDLE_PATH="$bundle_path"
+          python - <<'PY'
+          import os
+          import stat
+          import zipfile
+          from pathlib import PurePosixPath
+
+          intake = {
+              "air_status.json",
+              "calibration_bins.csv",
+              "ece_status.json",
+              "eo_status.json",
+              "fairness_slices.json",
+              "group_confusion.csv",
+              "manifest.json",
+              "metrics_long.csv",
+              "metrics_uncertainty.json",
+              "pack_intent.json",
+              "regulatory_matrix.csv",
+              "run_summary.json",
+              "selection_rates.csv",
+          }
+          certificates = {
+              "branch_amplification__generation_process_certificate.json",
+              "branch_amplification__synthetic_quality_certificate.json",
+              "branch_amplification__synthetic_validation_certificate.json",
+              "branch_intrinsic__generation_process_certificate.json",
+              "branch_intrinsic__synthetic_quality_certificate.json",
+              "branch_intrinsic__synthetic_validation_certificate.json",
+              "data_profiling_certificate_amplification.json",
+              "data_profiling_certificate_intrinsic.json",
+              "generation_process_certificate.json",
+              "hyperparameter_tuning_certificate_amplification.json",
+              "hyperparameter_tuning_certificate_intrinsic.json",
+              "input_validation_certificate.json",
+              "lc11_contract_certificate_amplification.json",
+              "lc11_contract_certificate_intrinsic.json",
+              "model_certificate_amplification.json",
+              "model_certificate_intrinsic.json",
+              "regulatory_alignment_certificate.json",
+              "synthetic_quality_certificate.json",
+              "synthetic_validation_certificate.json",
+              "training_convergence_certificate_amplification.json",
+              "training_convergence_certificate_intrinsic.json",
+          }
+          config = {"fairness_config.yaml", "sap.yaml"}
+          allowed = {f"intake/{name}" for name in intake}
+          allowed |= {f"certificates/{name}" for name in certificates}
+          allowed |= {f"config/{name}" for name in config}
+          allowed.add("provenance/manifest.json")
+          required = {
+              "intake/metrics_uncertainty.json",
+              "intake/pack_intent.json",
+              "provenance/manifest.json",
+              "certificates/synthetic_quality_certificate.json",
+              "config/sap.yaml",
+          }
+
+          bundle_path = os.environ["BUNDLE_PATH"]
+          with zipfile.ZipFile(bundle_path) as archive:
+              infos = archive.infolist()
+              names = [info.filename for info in infos if not info.is_dir()]
+              if len(names) != len(set(names)):
+                  raise SystemExit("producer bundle contains duplicate member names")
+              for index, info in enumerate(infos):
+                  path = PurePosixPath(info.filename)
+                  if path.is_absolute() or ".." in path.parts or "\\" in info.filename:
+                      raise SystemExit(f"producer bundle member {index} has an unsafe path")
+                  mode = info.external_attr >> 16
+                  file_type = stat.S_IFMT(mode)
+                  if file_type == stat.S_IFLNK:
+                      raise SystemExit(f"producer bundle member {index} is a symlink")
+                  if file_type not in (0, stat.S_IFREG, stat.S_IFDIR):
+                      raise SystemExit(
+                          f"producer bundle member {index} has an unsupported file type"
+                      )
+                  if info.flag_bits & 0x1:
+                      raise SystemExit(f"producer bundle member {index} is encrypted")
+                  if info.file_size > 20 * 1024 * 1024:
+                      raise SystemExit(f"producer bundle member {index} is too large")
+              unexpected = sorted(set(names) - allowed)
+              missing = sorted(required - set(names))
+              if unexpected:
+                  raise SystemExit(
+                      "producer bundle contains non-public/unreviewed members; "
+                      f"count={len(unexpected)} names redacted"
+                  )
+              if missing:
+                  raise SystemExit(
+                      "producer bundle is missing required members: " + ", ".join(missing)
+                  )
+              if sum(info.file_size for info in infos) > 100 * 1024 * 1024:
+                  raise SystemExit("producer bundle exceeds the 100 MiB unpacked limit")
+              bad_member = archive.testzip()
+              if bad_member is not None:
+                  raise SystemExit("producer bundle CRC validation failed for a redacted member")
+          print("Producer bundle disclosure allowlist OK")
+          PY
 
           rm -rf bundle && mkdir -p bundle
           unzip -q "$bundle_path" -d bundle
           test -f bundle/intake/metrics_uncertainty.json
+          test -f bundle/intake/pack_intent.json
           test -f bundle/provenance/manifest.json
           test -f bundle/certificates/synthetic_quality_certificate.json
+
+      - name: Validate public disclosure content and schema
+        run: |
+          set -euo pipefail
+          python scripts/validate_public_intake.py \
+            --bundle-root bundle \
+            --schema-root .
 
       - name: Validate bundle schema versions
         run: |
           set -euo pipefail
           python - <<'PY'
           import json
+          import os
+          import re
           from pathlib import Path
 
           manifest = Path("bundle/provenance/manifest.json")
@@ -185,6 +555,23 @@ jobs:
               raise SystemExit(
                   f"Unexpected bundle provenance schema_version={schema!r}; expected 'wp-intake.v1'"
               )
+
+          expected_head_sha = os.environ.get("SELECTED_PRODUCER_HEAD_SHA", "")
+          if not re.fullmatch(r"[0-9a-f]{40}", expected_head_sha):
+              raise SystemExit("Selected producer run head SHA is missing or malformed")
+          product_sha = str(m.get("commit_sha") or "")
+          if product_sha != expected_head_sha:
+              raise SystemExit(
+                  "Bundle product commit does not match the API-verified producer run head: "
+                  f"bundle={product_sha!r} run_head={expected_head_sha!r}"
+              )
+          for field in ("code_commit", "source_commit", "software_commit"):
+              value = m.get(field)
+              if value is not None and value != expected_head_sha:
+                  raise SystemExit(
+                      f"Bundle {field}={value!r} does not match producer run head "
+                      f"{expected_head_sha!r}"
+                  )
 
           mu_path = Path("bundle/intake/metrics_uncertainty.json")
           mu = json.loads(mu_path.read_text(encoding="utf-8"))
@@ -198,91 +585,143 @@ jobs:
           print("Bundle schema versions OK")
           PY
 
-      - name: Sync bundle contents into repo (intake/ + config/)
-        env:
-          PRODUCER_REPO: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.producer_repo || 'equilens-labs/fl-bsa' }}
-          PRODUCER_WORKFLOW: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'wp-evidence-nightly.yml' }}
-          PRODUCER_ARTIFACT: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_name || 'wp-intake-bundle-v4' }}
-          PRODUCER_BRANCH: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.branch || 'main' }}
-          PRODUCER_RUN_ID: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.producer_run_id || '' }}
+      - name: Stage and replace managed intake/config surfaces
         run: |
           set -euo pipefail
-          previous_manifest="$(mktemp)"
-          if [ -f intake/manifest.json ]; then
-            cp intake/manifest.json "$previous_manifest"
+          sync_stage="$(mktemp -d "${RUNNER_TEMP}/wp-intake-sync.XXXXXX")"
+          mkdir -p "$sync_stage/intake/certificates" "$sync_stage/config"
+
+          repo_owned_intake=(
+            calibration_bins_TEMPLATE.csv
+            confusion_by_group_TEMPLATE.csv
+            governance_contacts.csv
+            licenses_inventory.csv
+            model_hyperparams.yaml
+            privacy_audit_checklist.md
+          )
+          for name in "${repo_owned_intake[@]}"; do
+            test -f "intake/${name}"
+            cp "intake/${name}" "$sync_stage/intake/${name}"
+          done
+          if [ -d intake/archive ]; then
+            mkdir -p "$sync_stage/intake/archive"
+            cp -a intake/archive/. "$sync_stage/intake/archive/"
           fi
-          mkdir -p intake
-          cp bundle/intake/*.csv intake/ || true
-          cp bundle/intake/*.json intake/ || true
-          cp bundle/provenance/manifest.json intake/manifest.json
-          export PREVIOUS_MANIFEST_PATH="$previous_manifest"
+
+          producer_managed_intake=(
+            air_status.json
+            calibration_bins.csv
+            ece_status.json
+            eo_status.json
+            fairness_slices.json
+            group_confusion.csv
+            metrics_long.csv
+            metrics_uncertainty.json
+            pack_intent.json
+            regulatory_matrix.csv
+            run_summary.json
+            selection_rates.csv
+          )
+          for name in "${producer_managed_intake[@]}"; do
+            if [ -f "bundle/intake/${name}" ]; then
+              cp "bundle/intake/${name}" "$sync_stage/intake/${name}"
+            fi
+          done
+          cp bundle/provenance/manifest.json "$sync_stage/intake/manifest.json"
+          while IFS= read -r -d '' source; do
+            cp "$source" "$sync_stage/intake/certificates/"
+          done < <(find bundle/certificates -mindepth 1 -maxdepth 1 -type f -name '*.json' -print0)
+          while IFS= read -r -d '' source; do
+            cp "$source" "$sync_stage/config/"
+          done < <(find bundle/config -mindepth 1 -maxdepth 1 -type f \( -name '*.yaml' -o -name '*.yml' \) -print0)
+
+          test -f "$sync_stage/intake/metrics_uncertainty.json"
+          test -f "$sync_stage/intake/pack_intent.json"
+          test -f "$sync_stage/intake/certificates/synthetic_quality_certificate.json"
+          test -f "$sync_stage/config/sap.yaml"
+
+          export STAGED_INTAKE_MANIFEST="$sync_stage/intake/manifest.json"
           python - <<'PY'
           import json
           import os
-          from datetime import UTC, datetime
           from pathlib import Path
 
-          manifest_path = Path("intake/manifest.json")
+          manifest_path = Path(os.environ["STAGED_INTAKE_MANIFEST"])
           manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-          previous_consumer = None
-          previous_path = Path(os.environ["PREVIOUS_MANIFEST_PATH"])
-          if previous_path.exists() and previous_path.stat().st_size:
-              try:
-                  previous = json.loads(previous_path.read_text(encoding="utf-8"))
-                  previous_consumer = previous.get("whitepaper_consumer")
-              except json.JSONDecodeError:
-                  previous_consumer = None
-
           bundle_sha = os.environ.get("SELECTED_BUNDLE_SHA256", "")
-          previous_bundle_sha = ""
-          if isinstance(previous_consumer, dict):
-              previous_bundle_sha = (
-                  previous_consumer.get("producer", {}).get("bundle_sha256") or ""
-              )
-
+          # Keep the committed consumer stamp deterministic. GitHub Actions retains
+          # run/attempt/timestamp observations; putting those in the snapshot tree
+          # made exact-run replays create timestamp-only branch churn.
           consumer = {
+              "schema_version": "flbsa.whitepaper_consumer.v3",
               "repo": os.environ["GITHUB_REPOSITORY"],
-              "run_id": os.environ["GITHUB_RUN_ID"],
-              "run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT", ""),
-              "sha": os.environ["GITHUB_SHA"],
+              "base_commit": os.environ["GITHUB_SHA"],
               "ref": os.environ["GITHUB_REF"],
               "workflow": os.environ["GITHUB_WORKFLOW"],
-              "event_name": os.environ["GITHUB_EVENT_NAME"],
-              "ingested_at": datetime.now(tz=UTC).isoformat(),
               "producer": {
-                  "repo": os.environ.get("PRODUCER_REPO", ""),
-                  "workflow": os.environ.get("PRODUCER_WORKFLOW", ""),
-                  "artifact": os.environ.get("SELECTED_PRODUCER_ARTIFACT") or os.environ.get("PRODUCER_ARTIFACT", ""),
+                  "repo": os.environ.get("SELECTED_PRODUCER_REPO", ""),
+                  "workflow": os.environ.get("SELECTED_PRODUCER_WORKFLOW", ""),
+                  "artifact": os.environ.get("SELECTED_PRODUCER_ARTIFACT", ""),
                   "bundle_filename": os.environ.get("SELECTED_BUNDLE_FILENAME", ""),
                   "bundle_sha256": bundle_sha,
-                  "branch": os.environ.get("PRODUCER_BRANCH", ""),
-                  "run_id": os.environ.get("SELECTED_PRODUCER_RUN_ID") or os.environ.get("PRODUCER_RUN_ID", ""),
+                  "branch": os.environ.get("SELECTED_PRODUCER_BRANCH", ""),
+                  "run_id": os.environ.get("SELECTED_PRODUCER_RUN_ID", ""),
+                  "run_attempt": os.environ.get("SELECTED_PRODUCER_RUN_ATTEMPT", ""),
+                  "head_sha": os.environ.get("SELECTED_PRODUCER_HEAD_SHA", ""),
+                  "artifact_id": os.environ.get("SELECTED_PRODUCER_ARTIFACT_ID", ""),
+                  "artifact_digest": os.environ.get("SELECTED_PRODUCER_ARTIFACT_DIGEST", ""),
               },
           }
-          if bundle_sha and previous_bundle_sha == bundle_sha and previous_consumer:
-              consumer = previous_consumer
           manifest["whitepaper_consumer"] = consumer
           manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
           PY
-          mkdir -p intake/certificates
-          cp bundle/certificates/*.json intake/certificates/
-          mkdir -p config
-          cp bundle/config/sap.yaml config/sap.yaml
-          if [ -f bundle/config/fairness_config.yaml ]; then
-            cp bundle/config/fairness_config.yaml config/fairness_config.yaml
-          fi
+
+          rm -rf intake config
+          mv "$sync_stage/intake" intake
+          mv "$sync_stage/config" config
+
+      - name: Write deterministic intake snapshot record
+        run: |
+          set -euo pipefail
+          python scripts/intake_anchor.py snapshot \
+            --manifest intake/manifest.json \
+            --pack-intent bundle/intake/pack_intent.json \
+            --producer-repo "$SELECTED_PRODUCER_REPO" \
+            --producer-workflow "$SELECTED_PRODUCER_WORKFLOW" \
+            --producer-branch "$SELECTED_PRODUCER_BRANCH" \
+            --producer-run-id "$SELECTED_PRODUCER_RUN_ID" \
+            --producer-run-attempt "$SELECTED_PRODUCER_RUN_ATTEMPT" \
+            --producer-head-sha "$SELECTED_PRODUCER_HEAD_SHA" \
+            --producer-artifact "$SELECTED_PRODUCER_ARTIFACT" \
+            --producer-artifact-id "$SELECTED_PRODUCER_ARTIFACT_ID" \
+            --producer-artifact-digest "$SELECTED_PRODUCER_ARTIFACT_DIGEST" \
+            --bundle-filename "$SELECTED_BUNDLE_FILENAME" \
+            --bundle-sha256 "$SELECTED_BUNDLE_SHA256" \
+            --whitepaper-repo "$GITHUB_REPOSITORY" \
+            --whitepaper-commit "$GITHUB_SHA" \
+            --output intake/whitepaper_snapshot.json \
+            --github-env "$GITHUB_ENV"
 
       - name: Generate TeX macros from metrics
         run: |
           set -euo pipefail
-          python scripts/gen_tex_macros_from_metrics.py --metrics intake/metrics_long.csv --sap config/sap.yaml --outdir includes
-          python scripts/gen_tex_preamble_from_manifest.py --manifest intake/manifest.json --sap config/sap.yaml --out includes/provenance_macros.tex
-          python scripts/gen_tex_hyperparams_from_yaml.py --config intake/model_hyperparams.yaml --outdir includes
+          python scripts/gen_tex_macros_from_metrics.py --strict --metrics intake/metrics_long.csv --sap config/sap.yaml --outdir includes
+          python scripts/gen_tex_preamble_from_manifest.py --strict --manifest intake/manifest.json --sap config/sap.yaml --out includes/provenance_macros.tex
+          python scripts/gen_tex_hyperparams_from_yaml.py --strict --config intake/model_hyperparams.yaml --outdir includes
 
       - name: Generate figures from intake
         run: |
           set -euo pipefail
-          python scripts/gen_plots_from_intake.py --selection intake/selection_rates.csv --metrics intake/metrics_long.csv --outdir figures
+          plot_stage="$(mktemp -d "${RUNNER_TEMP}/wp-figures.XXXXXX")"
+          python scripts/gen_plots_from_intake.py \
+            --selection intake/selection_rates.csv \
+            --metrics intake/metrics_long.csv \
+            --outdir "$plot_stage" \
+            --require-all
+          for name in air_summary.pdf gender_air_slices.pdf selection_rates.pdf; do
+            test -s "$plot_stage/$name"
+            install -m 0644 "$plot_stage/$name" "figures/$name"
+          done
 
       - name: Enable public demo watermark
         run: |
@@ -294,10 +733,26 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends poppler-utils
 
+      - name: Set reproducible source epoch
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "SOURCE_DATE_EPOCH=$(git show -s --format=%ct HEAD)" >> "$GITHUB_ENV"
+          echo "FORCE_SOURCE_DATE=1" >> "$GITHUB_ENV"
+          echo "TZ=UTC" >> "$GITHUB_ENV"
+
       - name: Compile LaTeX
-        uses: xu-cheng/latex-action@v3
+        uses: xu-cheng/latex-action@e2f99d4b3685b0da93f97e1b86ad8fab81105098 # v3.3.0
         with:
           root_file: main.tex
+          docker_image: ghcr.io/xu-cheng/texlive-full@sha256:d9bfb267e3e3f5e0820ca86e867ee59ebb133fc29561bb28677d9b5a1a9e84ff
+          pre_compile: |
+            export SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
+            export FORCE_SOURCE_DATE=1
+            export TZ=UTC
+            test "$SOURCE_DATE_EPOCH" -gt 0
+            test "$FORCE_SOURCE_DATE" = 1
+            test "$TZ" = UTC
           latexmk_use_xelatex: false
 
       - name: Assert public demo watermark in PDF
@@ -311,86 +766,66 @@ jobs:
           echo "Found DEMO / EVALUATION ONLY marker ${hits} time(s)."
 
       - name: Upload PDF artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: whitepaper-pdf-from-intake
+          name: whitepaper-pdf-from-intake-${{ github.run_attempt }}
           path: main.pdf
-
-      - name: Upload intake bundle used
-        uses: actions/upload-artifact@v4
-        with:
-          name: intake-bundle-used
-          path: |
-            wp-bundle/**/WhitePaper_Intake_Bundle_v4.zip
-            wp-bundle/**/WhitePaper_Reviewer_Pack_v4.zip
 
       - name: Package arXiv source
         run: |
           bash scripts/arxiv_pack.sh
 
       - name: Upload arXiv source
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: arxiv-source-from-intake
+          name: arxiv-source-from-intake-${{ github.run_attempt }}
           path: dist/whitepaper_arxiv_source.zip
 
-      - name: Open intake snapshot PR
+      - name: Persist intake snapshot
         env:
           GH_TOKEN: ${{ github.token }}
           WP_INTAKE_PR_TOKEN: ${{ secrets.WP_INTAKE_PR_TOKEN }}
-          PERSIST_INTAKE_PR: ${{ github.event_name == 'repository_dispatch' && format('{0}', github.event.client_payload.persist_intake_pr) || 'true' }}
-          PRODUCER_REPO: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.producer_repo || 'equilens-labs/fl-bsa' }}
-          PRODUCER_WORKFLOW: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'wp-evidence-nightly.yml' }}
-          PRODUCER_BRANCH: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.branch || 'main' }}
+          PERSIST_INTAKE_SNAPSHOT: ${{ github.event_name == 'repository_dispatch' && format('{0}', github.event.client_payload.persist_intake_pr) || 'true' }}
         run: |
           set -euo pipefail
 
-          persist="$(printf '%s' "$PERSIST_INTAKE_PR" | tr '[:upper:]' '[:lower:]')"
+          persist="$(printf '%s' "$PERSIST_INTAKE_SNAPSHOT" | tr '[:upper:]' '[:lower:]')"
           if [ "$persist" = "false" ] || [ "$persist" = "0" ] || [ "$persist" = "no" ]; then
-            echo "Skipping intake PR persistence because persist_intake_pr=${PERSIST_INTAKE_PR}."
+            echo "Skipping intake snapshot persistence because persist_intake_pr=${PERSIST_INTAKE_SNAPSHOT}."
             exit 0
           fi
 
-          if [ -z "$(git status --short -- intake config includes figures)" ]; then
-            echo "No intake, config, macro, or figure changes to persist."
-            exit 0
-          fi
-
-          producer_sha="$(python - <<'PY'
-          import json
-          from pathlib import Path
-
-          manifest = json.loads(Path("intake/manifest.json").read_text(encoding="utf-8"))
-          print(
-              manifest.get("commit_sha")
-              or manifest.get("code_commit")
-              or manifest.get("source_commit")
-              or manifest.get("software_commit")
-              or "unknown"
-          )
-          PY
-          )"
-          short_sha="$(printf '%s' "$producer_sha" | tr -cd '[:alnum:]' | cut -c1-12)"
-          if [ -z "$short_sha" ]; then
-            short_sha="unknown"
-          fi
-
-          branch="chore/wp-intake-${short_sha}-${SELECTED_PRODUCER_RUN_ID:-${GITHUB_RUN_ID}}"
+          branch="$INTAKE_SNAPSHOT_BRANCH"
+          mode="$INTAKE_SNAPSHOT_MODE"
+          producer_sha="$(jq -r '.producer.product_sha' intake/whitepaper_snapshot.json)"
+          short_sha="${producer_sha:0:12}"
           title="chore(intake): sync FL-BSA evidence ${short_sha}"
           body_file="$(mktemp)"
           cat > "$body_file" <<EOF
           ## Summary
-          - sync intake/config artifacts from ${PRODUCER_REPO} ${PRODUCER_WORKFLOW}
+          - sync intake/config artifacts from ${SELECTED_PRODUCER_REPO} ${SELECTED_PRODUCER_WORKFLOW}
           - regenerate committed TeX macros and figures from the synced intake
           - preserve the exact whitepaper source snapshot used by pull-wp-intake run ${GITHUB_RUN_ID}
 
           ## Provenance
-          - producer repo: ${PRODUCER_REPO}
-          - producer workflow: ${PRODUCER_WORKFLOW}
-          - producer branch: ${PRODUCER_BRANCH}
-          - producer run id: ${SELECTED_PRODUCER_RUN_ID:-${PRODUCER_RUN_ID:-not_available}}
+          - producer repo: ${SELECTED_PRODUCER_REPO}
+          - producer workflow: ${SELECTED_PRODUCER_WORKFLOW}
+          - producer branch: ${SELECTED_PRODUCER_BRANCH}
+          - producer run id: ${SELECTED_PRODUCER_RUN_ID}
+          - producer run attempt: ${SELECTED_PRODUCER_RUN_ATTEMPT}
+          - producer run head: ${SELECTED_PRODUCER_HEAD_SHA}
           - producer artifact: ${SELECTED_PRODUCER_ARTIFACT:-not_available}
+          - producer artifact id: ${SELECTED_PRODUCER_ARTIFACT_ID}
+          - producer artifact digest: ${SELECTED_PRODUCER_ARTIFACT_DIGEST}
           - producer commit: ${producer_sha}
+          - bundle sha256: ${SELECTED_BUNDLE_SHA256}
+          - snapshot id: ${INTAKE_SNAPSHOT_ID}
+          - persistence mode: ${mode}
+
+          ## Claim boundary
+          - customer_evidence_eligible: false
+          - customer_evidence_disposition: characterization_only
+          - publication status: candidate_not_published
 
           ## Validation
           - bundle schema versions checked by pull-wp-intake
@@ -401,14 +836,77 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # Keep a remote-tracking ref for deterministic intake branches before using
-          # --force-with-lease. Scheduled runs can revisit the same producer run/branch; without
-          # the remote ref, Git rejects the push as stale even though this branch is bot-owned.
-          git fetch origin "+refs/heads/${branch}:refs/remotes/origin/${branch}" || true
-          git switch -C "$branch"
           git add intake config includes figures
-          git commit -m "$title"
-          git push --force-with-lease origin "$branch"
+          snapshot_tree="$(git write-tree)"
+
+          remote_ref="refs/remotes/origin/${branch}"
+          remote_head=""
+          set +e
+          remote_line="$(git ls-remote --exit-code --heads origin "refs/heads/${branch}" 2>&1)"
+          remote_status=$?
+          set -e
+          case "$remote_status" in
+            0)
+              git fetch origin "+refs/heads/${branch}:${remote_ref}"
+              remote_head="$(git rev-parse "$remote_ref")"
+              ;;
+            2)
+              ;;
+            *)
+              echo "$remote_line" >&2
+              echo "Unable to resolve persistence branch ${branch}." >&2
+              exit "$remote_status"
+              ;;
+          esac
+
+          remote_snapshot_id=""
+          remote_tree=""
+          if [ -n "$remote_head" ]; then
+            remote_snapshot_id="$(git show "${remote_ref}:intake/whitepaper_snapshot.json" 2>/dev/null | jq -r '.snapshot_id // empty' || true)"
+            remote_tree="$(git rev-parse "${remote_ref}^{tree}")"
+          fi
+
+          anchor_commit=""
+          if [ "$remote_snapshot_id" = "$INTAKE_SNAPSHOT_ID" ] && [ "$remote_tree" = "$snapshot_tree" ]; then
+            echo "Snapshot ${INTAKE_SNAPSHOT_ID} is already anchored at ${remote_head}."
+            anchor_commit="$remote_head"
+          elif [ "$remote_snapshot_id" = "$INTAKE_SNAPSHOT_ID" ]; then
+            echo "Snapshot identity ${INTAKE_SNAPSHOT_ID} already exists with a different tree; refusing nondeterministic identity drift." >&2
+            echo "remote tree=${remote_tree:-missing} current tree=${snapshot_tree}" >&2
+            exit 1
+          elif [ "$mode" = "workflow_write_once_release_snapshot" ] && [ -n "$remote_head" ]; then
+            echo "Workflow write-once intake branch ${branch} already exists with different content; refusing to rewrite it." >&2
+            echo "remote snapshot=${remote_snapshot_id:-missing} current snapshot=${INTAKE_SNAPSHOT_ID}" >&2
+            exit 1
+          else
+            commit_message="$(mktemp)"
+            {
+              printf '%s\n\n' "$title"
+              cat "$body_file"
+            } > "$commit_message"
+            parent_args=(-p "$GITHUB_SHA")
+            if [ "$mode" = "rolling_history" ] && [ -n "$remote_head" ]; then
+              # The previous rolling head is an explicit parent, so every prior
+              # nightly source tree remains reachable without per-run branches.
+              parent_args+=(-p "$remote_head")
+            fi
+            anchor_commit="$(git commit-tree "$snapshot_tree" "${parent_args[@]}" -F "$commit_message")"
+            git push origin "$anchor_commit:refs/heads/$branch"
+          fi
+
+          {
+            echo "### Intake snapshot anchored"
+            echo ""
+            echo "- mode: \`${mode}\`"
+            echo "- branch: \`${branch}\`"
+            echo "- commit: \`${anchor_commit}\`"
+            echo "- snapshot id: \`${INTAKE_SNAPSHOT_ID}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$mode" = "rolling_history" ]; then
+            echo "Routine nightly snapshot retained in append-only history; no per-run branch or PR created."
+            exit 0
+          fi
 
           soft_fail_dir="dist/intake-pr-soft-fail"
           soft_fail_sentinel="${soft_fail_dir}/intake_pr_soft_fail.json"
@@ -442,9 +940,10 @@ jobs:
               "repository": os.environ.get("GITHUB_REPOSITORY"),
               "run_id": os.environ.get("GITHUB_RUN_ID"),
               "run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
-              "producer_repo": os.environ.get("PRODUCER_REPO"),
-              "producer_workflow": os.environ.get("PRODUCER_WORKFLOW"),
-              "producer_branch": os.environ.get("PRODUCER_BRANCH"),
+              "producer_repo": os.environ.get("SELECTED_PRODUCER_REPO"),
+              "producer_workflow": os.environ.get("SELECTED_PRODUCER_WORKFLOW"),
+              "producer_branch": os.environ.get("SELECTED_PRODUCER_BRANCH"),
+              "producer_head_sha": os.environ.get("SELECTED_PRODUCER_HEAD_SHA"),
               "reason": "GitHub Actions token is not permitted to create or approve pull requests.",
               "stderr": os.environ["SOFT_FAIL_OUTPUT"],
           }
@@ -490,8 +989,8 @@ jobs:
 
       - name: Upload intake PR soft-fail sentinel
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: intake-pr-soft-fail
+          name: intake-pr-soft-fail-${{ github.run_attempt }}
           path: dist/intake-pr-soft-fail/intake_pr_soft_fail.json
           if-no-files-found: ignore

@@ -1,5 +1,9 @@
 
 PDF=dist/whitepaper.pdf
+SOURCE_DATE_EPOCH ?= $(shell git log -1 --format=%ct HEAD)
+export SOURCE_DATE_EPOCH
+export FORCE_SOURCE_DATE = 1
+export TZ = UTC
 
 all: pdf
 
@@ -7,12 +11,12 @@ test:
 	python3 -m unittest discover -s tests
 
 macros:
-	python3 scripts/gen_tex_macros_from_metrics.py --metrics intake/metrics_long.csv --sap config/sap.yaml --outdir includes || true
-	python3 scripts/gen_tex_preamble_from_manifest.py --manifest intake/manifest.json --sap config/sap.yaml --out includes/provenance_macros.tex || true
-	python3 scripts/gen_tex_hyperparams_from_yaml.py --config intake/model_hyperparams.yaml --outdir includes || true
+	python3 scripts/gen_tex_macros_from_metrics.py --strict --metrics intake/metrics_long.csv --sap config/sap.yaml --outdir includes
+	python3 scripts/gen_tex_preamble_from_manifest.py --strict --manifest intake/manifest.json --sap config/sap.yaml --out includes/provenance_macros.tex
+	python3 scripts/gen_tex_hyperparams_from_yaml.py --strict --config intake/model_hyperparams.yaml --outdir includes
 
 plots:
-	python3 scripts/gen_plots_from_intake.py --selection intake/selection_rates.csv --metrics intake/metrics_long.csv --outdir figures || true
+	python3 scripts/gen_plots_from_intake.py --selection intake/selection_rates.csv --metrics intake/metrics_long.csv --outdir figures --require-all
 
 pdf: macros plots
 	latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
