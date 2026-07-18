@@ -492,10 +492,12 @@ def _validate_ci_runtime_provenance(value: Any, location: str) -> None:
         {"bounded_runtime_contract_verified", "full_ci_proven"},
         f"{location}.claims",
     )
-    if claims != {
-        "bounded_runtime_contract_verified": True,
-        "full_ci_proven": False,
-    }:
+    # ``bool`` is a subclass of ``int`` in Python, so ordinary equality would
+    # also accept JSON numbers 1 and 0 for these evidence-boundary booleans.
+    if (
+        claims.get("bounded_runtime_contract_verified") is not True
+        or claims.get("full_ci_proven") is not False
+    ):
         raise DisclosureError(f"{location}.claims exceed the reviewed bounded proof")
 
 
