@@ -285,6 +285,85 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
             ):
                 DISCLOSURE.validate_bundle(bundle, schema_root)
 
+    def test_runtime_claim_booleans_reject_numeric_equivalents(self) -> None:
+        for field, numeric_equivalent in (
+            ("bounded_runtime_contract_verified", 1),
+            ("full_ci_proven", 0),
+        ):
+            with self.subTest(field=field):
+                provenance = self._ci_runtime_provenance()
+                provenance["claims"][field] = numeric_equivalent
+                with self.assertRaisesRegex(
+                    DISCLOSURE.DisclosureError,
+                    "claims exceed the reviewed bounded proof",
+                ):
+                    DISCLOSURE._validate_ci_runtime_provenance(
+                        provenance, "ci_runtime_provenance"
+                    )
+                with tempfile.TemporaryDirectory() as tmp:
+                    bundle = self._bundle(Path(tmp))
+                    manifest_path = bundle / "provenance" / "manifest.json"
+                    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                    provenance = self._ci_runtime_provenance(manifest["commit_sha"])
+                    provenance["claims"][field] = numeric_equivalent
+                    manifest["ci_runtime_provenance"] = provenance
+                    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+                    with self.assertRaisesRegex(
+                        DISCLOSURE.DisclosureError,
+                        "changed type from boolean to number",
+                    ):
+                        DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_nonstandard_json_numbers_fail_closed(self) -> None:
+        for nonstandard_number in ("NaN", "Infinity", "-Infinity"):
+            with (
+                self.subTest(nonstandard_number=nonstandard_number),
+                tempfile.TemporaryDirectory() as tmp,
+            ):
+                bundle = self._bundle(Path(tmp))
+                manifest_path = bundle / "provenance" / "manifest.json"
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                manifest["ci_runtime_provenance"] = self._ci_runtime_provenance(
+                    manifest["commit_sha"]
+                )
+                candidate = json.dumps(manifest)
+                self.assertEqual(candidate.count('"run_id": 123'), 1)
+                manifest_path.write_text(
+                    candidate.replace(
+                        '"run_id": 123', f'"run_id": {nonstandard_number}'
+                    ),
+                    encoding="utf-8",
+                )
+                with self.assertRaisesRegex(
+                    DISCLOSURE.DisclosureError, "non-finite number"
+                ):
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_runtime_provenance_owned_objects_require_exact_fields(self) -> None:
+        for label, path in (
+            ("root", ()),
+            ("source_ci", ("source_ci",)),
+            ("contract_artifact", ("source_ci", "contract_artifact")),
+            ("runtime_image", ("runtime_image",)),
+            (
+                "runtime_input_projection",
+                ("runtime_image", "runtime_input_projection"),
+            ),
+            ("claims", ("claims",)),
+        ):
+            with self.subTest(label=label):
+                provenance = self._ci_runtime_provenance()
+                owned_object = provenance
+                for segment in path:
+                    owned_object = owned_object[segment]
+                owned_object["unreviewed_extra"] = "redacted"
+                with self.assertRaisesRegex(
+                    DISCLOSURE.DisclosureError, "exact reviewed fields"
+                ):
+                    DISCLOSURE._validate_ci_runtime_provenance(
+                        provenance, "ci_runtime_provenance"
+                    )
+
     def test_ci_runtime_provenance_binds_enclosing_commit_and_image(self) -> None:
         for mutation, expected in (
             ("head", "commit identity"),
