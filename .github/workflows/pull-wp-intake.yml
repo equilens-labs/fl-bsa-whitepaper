@@ -808,19 +808,34 @@ jobs:
             exit 1
           fi
           export GH_TOKEN="$WP_INTAKE_PR_TOKEN"
-          origin_url="$(git remote get-url origin)"
-          case "$origin_url" in
-            "https://github.com/${GITHUB_REPOSITORY}"|"https://github.com/${GITHUB_REPOSITORY}.git")
-              gh auth setup-git
-              ;;
-            *)
-              if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
-                echo "Refusing public persistence through unexpected Actions origin ${origin_url@Q}." >&2
+          mapfile -t origin_fetch_urls < <(git remote get-url --all origin)
+          mapfile -t origin_push_urls < <(git remote get-url --push --all origin)
+          if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+            canonical_origin="https://github.com/${GITHUB_REPOSITORY}"
+            if [ "${#origin_fetch_urls[@]}" -ne 1 ] || [ "${#origin_push_urls[@]}" -ne 1 ]; then
+              echo "Refusing public persistence: origin must have exactly one fetch URL and one push URL." >&2
+              exit 1
+            fi
+            fetch_url="${origin_fetch_urls[0]}"
+            push_url="${origin_push_urls[0]}"
+            case "$fetch_url" in
+              "$canonical_origin"|"${canonical_origin}.git") ;;
+              *)
+                echo "Refusing public persistence through an unexpected Actions fetch origin." >&2
                 exit 1
-              fi
-              echo "Non-GitHub local test remote; skipping GitHub credential-helper setup."
-              ;;
-          esac
+                ;;
+            esac
+            case "$push_url" in
+              "$canonical_origin"|"${canonical_origin}.git") ;;
+              *)
+                echo "Refusing public persistence through an unexpected Actions push origin." >&2
+                exit 1
+                ;;
+            esac
+            gh auth setup-git
+          else
+            echo "Non-GitHub local test remote; skipping GitHub credential-helper setup."
+          fi
 
           branch="$INTAKE_SNAPSHOT_BRANCH"
           mode="$INTAKE_SNAPSHOT_MODE"

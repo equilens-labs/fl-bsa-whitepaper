@@ -123,7 +123,9 @@ ordinary validation/build runs receive a read-only default Actions token; checko
 that credential. The write token is exposed only to the guarded persistence step, which configures
 the Git credential helper after validating literal `true` and fails before Git mutation when the
 token is absent. In GitHub Actions, persistence also requires the exact canonical HTTPS origin for
-`equilens-labs/fl-bsa-whitepaper`; a different repository or an SSH origin is rejected.
+`equilens-labs/fl-bsa-whitepaper`: exactly one effective fetch URL and one effective push URL,
+allowing only the optional `.git` suffix. A different repository, an SSH origin, a separate or
+multiple `pushurl`, or a Git URL rewrite is rejected.
 
 Rotate both credentials on the normal CI credential cadence. Never put a token or its contents
 in a dispatch payload, artifact, snapshot record, or tracked file.
