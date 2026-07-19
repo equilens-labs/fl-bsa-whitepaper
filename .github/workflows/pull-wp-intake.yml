@@ -416,7 +416,14 @@ jobs:
             export GH_TOKEN="$PRODUCER_TOKEN"
           fi
           case "${SELECTED_PRODUCER_ARTIFACT:-}" in
-            wp-intake-bundle-v4|wp-intake-bundle-v4-[1-9][0-9]*)
+            wp-intake-bundle-v4)
+              gh attestation verify "$bundle_path" --repo "${SELECTED_PRODUCER_REPO:-equilens-labs/fl-bsa}"
+              ;;
+            wp-intake-bundle-v4-*)
+              if [[ ! "${SELECTED_PRODUCER_ARTIFACT:-}" =~ ^wp-intake-bundle-v4-[1-9][0-9]*$ ]]; then
+                echo "Malformed selected producer artifact ${SELECTED_PRODUCER_ARTIFACT:-missing}." >&2
+                exit 1
+              fi
               gh attestation verify "$bundle_path" --repo "${SELECTED_PRODUCER_REPO:-equilens-labs/fl-bsa}"
               ;;
             wp-reviewer-pack-v4)

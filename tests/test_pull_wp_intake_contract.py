@@ -514,6 +514,86 @@ class PullWpIntakeContractTests(unittest.TestCase):
         self.assertNotIn("name: intake-bundle-used", rendered)
         self.assertNotIn("wp-bundle/**", rendered)
 
+    def test_unpack_accepts_exact_attempt_qualified_artifacts(self) -> None:
+        workflow = yaml.safe_load(self.workflow)
+        unpack = next(
+            item
+            for item in workflow["jobs"]["fetch-build"]["steps"]
+            if item.get("name") == "Unpack intake bundle"
+        )["run"]
+        required = {
+            "intake/metrics_uncertainty.json": b"{}\n",
+            "intake/pack_intent.json": b"{}\n",
+            "provenance/manifest.json": b"{}\n",
+            "certificates/synthetic_quality_certificate.json": b"{}\n",
+            "config/sap.yaml": b"version: 1\n",
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            bundle_dir = root / "wp-bundle"
+            bundle_dir.mkdir()
+            bundle = bundle_dir / "WhitePaper_Intake_Bundle_v4.zip"
+            with zipfile.ZipFile(bundle, "w") as archive:
+                for name, payload in required.items():
+                    archive.writestr(name, payload)
+
+            fake_bin = root / "fake-bin"
+            fake_bin.mkdir()
+            fake_gh = fake_bin / "gh"
+            fake_gh.write_text(
+                '#!/usr/bin/env bash\nprintf "%s\\n" "$*" >> "$GH_CALL_LOG"\n',
+                encoding="utf-8",
+            )
+            fake_gh.chmod(0o755)
+            gh_call_log = root / "gh-calls.log"
+            github_env = root / "github-env"
+            env = {
+                **os.environ,
+                "PATH": f"{fake_bin}:{os.environ['PATH']}",
+                "GH_CALL_LOG": str(gh_call_log),
+                "GITHUB_ENV": str(github_env),
+                "SELECTED_PRODUCER_REPO": "equilens-labs/fl-bsa",
+            }
+
+            for artifact in ("wp-intake-bundle-v4-1", "wp-intake-bundle-v4-10"):
+                with self.subTest(artifact=artifact):
+                    completed = subprocess.run(
+                        ["bash", "-c", unpack],
+                        cwd=root,
+                        env={**env, "SELECTED_PRODUCER_ARTIFACT": artifact},
+                        check=False,
+                        capture_output=True,
+                        text=True,
+                    )
+                    self.assertEqual(0, completed.returncode, completed.stderr)
+
+            calls = gh_call_log.read_text(encoding="utf-8").splitlines()
+            self.assertEqual(2, len(calls))
+            self.assertTrue(
+                all(call.startswith("attestation verify ") for call in calls), calls
+            )
+
+            for artifact in (
+                "wp-intake-bundle-v4-0",
+                "wp-intake-bundle-v4-01",
+                "wp-intake-bundle-v4-1x",
+                "wp-intake-bundle-v4-",
+            ):
+                with self.subTest(artifact=artifact):
+                    completed = subprocess.run(
+                        ["bash", "-c", unpack],
+                        cwd=root,
+                        env={**env, "SELECTED_PRODUCER_ARTIFACT": artifact},
+                        check=False,
+                        capture_output=True,
+                        text=True,
+                    )
+                    self.assertNotEqual(0, completed.returncode)
+                    self.assertIn(
+                        "Malformed selected producer artifact", completed.stderr
+                    )
+
     def test_managed_surface_replacement_removes_omissions(self) -> None:
         workflow = yaml.safe_load(self.workflow)
         step = next(
