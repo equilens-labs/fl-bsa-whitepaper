@@ -117,6 +117,23 @@ class PullWpIntakeContractTests(unittest.TestCase):
     def test_pull_wp_intake_preserves_append_only_contract(self) -> None:
         self.assert_contract(self.workflow)
 
+    def test_public_snapshot_persistence_is_explicit_and_defaults_off(self) -> None:
+        workflow = yaml.safe_load(self.workflow)
+        steps = workflow["jobs"]["fetch-build"]["steps"]
+        persist = next(item for item in steps if item.get("name") == "Persist intake snapshot")
+
+        expression = persist["env"]["PERSIST_INTAKE_SNAPSHOT"]
+        self.assertEqual(
+            "${{ github.event_name == 'repository_dispatch' && "
+            "format('{0}', github.event.client_payload.persist_intake_pr) || 'false' }}",
+            expression,
+        )
+        self.assertNotIn("|| 'true'", expression)
+        self.assertIn(
+            'Skipping intake snapshot persistence because persist_intake_pr=${PERSIST_INTAKE_SNAPSHOT}.',
+            persist["run"],
+        )
+
     def test_required_anchors_are_mutation_sensitive(self) -> None:
         required_fragments = (
             "group: pull-wp-intake-persistence",

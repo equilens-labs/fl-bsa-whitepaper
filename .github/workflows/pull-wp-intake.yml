@@ -785,7 +785,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           WP_INTAKE_PR_TOKEN: ${{ secrets.WP_INTAKE_PR_TOKEN }}
-          PERSIST_INTAKE_SNAPSHOT: ${{ github.event_name == 'repository_dispatch' && format('{0}', github.event.client_payload.persist_intake_pr) || 'true' }}
+          PERSIST_INTAKE_SNAPSHOT: ${{ github.event_name == 'repository_dispatch' && format('{0}', github.event.client_payload.persist_intake_pr) || 'false' }}
         run: |
           set -euo pipefail
 
