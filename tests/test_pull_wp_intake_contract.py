@@ -189,6 +189,49 @@ class PullWpIntakeContractTests(unittest.TestCase):
             persist["run"].index('git push origin "$anchor_commit:refs/heads/$branch"'),
         )
 
+    def test_public_persistence_rejects_unexpected_actions_origin_before_mutation(self) -> None:
+        workflow = yaml.safe_load(self.workflow)
+        persist = next(
+            item
+            for item in workflow["jobs"]["fetch-build"]["steps"]
+            if item.get("name") == "Persist intake snapshot"
+        )["run"]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            remote = root / "remote.git"
+            work = root / "work"
+            subprocess.run(["git", "init", "--bare", str(remote)], check=True)
+            subprocess.run(["git", "init", "-b", "main", str(work)], check=True)
+            subprocess.run(
+                ["git", "-C", str(work), "remote", "add", "origin", str(remote)],
+                check=True,
+            )
+
+            completed = subprocess.run(
+                ["bash", "-c", persist],
+                cwd=work,
+                env={
+                    **os.environ,
+                    "GITHUB_ACTIONS": "true",
+                    "PERSIST_INTAKE_SNAPSHOT": "true",
+                    "WP_INTAKE_PR_TOKEN": "unused-test-token",
+                },
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(0, completed.returncode)
+            self.assertIn(
+                "Refusing public persistence through unexpected Actions origin",
+                completed.stderr,
+            )
+            remote_refs = subprocess.check_output(
+                ["git", "--git-dir", str(remote), "for-each-ref", "--format=%(refname)"],
+                text=True,
+            )
+            self.assertEqual("", remote_refs)
+
     def test_required_anchors_are_mutation_sensitive(self) -> None:
         required_fragments = (
             "group: pull-wp-intake-persistence",
