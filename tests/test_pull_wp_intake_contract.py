@@ -182,6 +182,10 @@ class PullWpIntakeContractTests(unittest.TestCase):
         self.assertIn("Explicit public intake persistence requires WP_INTAKE_PR_TOKEN", persist["run"])
         self.assertIn('export GH_TOKEN="$WP_INTAKE_PR_TOKEN"', persist["run"])
         self.assertIn("gh auth setup-git", persist["run"])
+        self.assertIn('"https://github.com/${GITHUB_REPOSITORY}"', persist["run"])
+        self.assertIn('"https://github.com/${GITHUB_REPOSITORY}.git"', persist["run"])
+        self.assertNotIn("https://github.com/*", persist["run"])
+        self.assertNotIn("git@github.com:*", persist["run"])
         self.assertIn('if [ "${GITHUB_ACTIONS:-}" = "true" ]; then', persist["run"])
         self.assertIn("Refusing public persistence through unexpected Actions origin", persist["run"])
         self.assertLess(
@@ -197,40 +201,50 @@ class PullWpIntakeContractTests(unittest.TestCase):
             if item.get("name") == "Persist intake snapshot"
         )["run"]
 
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            remote = root / "remote.git"
-            work = root / "work"
-            subprocess.run(["git", "init", "--bare", str(remote)], check=True)
-            subprocess.run(["git", "init", "-b", "main", str(work)], check=True)
-            subprocess.run(
-                ["git", "-C", str(work), "remote", "add", "origin", str(remote)],
-                check=True,
-            )
+        unexpected_origins = (
+            "local",
+            "https://github.com/equilens-labs/not-fl-bsa-whitepaper.git",
+            "git@github.com:equilens-labs/fl-bsa-whitepaper.git",
+        )
+        for unexpected_origin in unexpected_origins:
+            with self.subTest(origin=unexpected_origin), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                work = root / "work"
+                subprocess.run(["git", "init", "-b", "main", str(work)], check=True)
+                origin = unexpected_origin
+                if origin == "local":
+                    remote = root / "remote.git"
+                    subprocess.run(["git", "init", "--bare", str(remote)], check=True)
+                    origin = str(remote)
+                subprocess.run(
+                    ["git", "-C", str(work), "remote", "add", "origin", origin],
+                    check=True,
+                )
 
-            completed = subprocess.run(
-                ["bash", "-c", persist],
-                cwd=work,
-                env={
-                    **os.environ,
-                    "GITHUB_ACTIONS": "true",
-                    "PERSIST_INTAKE_SNAPSHOT": "true",
-                    "WP_INTAKE_PR_TOKEN": "unused-test-token",
-                },
-                check=False,
-                capture_output=True,
-                text=True,
-            )
-            self.assertNotEqual(0, completed.returncode)
-            self.assertIn(
-                "Refusing public persistence through unexpected Actions origin",
-                completed.stderr,
-            )
-            remote_refs = subprocess.check_output(
-                ["git", "--git-dir", str(remote), "for-each-ref", "--format=%(refname)"],
-                text=True,
-            )
-            self.assertEqual("", remote_refs)
+                completed = subprocess.run(
+                    ["bash", "-c", persist],
+                    cwd=work,
+                    env={
+                        **os.environ,
+                        "GITHUB_ACTIONS": "true",
+                        "GITHUB_REPOSITORY": "equilens-labs/fl-bsa-whitepaper",
+                        "PERSIST_INTAKE_SNAPSHOT": "true",
+                        "WP_INTAKE_PR_TOKEN": "unused-test-token",
+                    },
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertNotEqual(0, completed.returncode)
+                self.assertIn(
+                    "Refusing public persistence through unexpected Actions origin",
+                    completed.stderr,
+                )
+                local_refs = subprocess.check_output(
+                    ["git", "-C", str(work), "for-each-ref", "--format=%(refname)"],
+                    text=True,
+                )
+                self.assertEqual("", local_refs)
 
     def test_required_anchors_are_mutation_sensitive(self) -> None:
         required_fragments = (

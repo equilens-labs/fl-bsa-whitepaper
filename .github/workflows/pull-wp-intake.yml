@@ -810,7 +810,9 @@ jobs:
           export GH_TOKEN="$WP_INTAKE_PR_TOKEN"
           origin_url="$(git remote get-url origin)"
           case "$origin_url" in
-            https://github.com/*|git@github.com:*) gh auth setup-git ;;
+            "https://github.com/${GITHUB_REPOSITORY}"|"https://github.com/${GITHUB_REPOSITORY}.git")
+              gh auth setup-git
+              ;;
             *)
               if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
                 echo "Refusing public persistence through unexpected Actions origin ${origin_url@Q}." >&2
