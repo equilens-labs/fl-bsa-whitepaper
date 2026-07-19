@@ -544,6 +544,7 @@ class PullWpIntakeContractTests(unittest.TestCase):
                     "INTAKE_SNAPSHOT_MODE": mode,
                     "INTAKE_SNAPSHOT_ID": snapshot_id,
                     "PERSIST_INTAKE_SNAPSHOT": "true",
+                    "GITHUB_ACTIONS": "false",
                     "GH_TOKEN": "unused",
                     "WP_INTAKE_PR_TOKEN": "unused-test-token",
                 }
