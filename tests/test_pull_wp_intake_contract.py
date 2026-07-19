@@ -117,6 +117,234 @@ class PullWpIntakeContractTests(unittest.TestCase):
     def test_pull_wp_intake_preserves_append_only_contract(self) -> None:
         self.assert_contract(self.workflow)
 
+    def test_public_snapshot_persistence_is_explicit_and_defaults_off(self) -> None:
+        workflow = yaml.safe_load(self.workflow)
+        self.assertEqual("read", workflow["permissions"]["contents"])
+        self.assertEqual("read", workflow["permissions"]["pull-requests"])
+        steps = workflow["jobs"]["fetch-build"]["steps"]
+        checkout = next(item for item in steps if str(item.get("uses", "")).startswith("actions/checkout@"))
+        self.assertIs(checkout["with"]["persist-credentials"], False)
+        persist = next(item for item in steps if item.get("name") == "Persist intake snapshot")
+
+        expression = persist["env"]["PERSIST_INTAKE_SNAPSHOT"]
+        self.assertEqual(
+            "${{ github.event_name == 'repository_dispatch' && "
+            "format('{0}', github.event.client_payload.persist_intake_pr) || 'false' }}",
+            expression,
+        )
+        self.assertNotIn("|| 'true'", expression)
+        self.assertIn(
+            'Skipping intake snapshot persistence because persist_intake_pr=${PERSIST_INTAKE_SNAPSHOT}.',
+            persist["run"],
+        )
+        guard = persist["run"].split(
+            'if [ -z "${WP_INTAKE_PR_TOKEN:-}" ]; then', 1
+        )[0]
+        probe = guard + "\nprintf 'persistence-enabled\\n'\n"
+
+        disabled = subprocess.run(
+            ["bash", "-c", probe],
+            env={**os.environ, "PERSIST_INTAKE_SNAPSHOT": "false"},
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(0, disabled.returncode, disabled.stderr)
+        self.assertNotIn("persistence-enabled", disabled.stdout)
+
+        enabled = subprocess.run(
+            ["bash", "-c", probe],
+            env={**os.environ, "PERSIST_INTAKE_SNAPSHOT": "true"},
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(0, enabled.returncode, enabled.stderr)
+        self.assertIn("persistence-enabled", enabled.stdout)
+
+        for malformed in ("", "0", "no", "1", "yes", "tru", " false ", "random"):
+            with self.subTest(malformed=malformed):
+                rejected = subprocess.run(
+                    ["bash", "-c", probe],
+                    env={**os.environ, "PERSIST_INTAKE_SNAPSHOT": malformed},
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertNotEqual(0, rejected.returncode)
+                self.assertIn("expected literal true or false", rejected.stderr)
+
+        self.assertNotIn("GH_TOKEN", persist["env"])
+        self.assertEqual(
+            "${{ secrets.WP_INTAKE_PR_TOKEN }}",
+            persist["env"]["WP_INTAKE_PR_TOKEN"],
+        )
+        self.assertIn("Explicit public intake persistence requires WP_INTAKE_PR_TOKEN", persist["run"])
+        self.assertIn('export GH_TOKEN="$WP_INTAKE_PR_TOKEN"', persist["run"])
+        self.assertIn("gh auth setup-git", persist["run"])
+        self.assertIn("git remote get-url --all origin", persist["run"])
+        self.assertIn("git remote get-url --push --all origin", persist["run"])
+        self.assertIn('canonical_origin="https://github.com/${GITHUB_REPOSITORY}"', persist["run"])
+        self.assertIn('"${#origin_fetch_urls[@]}" -ne 1', persist["run"])
+        self.assertIn('"${#origin_push_urls[@]}" -ne 1', persist["run"])
+        self.assertIn('fetch_url="${origin_fetch_urls[0]}"', persist["run"])
+        self.assertIn('push_url="${origin_push_urls[0]}"', persist["run"])
+        self.assertNotIn("https://github.com/*", persist["run"])
+        self.assertNotIn("git@github.com:*", persist["run"])
+        self.assertIn('if [ "${GITHUB_ACTIONS:-}" = "true" ]; then', persist["run"])
+        self.assertIn("unexpected Actions fetch origin", persist["run"])
+        self.assertIn("unexpected Actions push origin", persist["run"])
+        self.assertLess(
+            persist["run"].index("gh auth setup-git"),
+            persist["run"].index('git push origin "$anchor_commit:refs/heads/$branch"'),
+        )
+
+    def test_public_persistence_rejects_unexpected_actions_origin_before_mutation(self) -> None:
+        workflow = yaml.safe_load(self.workflow)
+        persist = next(
+            item
+            for item in workflow["jobs"]["fetch-build"]["steps"]
+            if item.get("name") == "Persist intake snapshot"
+        )["run"]
+
+        canonical = "https://github.com/equilens-labs/fl-bsa-whitepaper.git"
+        different = "https://github.com/equilens-labs/not-fl-bsa-whitepaper.git"
+        ssh = "git@github.com:equilens-labs/fl-bsa-whitepaper.git"
+        unexpected_origins = (
+            ("local", (), ()),
+            (different, (), ()),
+            (ssh, (), ()),
+            (canonical, (different,), ()),
+            (canonical, (ssh,), ()),
+            (canonical, (canonical, different), ()),
+            (
+                canonical,
+                (),
+                ((f"url.{different}.pushInsteadOf", canonical),),
+            ),
+            (
+                canonical,
+                (),
+                ((f"url.{different}.insteadOf", canonical),),
+            ),
+        )
+        for fetch_origin, push_origins, url_rewrites in unexpected_origins:
+            with self.subTest(
+                fetch_origin=fetch_origin,
+                push_origins=push_origins,
+                url_rewrites=url_rewrites,
+            ), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                work = root / "work"
+                subprocess.run(["git", "init", "-b", "main", str(work)], check=True)
+                origin = fetch_origin
+                if origin == "local":
+                    remote = root / "remote.git"
+                    subprocess.run(["git", "init", "--bare", str(remote)], check=True)
+                    origin = str(remote)
+                subprocess.run(
+                    ["git", "-C", str(work), "remote", "add", "origin", origin],
+                    check=True,
+                )
+                for push_origin in push_origins:
+                    subprocess.run(
+                        [
+                            "git",
+                            "-C",
+                            str(work),
+                            "config",
+                            "--add",
+                            "remote.origin.pushurl",
+                            push_origin,
+                        ],
+                        check=True,
+                    )
+                for key, value in url_rewrites:
+                    subprocess.run(
+                        ["git", "-C", str(work), "config", "--add", key, value],
+                        check=True,
+                    )
+
+                completed = subprocess.run(
+                    ["bash", "-c", persist],
+                    cwd=work,
+                    env={
+                        **os.environ,
+                        "GIT_CONFIG_GLOBAL": "/dev/null",
+                        "GIT_CONFIG_SYSTEM": "/dev/null",
+                        "GITHUB_ACTIONS": "true",
+                        "GITHUB_REPOSITORY": "equilens-labs/fl-bsa-whitepaper",
+                        "PERSIST_INTAKE_SNAPSHOT": "true",
+                        "WP_INTAKE_PR_TOKEN": "unused-test-token",
+                    },
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertNotEqual(0, completed.returncode)
+                self.assertIn("Refusing public persistence", completed.stderr)
+                local_refs = subprocess.check_output(
+                    ["git", "-C", str(work), "for-each-ref", "--format=%(refname)"],
+                    text=True,
+                )
+                self.assertEqual("", local_refs)
+
+    def test_public_persistence_accepts_only_canonical_https_origins(self) -> None:
+        workflow = yaml.safe_load(self.workflow)
+        persist = next(
+            item
+            for item in workflow["jobs"]["fetch-build"]["steps"]
+            if item.get("name") == "Persist intake snapshot"
+        )["run"]
+        guard = persist.split('branch="$INTAKE_SNAPSHOT_BRANCH"', 1)[0]
+        probe = guard + "\nprintf 'origin-approved\\n'\n"
+
+        for suffix in ("", ".git"):
+            with self.subTest(suffix=suffix), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                work = root / "work"
+                fake_bin = root / "bin"
+                fake_bin.mkdir()
+                fake_gh = fake_bin / "gh"
+                fake_gh.write_text(
+                    '#!/bin/sh\n[ "$1 $2" = "auth setup-git" ]\n',
+                    encoding="utf-8",
+                )
+                fake_gh.chmod(0o755)
+                subprocess.run(["git", "init", "-b", "main", str(work)], check=True)
+                subprocess.run(
+                    [
+                        "git",
+                        "-C",
+                        str(work),
+                        "remote",
+                        "add",
+                        "origin",
+                        f"https://github.com/equilens-labs/fl-bsa-whitepaper{suffix}",
+                    ],
+                    check=True,
+                )
+
+                completed = subprocess.run(
+                    ["bash", "-c", probe],
+                    cwd=work,
+                    env={
+                        **os.environ,
+                        "GIT_CONFIG_GLOBAL": "/dev/null",
+                        "GIT_CONFIG_SYSTEM": "/dev/null",
+                        "GITHUB_ACTIONS": "true",
+                        "GITHUB_REPOSITORY": "equilens-labs/fl-bsa-whitepaper",
+                        "PATH": f"{fake_bin}:{os.environ['PATH']}",
+                        "PERSIST_INTAKE_SNAPSHOT": "true",
+                        "WP_INTAKE_PR_TOKEN": "unused-test-token",
+                    },
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual(0, completed.returncode, completed.stderr)
+                self.assertIn("origin-approved", completed.stdout)
+
     def test_required_anchors_are_mutation_sensitive(self) -> None:
         required_fragments = (
             "group: pull-wp-intake-persistence",
@@ -472,8 +700,9 @@ class PullWpIntakeContractTests(unittest.TestCase):
                     "INTAKE_SNAPSHOT_MODE": mode,
                     "INTAKE_SNAPSHOT_ID": snapshot_id,
                     "PERSIST_INTAKE_SNAPSHOT": "true",
+                    "GITHUB_ACTIONS": "false",
                     "GH_TOKEN": "unused",
-                    "WP_INTAKE_PR_TOKEN": "",
+                    "WP_INTAKE_PR_TOKEN": "unused-test-token",
                 }
                 completed = subprocess.run(
                     ["bash", "-c", persist],

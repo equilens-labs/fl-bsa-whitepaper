@@ -11,10 +11,10 @@ on:
     - cron: '0 6 * * *'
 
 permissions:
-  contents: write
+  contents: read
   actions: read
   attestations: read
-  pull-requests: write
+  pull-requests: read
 
 concurrency:
   # All persistence targets are serialized. This is required for the append-only
@@ -28,6 +28,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
@@ -783,16 +785,56 @@ jobs:
 
       - name: Persist intake snapshot
         env:
-          GH_TOKEN: ${{ github.token }}
           WP_INTAKE_PR_TOKEN: ${{ secrets.WP_INTAKE_PR_TOKEN }}
-          PERSIST_INTAKE_SNAPSHOT: ${{ github.event_name == 'repository_dispatch' && format('{0}', github.event.client_payload.persist_intake_pr) || 'true' }}
+          PERSIST_INTAKE_SNAPSHOT: ${{ github.event_name == 'repository_dispatch' && format('{0}', github.event.client_payload.persist_intake_pr) || 'false' }}
         run: |
           set -euo pipefail
 
           persist="$(printf '%s' "$PERSIST_INTAKE_SNAPSHOT" | tr '[:upper:]' '[:lower:]')"
-          if [ "$persist" = "false" ] || [ "$persist" = "0" ] || [ "$persist" = "no" ]; then
-            echo "Skipping intake snapshot persistence because persist_intake_pr=${PERSIST_INTAKE_SNAPSHOT}."
-            exit 0
+          case "$persist" in
+            false)
+              echo "Skipping intake snapshot persistence because persist_intake_pr=${PERSIST_INTAKE_SNAPSHOT}."
+              exit 0
+              ;;
+            true) ;;
+            *)
+              echo "Invalid persist_intake_pr value ${PERSIST_INTAKE_SNAPSHOT@Q}; expected literal true or false." >&2
+              exit 1
+              ;;
+          esac
+
+          if [ -z "${WP_INTAKE_PR_TOKEN:-}" ]; then
+            echo "Explicit public intake persistence requires WP_INTAKE_PR_TOKEN; no Git mutation was attempted." >&2
+            exit 1
+          fi
+          export GH_TOKEN="$WP_INTAKE_PR_TOKEN"
+          mapfile -t origin_fetch_urls < <(git remote get-url --all origin)
+          mapfile -t origin_push_urls < <(git remote get-url --push --all origin)
+          if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+            canonical_origin="https://github.com/${GITHUB_REPOSITORY}"
+            if [ "${#origin_fetch_urls[@]}" -ne 1 ] || [ "${#origin_push_urls[@]}" -ne 1 ]; then
+              echo "Refusing public persistence: origin must have exactly one fetch URL and one push URL." >&2
+              exit 1
+            fi
+            fetch_url="${origin_fetch_urls[0]}"
+            push_url="${origin_push_urls[0]}"
+            case "$fetch_url" in
+              "$canonical_origin"|"${canonical_origin}.git") ;;
+              *)
+                echo "Refusing public persistence through an unexpected Actions fetch origin." >&2
+                exit 1
+                ;;
+            esac
+            case "$push_url" in
+              "$canonical_origin"|"${canonical_origin}.git") ;;
+              *)
+                echo "Refusing public persistence through an unexpected Actions push origin." >&2
+                exit 1
+                ;;
+            esac
+            gh auth setup-git
+          else
+            echo "Non-GitHub local test remote; skipping GitHub credential-helper setup."
           fi
 
           branch="$INTAKE_SNAPSHOT_BRANCH"
@@ -965,10 +1007,6 @@ jobs:
             printf '%s\n' "$pr_output" >&2
             return 0
           }
-
-          if [ -n "${WP_INTAKE_PR_TOKEN:-}" ]; then
-            export GH_TOKEN="$WP_INTAKE_PR_TOKEN"
-          fi
 
           if gh pr view "$branch" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             if ! pr_output="$(gh pr edit "$branch" --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$body_file" 2>&1)"; then

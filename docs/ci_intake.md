@@ -1,9 +1,11 @@
 # Intake Pull CI — Cross-Repo Automation
 
 This repository consumes the whitepaper intake bundle produced by
-`equilens-labs/fl-bsa`, rebuilds the paper, and preserves the exact source state in Git.
-Transient Actions artifacts are useful review outputs, but they are not the durability
-boundary.
+`equilens-labs/fl-bsa` and rebuilds the paper. Public Git persistence is a separate, explicit
+publication mutation: ordinary dispatches and the daily schedule validate and build with
+persistence disabled. When that mutation is approved, the workflow can preserve the exact source
+state under the bounded branch contracts below. Transient Actions artifacts are review outputs,
+not durable publication.
 
 ## Persistence contract
 
@@ -20,13 +22,13 @@ boundary to:
 All intake persistence runs share the `pull-wp-intake-persistence` concurrency group and do
 not cancel an in-progress predecessor. This serializes reads and writes to the rolling branch.
 
-Routine `wp-evidence-nightly.yml` inputs use one branch:
-`chore/wp-intake-nightly`. Each changed snapshot is committed with both the current default
-branch commit and the previous rolling head as parents. The previous head therefore remains
-reachable, while repeated runs with the same snapshot ID and tree are no-ops. Routine runs do
-not create per-run branches or PRs.
+When a `wp-evidence-nightly.yml` dispatch explicitly sets `persist_intake_pr=true`, it uses one
+public branch: `chore/wp-intake-nightly`. Each changed snapshot is committed with both the current
+default-branch commit and the previous rolling head as parents. The previous head therefore remains
+reachable, while repeated runs with the same snapshot ID and tree are no-ops. It does not create
+per-run branches or PRs. The ordinary producer dispatch and scheduled pull keep this setting false.
 
-`release-evidence.yml` inputs use workflow-write-once branches named
+Approved `release-evidence.yml` persistence inputs use workflow-write-once branches named
 `chore/wp-intake-<producer-sha12>-<producer-run-id>`. An exact replay is a no-op. If that branch
 already exists with different content, the workflow fails instead of rewriting it. A release
 snapshot PR is best-effort reviewer convenience; the write-once branch is the durable workflow
@@ -64,7 +66,7 @@ curl -X POST \
           "producer_run_attempt":"<exact-run-attempt>",
           "artifact_id":"<exact-actions-artifact-id>",
           "artifact_digest":"sha256:<exact-actions-artifact-digest>",
-          "persist_intake_pr":"true"
+          "persist_intake_pr":"false"
         }
       }'
 ```
@@ -77,10 +79,16 @@ The accepted producers are deliberately narrow:
   unqualified name is accepted only for first-attempt runs; unattested `wp-reviewer-pack-v4` is
   restricted to explicit first-attempt legacy compatibility (never an automatic fallback)
 
-`persist_intake_pr` is retained as a compatibility payload name. It now controls snapshot
-persistence. For nightly input, persistence means the rolling history branch and no PR. For
-release input, it means the workflow-write-once branch plus a best-effort PR. Set it to `false` only for
-an intentionally transient local/debug rebuild.
+`persist_intake_pr` is retained as a compatibility payload name. It controls public snapshot
+persistence and defaults to `false`. Only literal `true` or `false` (case-normalized) is accepted;
+malformed or alternate truthy/falsey values fail before any Git mutation. For an explicitly approved nightly input, `true` means the
+rolling history branch and no PR. For an explicitly approved release input, it means the
+workflow-write-once branch plus a best-effort PR. Validation, PDF compilation, and Actions-artifact
+upload still run when it is false; no public intake branch is created or updated.
+
+Product workflow operators use the typed `persist_public_whitepaper_snapshot` input on
+`wp-evidence-nightly.yml`; the producer maps that value to the internal compatibility payload field
+shown above. Do not treat `persist_intake_pr` as an independent publication approval.
 
 For release and other audit-sensitive rebuilds, the producer dispatches the run ID, run attempt,
 artifact ID, and API digest so the consumer cannot drift to a newer branch-head run or a retained
@@ -91,7 +99,8 @@ outer Actions ZIP against the API digest/size, and records them in the snapshot.
 
 The daily `0 6 * * *` schedule resolves the latest successful `wp-evidence-nightly.yml` run on
 `main`, reads its API-verified run attempt, derives
-`wp-intake-bundle-v4-<run-attempt>`, then applies the same validation and rolling-history policy.
+`wp-intake-bundle-v4-<run-attempt>`, and applies the same validation with public persistence
+disabled.
 For transition compatibility only, an attempt-1 run with no qualified artifact may select one
 unique attested `wp-intake-bundle-v4`. There is no scheduled fallback for later attempts or to
 the unattested reviewer pack.
@@ -108,10 +117,15 @@ attestation. The workflow fails if cross-repository authorization is absent; it 
 substitute the whitepaper repository's token. Do not grant Packages, administration, or write
 access to this read-only producer credential.
 
-`WP_INTAKE_PR_TOKEN` is optional and only affects release-snapshot PR creation. If used, scope it
-to `equilens-labs/fl-bsa-whitepaper` with Contents write and Pull requests write. The default
-Actions token remains sufficient for the durable branch when repository policy permits branch
-writes.
+`WP_INTAKE_PR_TOKEN` is required only when public persistence is explicitly approved. Scope it to
+`equilens-labs/fl-bsa-whitepaper` with Contents write and Pull requests write. Scheduled and
+ordinary validation/build runs receive a read-only default Actions token; checkout does not persist
+that credential. The write token is exposed only to the guarded persistence step, which configures
+the Git credential helper after validating literal `true` and fails before Git mutation when the
+token is absent. In GitHub Actions, persistence also requires the exact canonical HTTPS origin for
+`equilens-labs/fl-bsa-whitepaper`: exactly one effective fetch URL and one effective push URL,
+allowing only the optional `.git` suffix. A different repository, an SSH origin, a separate or
+multiple `pushurl`, or a Git URL rewrite is rejected.
 
 Rotate both credentials on the normal CI credential cadence. Never put a token or its contents
 in a dispatch payload, artifact, snapshot record, or tracked file.
