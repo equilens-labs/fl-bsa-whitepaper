@@ -119,7 +119,11 @@ class PullWpIntakeContractTests(unittest.TestCase):
 
     def test_public_snapshot_persistence_is_explicit_and_defaults_off(self) -> None:
         workflow = yaml.safe_load(self.workflow)
+        self.assertEqual("read", workflow["permissions"]["contents"])
+        self.assertEqual("read", workflow["permissions"]["pull-requests"])
         steps = workflow["jobs"]["fetch-build"]["steps"]
+        checkout = next(item for item in steps if str(item.get("uses", "")).startswith("actions/checkout@"))
+        self.assertIs(checkout["with"]["persist-credentials"], False)
         persist = next(item for item in steps if item.get("name") == "Persist intake snapshot")
 
         expression = persist["env"]["PERSIST_INTAKE_SNAPSHOT"]
@@ -132,6 +136,57 @@ class PullWpIntakeContractTests(unittest.TestCase):
         self.assertIn(
             'Skipping intake snapshot persistence because persist_intake_pr=${PERSIST_INTAKE_SNAPSHOT}.',
             persist["run"],
+        )
+        guard = persist["run"].split(
+            'if [ -z "${WP_INTAKE_PR_TOKEN:-}" ]; then', 1
+        )[0]
+        probe = guard + "\nprintf 'persistence-enabled\\n'\n"
+
+        disabled = subprocess.run(
+            ["bash", "-c", probe],
+            env={**os.environ, "PERSIST_INTAKE_SNAPSHOT": "false"},
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(0, disabled.returncode, disabled.stderr)
+        self.assertNotIn("persistence-enabled", disabled.stdout)
+
+        enabled = subprocess.run(
+            ["bash", "-c", probe],
+            env={**os.environ, "PERSIST_INTAKE_SNAPSHOT": "true"},
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(0, enabled.returncode, enabled.stderr)
+        self.assertIn("persistence-enabled", enabled.stdout)
+
+        for malformed in ("", "0", "no", "1", "yes", "tru", " false ", "random"):
+            with self.subTest(malformed=malformed):
+                rejected = subprocess.run(
+                    ["bash", "-c", probe],
+                    env={**os.environ, "PERSIST_INTAKE_SNAPSHOT": malformed},
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertNotEqual(0, rejected.returncode)
+                self.assertIn("expected literal true or false", rejected.stderr)
+
+        self.assertNotIn("GH_TOKEN", persist["env"])
+        self.assertEqual(
+            "${{ secrets.WP_INTAKE_PR_TOKEN }}",
+            persist["env"]["WP_INTAKE_PR_TOKEN"],
+        )
+        self.assertIn("Explicit public intake persistence requires WP_INTAKE_PR_TOKEN", persist["run"])
+        self.assertIn('export GH_TOKEN="$WP_INTAKE_PR_TOKEN"', persist["run"])
+        self.assertIn("gh auth setup-git", persist["run"])
+        self.assertIn('if [ "${GITHUB_ACTIONS:-}" = "true" ]; then', persist["run"])
+        self.assertIn("Refusing public persistence through unexpected Actions origin", persist["run"])
+        self.assertLess(
+            persist["run"].index("gh auth setup-git"),
+            persist["run"].index('git push origin "$anchor_commit:refs/heads/$branch"'),
         )
 
     def test_required_anchors_are_mutation_sensitive(self) -> None:
@@ -490,7 +545,7 @@ class PullWpIntakeContractTests(unittest.TestCase):
                     "INTAKE_SNAPSHOT_ID": snapshot_id,
                     "PERSIST_INTAKE_SNAPSHOT": "true",
                     "GH_TOKEN": "unused",
-                    "WP_INTAKE_PR_TOKEN": "",
+                    "WP_INTAKE_PR_TOKEN": "unused-test-token",
                 }
                 completed = subprocess.run(
                     ["bash", "-c", persist],

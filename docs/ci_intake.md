@@ -80,10 +80,15 @@ The accepted producers are deliberately narrow:
   restricted to explicit first-attempt legacy compatibility (never an automatic fallback)
 
 `persist_intake_pr` is retained as a compatibility payload name. It controls public snapshot
-persistence and defaults to `false`. For an explicitly approved nightly input, `true` means the
+persistence and defaults to `false`. Only literal `true` or `false` (case-normalized) is accepted;
+malformed or alternate truthy/falsey values fail before any Git mutation. For an explicitly approved nightly input, `true` means the
 rolling history branch and no PR. For an explicitly approved release input, it means the
 workflow-write-once branch plus a best-effort PR. Validation, PDF compilation, and Actions-artifact
 upload still run when it is false; no public intake branch is created or updated.
+
+Product workflow operators use the typed `persist_public_whitepaper_snapshot` input on
+`wp-evidence-nightly.yml`; the producer maps that value to the internal compatibility payload field
+shown above. Do not treat `persist_intake_pr` as an independent publication approval.
 
 For release and other audit-sensitive rebuilds, the producer dispatches the run ID, run attempt,
 artifact ID, and API digest so the consumer cannot drift to a newer branch-head run or a retained
@@ -112,10 +117,12 @@ attestation. The workflow fails if cross-repository authorization is absent; it 
 substitute the whitepaper repository's token. Do not grant Packages, administration, or write
 access to this read-only producer credential.
 
-`WP_INTAKE_PR_TOKEN` is optional and only affects release-snapshot PR creation. If used, scope it
-to `equilens-labs/fl-bsa-whitepaper` with Contents write and Pull requests write. When public
-persistence is explicitly approved, the default Actions token remains sufficient for the durable
-branch when repository policy permits branch writes.
+`WP_INTAKE_PR_TOKEN` is required only when public persistence is explicitly approved. Scope it to
+`equilens-labs/fl-bsa-whitepaper` with Contents write and Pull requests write. Scheduled and
+ordinary validation/build runs receive a read-only default Actions token; checkout does not persist
+that credential. The write token is exposed only to the guarded persistence step, which configures
+the Git credential helper after validating literal `true` and fails before Git mutation when the
+token is absent.
 
 Rotate both credentials on the normal CI credential cadence. Never put a token or its contents
 in a dispatch payload, artifact, snapshot record, or tracked file.
