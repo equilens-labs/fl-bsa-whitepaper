@@ -37,7 +37,7 @@ class PullWpIntakeContractTests(unittest.TestCase):
             '--producer-artifact-digest "$SELECTED_PRODUCER_ARTIFACT_DIGEST"',
             "--output intake/whitepaper_snapshot.json",
             'if [[ ! "$run_id" =~ ^[1-9][0-9]*$ ]]; then',
-            'gh api "repos/${PRODUCER_REPO}/actions/runs/${run_id}"',
+            'if ! run_json="$(gh api "repos/${PRODUCER_REPO}/actions/runs/${run_id}")"; then',
             "for ((attempt=1; attempt<=81; attempt++)); do",
             'if [ "$run_status" = "completed" ]; then',
             'if [ "$run_conclusion" != "success" ]; then',
@@ -114,8 +114,153 @@ class PullWpIntakeContractTests(unittest.TestCase):
                 workflow,
             )
 
+        self.assert_scheduled_freshness_contract(workflow)
+
+    def assert_scheduled_freshness_contract(self, workflow: str) -> None:
+        download = workflow.split(
+            "      - name: Download intake bundle from producer", 1
+        )[1].split("      - name: Unpack intake bundle", 1)[0]
+        newest_resolver = download.split(
+            "          resolve_latest_producer_run() {", 1
+        )[1].split("\n          }\n\n          scheduled_authority_sha", 1)[0]
+
+        self.assertIn(
+            'gh api "repos/${PRODUCER_REPO}/git/ref/heads/${PRODUCER_BRANCH}"',
+            download,
+        )
+        self.assertIn("--json databaseId,headSha", newest_resolver)
+        self.assertIn("--limit 1", newest_resolver)
+        self.assertNotIn(
+            "--status success",
+            newest_resolver,
+            "scheduled discovery must consider the newest run regardless of status",
+        )
+        self.assertIn(
+            'scheduled_authority_sha="$(resolve_producer_branch_sha)"', download
+        )
+        self.assertIn(
+            'if [ "$scheduled_run_head_sha" != "$scheduled_authority_sha" ]; then',
+            download,
+        )
+        self.assertIn("Refusing to fall back to an older successful run.", download)
+        self.assertIn(
+            '[ "$(jq -r \'.head_sha\' <<<"$run_json")" != "$scheduled_authority_sha" ]',
+            download,
+        )
+
+        dispatch_selection = download.split(
+            '            else\n              run_id="$(gh run list', 1
+        )[1].split("            fi\n", 1)[0]
+        self.assertIn(
+            "--status success",
+            dispatch_selection,
+            "dispatch discovery behavior must remain unchanged",
+        )
+
+        recheck_start = (
+            'current_authority_sha_before="$(resolve_producer_branch_sha)"'
+        )
+        recheck = recheck_start + download.split(
+            '          if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then\n'
+            f"            {recheck_start}",
+            1,
+        )[1]
+        self.assertIn(
+            '[ "$current_authority_sha_before" != "$scheduled_authority_sha" ]',
+            recheck,
+        )
+        self.assertIn(
+            '[ "$current_authority_sha_after" != "$scheduled_authority_sha" ]',
+            recheck,
+        )
+        self.assertIn('[ "$current_latest_run_id" != "$run_id" ]', recheck)
+        self.assertIn(
+            '[ "$current_latest_run_head_sha" != "$scheduled_authority_sha" ]',
+            recheck,
+        )
+        self.assertIn(
+            'current_run_json="$(gh api "repos/${PRODUCER_REPO}/actions/runs/${run_id}")"',
+            recheck,
+        )
+        self.assertIn("(.run_attempt | tostring) == $run_attempt", recheck)
+        self.assertIn('.status == "completed"', recheck)
+        self.assertIn('.conclusion == "success"', recheck)
+        self.assertLess(
+            recheck.index(
+                'current_authority_sha_before="$(resolve_producer_branch_sha)"'
+            ),
+            recheck.index(
+                "IFS=$'\\t' read -r current_latest_run_id current_latest_run_head_sha"
+            ),
+        )
+        self.assertLess(
+            recheck.index(
+                "IFS=$'\\t' read -r current_latest_run_id current_latest_run_head_sha"
+            ),
+            recheck.index(
+                'current_run_json="$(gh api '
+                '"repos/${PRODUCER_REPO}/actions/runs/${run_id}")"'
+            ),
+        )
+        self.assertLess(
+            recheck.index(
+                'current_run_json="$(gh api '
+                '"repos/${PRODUCER_REPO}/actions/runs/${run_id}")"'
+            ),
+            recheck.index(
+                'current_authority_sha_after="$(resolve_producer_branch_sha)"'
+            ),
+        )
+        self.assertLess(
+            download.index(
+                'current_authority_sha_after="$(resolve_producer_branch_sha)"'
+            ),
+            download.index('echo "Downloading artifact ${artifact_id}'),
+        )
+
     def test_pull_wp_intake_preserves_append_only_contract(self) -> None:
         self.assert_contract(self.workflow)
+
+    def test_scheduled_pull_selects_and_rechecks_exact_current_authority(
+        self,
+    ) -> None:
+        self.assert_scheduled_freshness_contract(self.workflow)
+
+    def test_scheduled_freshness_contract_is_mutation_sensitive(self) -> None:
+        mutations = (
+            self.workflow.replace(
+                '              --branch "$PRODUCER_BRANCH" \\\n'
+                "              --limit 1 \\\n"
+                "              --json databaseId,headSha)",
+                '              --branch "$PRODUCER_BRANCH" \\\n'
+                "              --status success \\\n"
+                "              --limit 1 \\\n"
+                "              --json databaseId,headSha)",
+                1,
+            ),
+            self.workflow.replace(
+                'if [ "$scheduled_run_head_sha" != "$scheduled_authority_sha" ]; then',
+                'if [ -z "$scheduled_run_head_sha" ]; then',
+                1,
+            ),
+            self.workflow.replace(
+                '[ "$current_authority_sha_before" != "$scheduled_authority_sha" ]',
+                '[ -z "$current_authority_sha_before" ]',
+                1,
+            ),
+            self.workflow.replace(
+                '[ "$current_authority_sha_after" != "$scheduled_authority_sha" ]',
+                '[ -z "$current_authority_sha_after" ]',
+                1,
+            ),
+            self.workflow.replace(
+                "(.run_attempt | tostring) == $run_attempt and", "true and", 1
+            ),
+        )
+        for mutated in mutations:
+            with self.subTest():
+                with self.assertRaises((AssertionError, IndexError)):
+                    self.assert_scheduled_freshness_contract(mutated)
 
     def test_public_snapshot_persistence_is_explicit_and_defaults_off(self) -> None:
         workflow = yaml.safe_load(self.workflow)
@@ -351,7 +496,7 @@ class PullWpIntakeContractTests(unittest.TestCase):
             "queue: max",
             "python scripts/intake_anchor.py snapshot",
             "python scripts/validate_public_intake.py",
-            'gh api "repos/${PRODUCER_REPO}/actions/runs/${run_id}"',
+            'if ! run_json="$(gh api "repos/${PRODUCER_REPO}/actions/runs/${run_id}")"; then',
             "Stage and replace managed intake/config surfaces",
             "producer bundle contains non-public/unreviewed members",
             '.head_repository.full_name == $producer_repo',

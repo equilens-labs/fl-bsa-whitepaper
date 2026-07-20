@@ -97,10 +97,18 @@ outer Actions ZIP against the API digest/size, and records them in the snapshot.
 
 ### Scheduled pull
 
-The daily `0 6 * * *` schedule resolves the latest successful `wp-evidence-nightly.yml` run on
-`main`, reads its API-verified run attempt, derives
-`wp-intake-bundle-v4-<run-attempt>`, and applies the same validation with public persistence
-disabled.
+The daily `0 6 * * *` schedule resolves the current `equilens-labs/fl-bsa@main` commit and the
+newest `wp-evidence-nightly.yml` run on `main` without filtering by run status. The newest run must
+be for that exact current commit. The consumer then waits only on that run: queued or in-progress
+authority is polled, while a failed, cancelled, timed-out, stale-head, or otherwise unsuccessful
+authority fails the pull. It never searches backward for an older successful run.
+
+Immediately before downloading artifact bytes, the consumer re-resolves `fl-bsa@main`, the newest
+matching producer run, and the selected run attempt/status. Any branch, run, attempt, or conclusion
+drift fails closed so a run that became stale during the bounded wait cannot be consumed. Once the
+authority remains exact, the workflow derives `wp-intake-bundle-v4-<run-attempt>` and applies the
+same validation with public persistence disabled.
+
 For transition compatibility only, an attempt-1 run with no qualified artifact may select one
 unique attested `wp-intake-bundle-v4`. There is no scheduled fallback for later attempts or to
 the unattested reviewer pack.
@@ -142,7 +150,9 @@ run ID (discovered or dispatched) is resolved through the Actions API and must b
 the exact workflow path, approved event, source repository, and branch policy, and reach
 `completed/success` within a bounded 20-minute poll. Nightly intake is restricted to `main`;
 release intake is restricted to an exact semantic release branch whose suffix and corresponding
-Git tag both resolve to the run head.
+Git tag both resolve to the run head. Scheduled discovery additionally binds the newest run,
+regardless of status, to the current `fl-bsa@main` ref and repeats that authority check immediately
+before artifact consumption; it never substitutes an older green run.
 After unpacking, the bundle product commit and every recorded commit alias must equal that
 API-verified run head SHA.
 

@@ -111,19 +111,78 @@ jobs:
             export GH_TOKEN="$token"
           fi
 
-          run_id="$PRODUCER_RUN_ID"
-          if [ -z "$run_id" ]; then
-            run_id="$(gh run list \
+          resolve_producer_branch_sha() {
+            local ref_json
+            if ! ref_json="$(gh api "repos/${PRODUCER_REPO}/git/ref/heads/${PRODUCER_BRANCH}")"; then
+              echo "Unable to resolve ${PRODUCER_REPO} branch ${PRODUCER_BRANCH}." >&2
+              return 1
+            fi
+            if ! jq -e \
+              --arg expected_ref "refs/heads/${PRODUCER_BRANCH}" \
+              '.ref == $expected_ref and
+               .object.type == "commit" and
+               ((.object.sha // "") | test("^[0-9a-f]{40}$"))' \
+              <<<"$ref_json" >/dev/null; then
+              jq '{ref, object}' <<<"$ref_json" >&2
+              echo "Producer branch ${PRODUCER_BRANCH} has an invalid authority response." >&2
+              return 1
+            fi
+            jq -r '.object.sha' <<<"$ref_json"
+          }
+
+          resolve_latest_producer_run() {
+            local runs_json
+            if ! runs_json="$(gh run list \
               -R "$PRODUCER_REPO" \
               --workflow "$PRODUCER_WORKFLOW" \
               --branch "$PRODUCER_BRANCH" \
-              --status success \
               --limit 1 \
-              --json databaseId \
-              --jq '.[0].databaseId // empty')"
+              --json databaseId,headSha)"; then
+              echo "Unable to list ${PRODUCER_REPO}/${PRODUCER_WORKFLOW}@${PRODUCER_BRANCH} runs." >&2
+              return 1
+            fi
+            if ! jq -e \
+              'length == 1 and
+               ((.[0].databaseId | tostring) | test("^[1-9][0-9]*$")) and
+               ((.[0].headSha // "") | test("^[0-9a-f]{40}$"))' \
+              <<<"$runs_json" >/dev/null; then
+              jq '[.[] | {databaseId, headSha}]' <<<"$runs_json" >&2
+              echo "No unambiguous newest producer run is available." >&2
+              return 1
+            fi
+            jq -r '.[0] | [(.databaseId | tostring), .headSha] | @tsv' <<<"$runs_json"
+          }
+
+          scheduled_authority_sha=""
+          run_id="$PRODUCER_RUN_ID"
+          if [ -z "$run_id" ]; then
+            if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
+              scheduled_authority_sha="$(resolve_producer_branch_sha)"
+              IFS=$'\t' read -r run_id scheduled_run_head_sha \
+                <<<"$(resolve_latest_producer_run)"
+              if [ "$scheduled_run_head_sha" != "$scheduled_authority_sha" ]; then
+                echo "Newest scheduled producer run ${run_id} is for ${scheduled_run_head_sha}, not current ${PRODUCER_REPO}/${PRODUCER_BRANCH} authority ${scheduled_authority_sha}." >&2
+                echo "Refusing to fall back to an older successful run." >&2
+                exit 1
+              fi
+              echo "Scheduled intake bound to newest producer run ${run_id} at current branch authority ${scheduled_authority_sha}."
+            else
+              run_id="$(gh run list \
+                -R "$PRODUCER_REPO" \
+                --workflow "$PRODUCER_WORKFLOW" \
+                --branch "$PRODUCER_BRANCH" \
+                --status success \
+                --limit 1 \
+                --json databaseId \
+                --jq '.[0].databaseId // empty')"
+            fi
           fi
           if [ -z "$run_id" ]; then
-            echo "No successful ${PRODUCER_REPO}/${PRODUCER_WORKFLOW}@${PRODUCER_BRANCH} run found." >&2
+            if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
+              echo "No newest ${PRODUCER_REPO}/${PRODUCER_WORKFLOW}@${PRODUCER_BRANCH} run authority found." >&2
+            else
+              echo "No successful ${PRODUCER_REPO}/${PRODUCER_WORKFLOW}@${PRODUCER_BRANCH} run found." >&2
+            fi
             exit 1
           fi
 
@@ -152,6 +211,12 @@ jobs:
               <<<"$run_json" >/dev/null; then
               jq '{id, status, conclusion, path, head_branch, head_sha}' <<<"$run_json" >&2
               echo "Producer run ${run_id} does not match the required workflow, branch, and head-SHA contract." >&2
+              exit 1
+            fi
+            if [ "$GITHUB_EVENT_NAME" = "schedule" ] && \
+               [ "$(jq -r '.head_sha' <<<"$run_json")" != "$scheduled_authority_sha" ]; then
+              jq '{id, status, conclusion, path, head_branch, head_sha}' <<<"$run_json" >&2
+              echo "Scheduled producer run ${run_id} is no longer bound to authority ${scheduled_authority_sha}." >&2
               exit 1
             fi
 
@@ -337,6 +402,40 @@ jobs:
           fi
           if [ "$PRODUCER_ARTIFACT" = "wp-reviewer-pack-v4" ]; then
             echo "::warning title=Explicit legacy compatibility path::wp-reviewer-pack-v4 is unattested and is accepted only because this exact legacy artifact name was requested."
+          fi
+
+          if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
+            current_authority_sha_before="$(resolve_producer_branch_sha)"
+            IFS=$'\t' read -r current_latest_run_id current_latest_run_head_sha \
+              <<<"$(resolve_latest_producer_run)"
+            if ! current_run_json="$(gh api "repos/${PRODUCER_REPO}/actions/runs/${run_id}")"; then
+              echo "Unable to re-resolve scheduled producer run ${run_id} before artifact consumption." >&2
+              exit 1
+            fi
+            current_authority_sha_after="$(resolve_producer_branch_sha)"
+            if [ "$current_authority_sha_before" != "$scheduled_authority_sha" ] || \
+               [ "$current_authority_sha_after" != "$scheduled_authority_sha" ] || \
+               [ "$current_latest_run_id" != "$run_id" ] || \
+               [ "$current_latest_run_head_sha" != "$scheduled_authority_sha" ]; then
+              echo "Scheduled producer authority changed before artifact consumption." >&2
+              echo "selected=${run_id}/${scheduled_authority_sha} current=${current_latest_run_id}/${current_latest_run_head_sha} branch_before=${current_authority_sha_before} branch_after=${current_authority_sha_after}" >&2
+              echo "Refusing stale intake; the next schedule must select and wait on the new exact authority." >&2
+              exit 1
+            fi
+            if ! jq -e \
+              --arg run_id "$run_id" \
+              --arg run_attempt "$run_attempt" \
+              --arg authority_sha "$scheduled_authority_sha" \
+              '(.id | tostring) == $run_id and
+               (.run_attempt | tostring) == $run_attempt and
+               .head_sha == $authority_sha and
+               .status == "completed" and
+               .conclusion == "success"' \
+              <<<"$current_run_json" >/dev/null; then
+              jq '{id, run_attempt, status, conclusion, head_sha}' <<<"$current_run_json" >&2
+              echo "Scheduled producer run identity changed before artifact consumption." >&2
+              exit 1
+            fi
           fi
 
           echo "Downloading artifact ${artifact_id} (${PRODUCER_ARTIFACT}) from ${PRODUCER_REPO} run ${run_id} attempt ${run_attempt}"
