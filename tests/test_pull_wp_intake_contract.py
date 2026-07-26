@@ -87,6 +87,10 @@ class PullWpIntakeContractTests(unittest.TestCase):
             '>> "$GITHUB_STEP_SUMMARY"',
             "name: intake-pr-soft-fail-${{ github.run_attempt }}",
             "path: dist/intake-pr-soft-fail/intake_pr_soft_fail.json",
+            "name: whitepaper-intake-receipt-${{ github.run_attempt }}",
+            "intake/whitepaper_snapshot.json",
+            "if-no-files-found: error",
+            "retention-days: 90",
         )
         for fragment in required:
             self.assertIn(fragment, workflow)
@@ -97,6 +101,14 @@ class PullWpIntakeContractTests(unittest.TestCase):
         self.assertLess(
             workflow.index('if [ "$mode" = "rolling_history" ]; then'),
             workflow.index('if gh pr view "$branch"'),
+        )
+        self.assertLess(
+            workflow.index("      - name: Assert public demo watermark in PDF"),
+            workflow.index("      - name: Upload exact intake receipt"),
+        )
+        self.assertLess(
+            workflow.index("      - name: Upload exact intake receipt"),
+            workflow.index("      - name: Persist intake snapshot"),
         )
 
         guard = re.search(
