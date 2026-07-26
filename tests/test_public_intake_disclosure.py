@@ -176,6 +176,46 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
             ):
                 DISCLOSURE.validate_bundle(bundle, ROOT)
 
+    def test_srg_point_must_match_selection_rate_difference(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = self._bundle(Path(tmp))
+            path = bundle / "intake" / "metrics_uncertainty.json"
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            payload["fairness_uncertainty"]["gender"]["srg"]["point"] = 0.999
+            path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                DISCLOSURE.DisclosureError,
+                "does not match protected-minus-reference selection rates",
+            ):
+                DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_srg_selection_rate_and_gap_points_must_be_bounded_numbers(self) -> None:
+        mutations = (
+            (
+                lambda pair: pair["selection_rates"]["ref"].__setitem__("p", -0.1),
+                "reference selection rate is outside the reviewed point bounds",
+            ),
+            (
+                lambda pair: pair["selection_rates"]["prot"].__setitem__("p", 1.1),
+                "protected selection rate is outside the reviewed point bounds",
+            ),
+            (
+                lambda pair: pair["srg"].__setitem__("point", 2.0),
+                "SRG point is outside the reviewed point bounds",
+            ),
+        )
+        for mutate, expected in mutations:
+            with self.subTest(expected=expected), tempfile.TemporaryDirectory() as tmp:
+                bundle = self._bundle(Path(tmp))
+                path = bundle / "intake" / "metrics_uncertainty.json"
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                mutate(payload["fairness_uncertainty"]["gender"])
+                path.write_text(json.dumps(payload), encoding="utf-8")
+
+                with self.assertRaisesRegex(DISCLOSURE.DisclosureError, expected):
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+
     def test_reviewed_srg_method_correction_history_passes(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             bundle = self._bundle(Path(tmp))

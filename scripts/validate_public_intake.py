@@ -597,8 +597,27 @@ def _numeric_interval(
     return lower, upper
 
 
+def _numeric_point(
+    value: Any,
+    *,
+    location: str,
+    lower_limit: float,
+    upper_limit: float,
+) -> float:
+    if (
+        not isinstance(value, (int, float))
+        or isinstance(value, bool)
+        or not math.isfinite(float(value))
+    ):
+        raise DisclosureError(f"{location} is not a reviewed finite point")
+    point = float(value)
+    if point < lower_limit or point > upper_limit:
+        raise DisclosureError(f"{location} is outside the reviewed point bounds")
+    return point
+
+
 def _validate_srg_artifact(payload: Any, location: str) -> None:
-    """Require exact SRG method labels, interval arithmetic, and correction bindings."""
+    """Require exact SRG method labels, point/bound arithmetic, and correction bindings."""
 
     if not isinstance(payload, dict):
         raise DisclosureError(f"{location} is not a JSON object")
@@ -632,6 +651,24 @@ def _validate_srg_artifact(payload: Any, location: str) -> None:
             protected_interval = (
                 protected.get("ci95") if isinstance(protected, dict) else None
             )
+            reference_point = _numeric_point(
+                reference.get("p") if isinstance(reference, dict) else None,
+                location=f"{location}:SRG reference selection rate",
+                lower_limit=0.0,
+                upper_limit=1.0,
+            )
+            protected_point = _numeric_point(
+                protected.get("p") if isinstance(protected, dict) else None,
+                location=f"{location}:SRG protected selection rate",
+                lower_limit=0.0,
+                upper_limit=1.0,
+            )
+            actual_point = _numeric_point(
+                srg.get("point"),
+                location=f"{location}:SRG point",
+                lower_limit=-1.0,
+                upper_limit=1.0,
+            )
             ref_lower, ref_upper = _numeric_interval(
                 reference_interval,
                 location=f"{location}:SRG reference interval",
@@ -650,6 +687,17 @@ def _validate_srg_artifact(payload: Any, location: str) -> None:
                 lower_limit=-1.0,
                 upper_limit=1.0,
             )
+            expected_point = protected_point - reference_point
+            if not math.isclose(
+                actual_point,
+                expected_point,
+                rel_tol=0.0,
+                abs_tol=1e-12,
+            ):
+                raise DisclosureError(
+                    f"{location} contains an SRG point that does not match "
+                    "protected-minus-reference selection rates"
+                )
             expected = (prot_lower - ref_upper, prot_upper - ref_lower)
             if not all(
                 math.isclose(actual, required, rel_tol=0.0, abs_tol=1e-12)

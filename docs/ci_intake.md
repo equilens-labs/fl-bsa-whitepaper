@@ -170,11 +170,13 @@ IP addresses, sensitive identity fields, control characters, and oversized value
 A legitimate producer schema expansion therefore requires a reviewed public baseline change in
 this repository before the corresponding private data can cross the boundary.
 The same validator requires every SRG-bearing uncertainty and slice block to name
-`conservative_wilson_endpoint_difference`, recomputes its bounds from the protected and reference
-Wilson endpoints, and binds that method in the provenance manifest and run summary. A producer may
-carry a legacy-label correction history only with the exact reviewed JSON-pointer contract,
-`interval_values_changed=false`, and a pointer to a validated current-method SRG block. Legacy,
-unknown, arithmetically inconsistent, duplicate, malformed, or unbound corrections fail closed.
+`conservative_wilson_endpoint_difference`, requires finite protected/reference selection rates,
+recomputes the SRG point as protected minus reference, recomputes its bounds from the protected and
+reference Wilson endpoints, and binds that method in the provenance manifest and run summary. A
+producer may carry a legacy-label correction history only with the exact reviewed JSON-pointer
+contract, `interval_values_changed=false`, and a pointer to a validated current-method SRG block.
+Legacy, unknown, arithmetically inconsistent, duplicate, malformed, or unbound corrections fail
+closed.
 The validator itself carries four narrow reviewed empty-baseline/additive schemas: broken
 correlation rows and range-violation rows may reference only column names already disclosed by
 the tracked certificate, the SRG correction history may appear only on the two reviewed
