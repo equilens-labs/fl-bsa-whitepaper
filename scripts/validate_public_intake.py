@@ -138,6 +138,24 @@ _CI_RUNTIME_MANIFEST_LOCATIONS = {
     "intake/manifest.json",
     "provenance/manifest.json",
 }
+_SRG_ARTIFACT_LOCATIONS = {
+    "intake/fairness_slices.json",
+    "intake/metrics_uncertainty.json",
+}
+_SRG_PROVENANCE_LOCATIONS = {
+    "intake/manifest.json",
+    "intake/run_summary.json",
+    "provenance/manifest.json",
+}
+_SRG_CI_METHOD = "conservative_wilson_endpoint_difference"
+_LEGACY_SRG_CI_METHOD = "newcombe_wilson"
+_SRG_CORRECTION_ITEM_SCHEMA = {
+    "field": "",
+    "from": "",
+    "to": "",
+    "scope": "",
+    "interval_values_changed": False,
+}
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
@@ -303,6 +321,21 @@ def _validate_structure(
                 )
                 _validate_ci_runtime_provenance(
                     value, f"{location}.ci_runtime_provenance"
+                )
+                continue
+            if (
+                location in _SRG_ARTIFACT_LOCATIONS
+                and key == "method_label_corrections"
+            ):
+                # Product-side Gate-WP may add this reviewed audit trail while
+                # correcting a verified legacy method label in the derived
+                # bundle. Its exact semantics and JSON-pointer bindings are
+                # validated after the ordinary disclosure-shape pass.
+                _validate_structure(
+                    value,
+                    [_SRG_CORRECTION_ITEM_SCHEMA],
+                    f"{location}.method_label_corrections",
+                    depth=depth + 1,
                 )
                 continue
             if key not in baseline:
@@ -527,12 +560,155 @@ def _validate_ci_runtime_manifest_binding(manifest: Any, location: str) -> None:
         manifest.get("container_digest") != digest_ref
         or not isinstance(container_digests, dict)
         or container_digests.get("api_image_digest") != runtime["api_digest_ref"]
-        or container_digests.get("worker_image_digest")
-        != runtime["worker_digest_ref"]
+        or container_digests.get("worker_image_digest") != runtime["worker_digest_ref"]
     ):
         raise DisclosureError(
             f"{location}.ci_runtime_provenance is not bound to the enclosing "
             "runtime image identity; values redacted"
+        )
+
+
+def _json_pointer(parts: tuple[str | int, ...]) -> str:
+    tokens = [str(part).replace("~", "~0").replace("/", "~1") for part in parts]
+    return "/" + "/".join(tokens)
+
+
+def _numeric_interval(
+    value: Any,
+    *,
+    location: str,
+    lower_limit: float,
+    upper_limit: float,
+) -> tuple[float, float]:
+    if (
+        not isinstance(value, list)
+        or len(value) != 2
+        or not all(
+            isinstance(item, (int, float))
+            and not isinstance(item, bool)
+            and math.isfinite(float(item))
+            for item in value
+        )
+    ):
+        raise DisclosureError(f"{location} is not a reviewed finite interval")
+    lower, upper = float(value[0]), float(value[1])
+    if lower > upper or lower < lower_limit or upper > upper_limit:
+        raise DisclosureError(f"{location} is outside the reviewed interval bounds")
+    return lower, upper
+
+
+def _validate_srg_artifact(payload: Any, location: str) -> None:
+    """Require exact SRG method labels, interval arithmetic, and correction bindings."""
+
+    if not isinstance(payload, dict):
+        raise DisclosureError(f"{location} is not a JSON object")
+
+    visited_methods: dict[str, str] = {}
+
+    def _visit(node: Any, parts: tuple[str | int, ...]) -> None:
+        if isinstance(node, list):
+            for index, value in enumerate(node):
+                _visit(value, (*parts, index))
+            return
+        if not isinstance(node, dict):
+            return
+        if "srg" in node:
+            srg = node["srg"]
+            srg_path = _json_pointer((*parts, "srg"))
+            if not isinstance(srg, dict):
+                raise DisclosureError(f"{location} contains a non-object SRG block")
+            method_path = f"{srg_path}/method"
+            if srg.get("method") != _SRG_CI_METHOD:
+                raise DisclosureError(
+                    f"{location} contains an unsupported SRG interval method"
+                )
+
+            rates = node.get("selection_rates")
+            reference = rates.get("ref") if isinstance(rates, dict) else None
+            protected = rates.get("prot") if isinstance(rates, dict) else None
+            reference_interval = (
+                reference.get("ci95") if isinstance(reference, dict) else None
+            )
+            protected_interval = (
+                protected.get("ci95") if isinstance(protected, dict) else None
+            )
+            ref_lower, ref_upper = _numeric_interval(
+                reference_interval,
+                location=f"{location}:SRG reference interval",
+                lower_limit=0.0,
+                upper_limit=1.0,
+            )
+            prot_lower, prot_upper = _numeric_interval(
+                protected_interval,
+                location=f"{location}:SRG protected interval",
+                lower_limit=0.0,
+                upper_limit=1.0,
+            )
+            actual_lower, actual_upper = _numeric_interval(
+                srg.get("ci95"),
+                location=f"{location}:SRG interval",
+                lower_limit=-1.0,
+                upper_limit=1.0,
+            )
+            expected = (prot_lower - ref_upper, prot_upper - ref_lower)
+            if not all(
+                math.isclose(actual, required, rel_tol=0.0, abs_tol=1e-12)
+                for actual, required in zip((actual_lower, actual_upper), expected)
+            ):
+                raise DisclosureError(
+                    f"{location} contains an SRG interval that does not match "
+                    "conservative Wilson endpoint subtraction"
+                )
+            visited_methods[method_path] = _SRG_CI_METHOD
+
+        for key, value in node.items():
+            _visit(value, (*parts, str(key)))
+
+    _visit(payload, ())
+    if not visited_methods:
+        raise DisclosureError(f"{location} contains no reviewable SRG method")
+
+    history = payload.get("method_label_corrections", [])
+    if not isinstance(history, list):
+        raise DisclosureError(f"{location} has invalid SRG method correction history")
+    seen_fields: set[str] = set()
+    expected_keys = set(_SRG_CORRECTION_ITEM_SCHEMA)
+    for entry in history:
+        if not isinstance(entry, dict) or set(entry) != expected_keys:
+            raise DisclosureError(
+                f"{location} has invalid SRG method correction history"
+            )
+        field = entry.get("field")
+        if (
+            not isinstance(field, str)
+            or not field.startswith("/")
+            or re.search(r"~(?![01])", field) is not None
+            or (field != "/srg/method" and not field.endswith("/srg/method"))
+            or field in seen_fields
+            or entry.get("from") != _LEGACY_SRG_CI_METHOD
+            or entry.get("to") != _SRG_CI_METHOD
+            or entry.get("scope") != "metadata_label_only"
+            or entry.get("interval_values_changed") is not False
+            or visited_methods.get(field) != _SRG_CI_METHOD
+        ):
+            raise DisclosureError(
+                f"{location} has invalid or unbound SRG method correction history"
+            )
+        seen_fields.add(field)
+
+
+def _validate_srg_provenance(payload: Any, location: str) -> None:
+    """Bind structured whitepaper metadata to the reviewed SRG method."""
+
+    inference = payload.get("inference") if isinstance(payload, dict) else None
+    methods = (
+        inference.get("headline_interval_methods")
+        if isinstance(inference, dict)
+        else None
+    )
+    if not isinstance(methods, dict) or methods.get("srg") != _SRG_CI_METHOD:
+        raise DisclosureError(
+            f"{location} does not bind the reviewed SRG interval method"
         )
 
 
@@ -744,16 +920,17 @@ def validate_bundle(bundle_root: Path, schema_root: Path) -> None:
         else:
             candidate_payload = _load_structured(candidate)
             baseline_payload = _load_structured(baseline)
-            _validate_structure(
-                candidate_payload, baseline_payload, relative.as_posix()
-            )
-            if relative.as_posix() in _CI_RUNTIME_MANIFEST_LOCATIONS:
-                _validate_ci_runtime_manifest_binding(
-                    candidate_payload, relative.as_posix()
-                )
+            relative_name = relative.as_posix()
+            _validate_structure(candidate_payload, baseline_payload, relative_name)
+            if relative_name in _CI_RUNTIME_MANIFEST_LOCATIONS:
+                _validate_ci_runtime_manifest_binding(candidate_payload, relative_name)
+            if relative_name in _SRG_ARTIFACT_LOCATIONS:
+                _validate_srg_artifact(candidate_payload, relative_name)
+            if relative_name in _SRG_PROVENANCE_LOCATIONS:
+                _validate_srg_provenance(candidate_payload, relative_name)
             if relative.parts[0] == "certificates":
                 _validate_certificate_semantics(
-                    candidate_payload, baseline_payload, relative.as_posix()
+                    candidate_payload, baseline_payload, relative_name
                 )
 
 

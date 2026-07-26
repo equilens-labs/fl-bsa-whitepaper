@@ -169,9 +169,16 @@ keys, new fields/columns, high-confidence credentials, email addresses, user-hom
 IP addresses, sensitive identity fields, control characters, and oversized values fail closed.
 A legitimate producer schema expansion therefore requires a reviewed public baseline change in
 this repository before the corresponding private data can cross the boundary.
-The validator itself carries three narrow reviewed empty-baseline/additive schemas: broken
+The same validator requires every SRG-bearing uncertainty and slice block to name
+`conservative_wilson_endpoint_difference`, recomputes its bounds from the protected and reference
+Wilson endpoints, and binds that method in the provenance manifest and run summary. A producer may
+carry a legacy-label correction history only with the exact reviewed JSON-pointer contract,
+`interval_values_changed=false`, and a pointer to a validated current-method SRG block. Legacy,
+unknown, arithmetically inconsistent, duplicate, malformed, or unbound corrections fail closed.
+The validator itself carries four narrow reviewed empty-baseline/additive schemas: broken
 correlation rows and range-violation rows may reference only column names already disclosed by
-the tracked certificate, and `ci_runtime_provenance` may appear in either manifest only with the
+the tracked certificate, the SRG correction history may appear only on the two reviewed
+SRG-bearing artifacts, and `ci_runtime_provenance` may appear in either manifest only with the
 exact `wp.ci_runtime_provenance.v2` bounded product-CI
 run/artifact/runtime-digest/projection shape. Version 2 is the first producer-consumer shape that
 persists runtime build-source identity; the incomplete pre-producer version-1 shape is not

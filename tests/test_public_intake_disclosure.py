@@ -18,11 +18,27 @@ SPEC.loader.exec_module(DISCLOSURE)
 
 
 class PublicIntakeDisclosureTests(unittest.TestCase):
+    @staticmethod
+    def _set_current_srg_methods(payload: object) -> None:
+        if isinstance(payload, list):
+            for value in payload:
+                PublicIntakeDisclosureTests._set_current_srg_methods(value)
+            return
+        if not isinstance(payload, dict):
+            return
+        srg = payload.get("srg")
+        if isinstance(srg, dict):
+            srg["method"] = DISCLOSURE._SRG_CI_METHOD
+        for value in payload.values():
+            PublicIntakeDisclosureTests._set_current_srg_methods(value)
+
     def _bundle(self, root: Path) -> Path:
         bundle = root / "bundle"
         for path in (
+            "intake/fairness_slices.json",
             "intake/metrics_uncertainty.json",
             "intake/metrics_long.csv",
+            "intake/run_summary.json",
             "certificates/synthetic_quality_certificate.json",
             "config/sap.yaml",
             "provenance/manifest.json",
@@ -36,6 +52,25 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
             target = bundle / path
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, target)
+
+        for relative in (
+            "intake/fairness_slices.json",
+            "intake/metrics_uncertainty.json",
+        ):
+            path = bundle / relative
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            self._set_current_srg_methods(payload)
+            path.write_text(json.dumps(payload), encoding="utf-8")
+        for relative in (
+            "intake/run_summary.json",
+            "provenance/manifest.json",
+        ):
+            path = bundle / relative
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            payload["inference"]["headline_interval_methods"]["srg"] = (
+                DISCLOSURE._SRG_CI_METHOD
+            )
+            path.write_text(json.dumps(payload), encoding="utf-8")
         return bundle
 
     @staticmethod
@@ -85,6 +120,120 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
     def test_reviewed_tracked_shapes_pass(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             DISCLOSURE.validate_bundle(self._bundle(Path(tmp)), ROOT)
+
+    def test_legacy_srg_labels_fail_closed_across_consumed_surfaces(self) -> None:
+        mutations = (
+            (
+                "intake/metrics_uncertainty.json",
+                lambda payload: payload["fairness_uncertainty"]["gender"][
+                    "srg"
+                ].__setitem__("method", DISCLOSURE._LEGACY_SRG_CI_METHOD),
+                "unsupported SRG interval method",
+            ),
+            (
+                "intake/fairness_slices.json",
+                lambda payload: payload["slices"]["historical"]["srg"].__setitem__(
+                    "method", DISCLOSURE._LEGACY_SRG_CI_METHOD
+                ),
+                "unsupported SRG interval method",
+            ),
+            (
+                "intake/run_summary.json",
+                lambda payload: payload["inference"][
+                    "headline_interval_methods"
+                ].__setitem__("srg", DISCLOSURE._LEGACY_SRG_CI_METHOD),
+                "does not bind the reviewed SRG interval method",
+            ),
+            (
+                "provenance/manifest.json",
+                lambda payload: payload["inference"][
+                    "headline_interval_methods"
+                ].__setitem__("srg", DISCLOSURE._LEGACY_SRG_CI_METHOD),
+                "does not bind the reviewed SRG interval method",
+            ),
+        )
+        for relative, mutate, expected in mutations:
+            with self.subTest(relative=relative), tempfile.TemporaryDirectory() as tmp:
+                bundle = self._bundle(Path(tmp))
+                path = bundle / relative
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                mutate(payload)
+                path.write_text(json.dumps(payload), encoding="utf-8")
+                with self.assertRaisesRegex(DISCLOSURE.DisclosureError, expected):
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_srg_interval_must_match_reviewed_endpoint_subtraction(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = self._bundle(Path(tmp))
+            path = bundle / "intake" / "metrics_uncertainty.json"
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            payload["fairness_uncertainty"]["gender"]["srg"]["ci95"][0] += 0.001
+            path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                DISCLOSURE.DisclosureError,
+                "does not match conservative Wilson endpoint subtraction",
+            ):
+                DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_reviewed_srg_method_correction_history_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = self._bundle(Path(tmp))
+            path = bundle / "intake" / "metrics_uncertainty.json"
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            payload["method_label_corrections"] = [
+                {
+                    "field": "/fairness_uncertainty/gender/srg/method",
+                    "from": DISCLOSURE._LEGACY_SRG_CI_METHOD,
+                    "to": DISCLOSURE._SRG_CI_METHOD,
+                    "scope": "metadata_label_only",
+                    "interval_values_changed": False,
+                }
+            ]
+            path.write_text(json.dumps(payload), encoding="utf-8")
+
+            DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_srg_method_correction_history_is_exact_and_bound(self) -> None:
+        base_entry = {
+            "field": "/fairness_uncertainty/gender/srg/method",
+            "from": DISCLOSURE._LEGACY_SRG_CI_METHOD,
+            "to": DISCLOSURE._SRG_CI_METHOD,
+            "scope": "metadata_label_only",
+            "interval_values_changed": False,
+        }
+        histories = (
+            [{**base_entry, "field": "/fairness_uncertainty/ghost/srg/method"}],
+            [{**base_entry, "interval_values_changed": True}],
+            [base_entry, dict(base_entry)],
+            [{key: value for key, value in base_entry.items() if key != "scope"}],
+        )
+        for history in histories:
+            with self.subTest(history=history), tempfile.TemporaryDirectory() as tmp:
+                bundle = self._bundle(Path(tmp))
+                path = bundle / "intake" / "metrics_uncertainty.json"
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                payload["method_label_corrections"] = history
+                path.write_text(json.dumps(payload), encoding="utf-8")
+
+                with self.assertRaisesRegex(
+                    DISCLOSURE.DisclosureError,
+                    "invalid.*SRG method correction history",
+                ):
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_srg_correction_extension_is_not_allowed_on_other_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = self._bundle(Path(tmp))
+            path = bundle / "provenance" / "manifest.json"
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            payload["method_label_corrections"] = []
+            path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                DISCLOSURE.DisclosureError, "outside the reviewed public schema"
+            ):
+                DISCLOSURE.validate_bundle(bundle, ROOT)
 
     def test_reviewed_ci_runtime_provenance_passes(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -264,7 +413,9 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
             schema_root = tmp_path / "schema"
             shutil.copytree(ROOT / "intake", schema_root / "intake")
             (schema_root / "config").mkdir(parents=True)
-            shutil.copyfile(ROOT / "config" / "sap.yaml", schema_root / "config" / "sap.yaml")
+            shutil.copyfile(
+                ROOT / "config" / "sap.yaml", schema_root / "config" / "sap.yaml"
+            )
 
             baseline_path = schema_root / "intake" / "manifest.json"
             baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
