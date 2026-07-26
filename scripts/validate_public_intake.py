@@ -16,6 +16,7 @@ import ipaddress
 import json
 import math
 import re
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -616,6 +617,23 @@ def _numeric_point(
     return point
 
 
+def _wilson_95_interval(successes: int, n: int) -> tuple[float, float]:
+    """Recompute the producer's canonical Wilson 95% interval from disclosed counts."""
+
+    p_hat = Decimal(successes) / Decimal(n)
+    z = Decimal("1.96")
+    denominator = Decimal("1") + z**2 / Decimal(n)
+    center = (p_hat + z**2 / (Decimal("2") * Decimal(n))) / denominator
+    margin_inner = p_hat * (Decimal("1") - p_hat) / Decimal(n) + z**2 / (
+        Decimal("4") * Decimal(n) ** 2
+    )
+    margin = z * margin_inner.sqrt() / denominator
+    return (
+        float(max(Decimal("0"), center - margin)),
+        float(min(Decimal("1"), center + margin)),
+    )
+
+
 def _validate_srg_artifact(payload: Any, location: str) -> None:
     """Require exact SRG method labels, point/bound arithmetic, and correction bindings."""
 
@@ -651,6 +669,51 @@ def _validate_srg_artifact(payload: Any, location: str) -> None:
             protected_interval = (
                 protected.get("ci95") if isinstance(protected, dict) else None
             )
+            counts = node.get("counts")
+            required_count_fields = {
+                "ref_n",
+                "prot_n",
+                "ref_approved",
+                "prot_approved",
+            }
+            if not isinstance(counts, dict) or set(counts) != required_count_fields:
+                raise DisclosureError(f"{location} contains non-canonical SRG counts")
+
+            def _canonical_count(name: str) -> int:
+                value = counts.get(name)
+                if type(value) is not int:
+                    raise DisclosureError(
+                        f"{location} contains a non-canonical SRG count {name!r}"
+                    )
+                return value
+
+            ref_n = _canonical_count("ref_n")
+            prot_n = _canonical_count("prot_n")
+            ref_approved = _canonical_count("ref_approved")
+            prot_approved = _canonical_count("prot_approved")
+            if (
+                ref_n <= 0
+                or prot_n <= 0
+                or not 0 <= ref_approved <= ref_n
+                or not 0 <= prot_approved <= prot_n
+            ):
+                raise DisclosureError(f"{location} contains invalid SRG count bounds")
+
+            confidence_level = node.get("confidence_level")
+            if (
+                not isinstance(confidence_level, (int, float))
+                or isinstance(confidence_level, bool)
+                or not math.isfinite(float(confidence_level))
+                or not math.isclose(
+                    float(confidence_level),
+                    0.95,
+                    rel_tol=0.0,
+                    abs_tol=1e-12,
+                )
+            ):
+                raise DisclosureError(
+                    f"{location} contains an invalid SRG confidence level"
+                )
             reference_point = _numeric_point(
                 reference.get("p") if isinstance(reference, dict) else None,
                 location=f"{location}:SRG reference selection rate",
@@ -687,7 +750,40 @@ def _validate_srg_artifact(payload: Any, location: str) -> None:
                 lower_limit=-1.0,
                 upper_limit=1.0,
             )
-            expected_point = protected_point - reference_point
+            expected_reference_point = ref_approved / ref_n
+            expected_protected_point = prot_approved / prot_n
+            if not math.isclose(
+                reference_point,
+                expected_reference_point,
+                rel_tol=0.0,
+                abs_tol=1e-12,
+            ) or not math.isclose(
+                protected_point,
+                expected_protected_point,
+                rel_tol=0.0,
+                abs_tol=1e-12,
+            ):
+                raise DisclosureError(
+                    f"{location} contains SRG selection rates that do not match "
+                    "disclosed counts"
+                )
+
+            expected_reference_interval = _wilson_95_interval(ref_approved, ref_n)
+            expected_protected_interval = _wilson_95_interval(prot_approved, prot_n)
+            if not all(
+                math.isclose(actual, required, rel_tol=0.0, abs_tol=1e-12)
+                for actual, required in zip(
+                    (ref_lower, ref_upper, prot_lower, prot_upper),
+                    (*expected_reference_interval, *expected_protected_interval),
+                    strict=True,
+                )
+            ):
+                raise DisclosureError(
+                    f"{location} contains SRG component intervals that do not match "
+                    "Wilson 95% intervals recomputed from disclosed counts"
+                )
+
+            expected_point = expected_protected_point - expected_reference_point
             if not math.isclose(
                 actual_point,
                 expected_point,
@@ -696,9 +792,12 @@ def _validate_srg_artifact(payload: Any, location: str) -> None:
             ):
                 raise DisclosureError(
                     f"{location} contains an SRG point that does not match "
-                    "protected-minus-reference selection rates"
+                    "protected-minus-reference rates recomputed from disclosed counts"
                 )
-            expected = (prot_lower - ref_upper, prot_upper - ref_lower)
+            expected = (
+                expected_protected_interval[0] - expected_reference_interval[1],
+                expected_protected_interval[1] - expected_reference_interval[0],
+            )
             if not all(
                 math.isclose(actual, required, rel_tol=0.0, abs_tol=1e-12)
                 for actual, required in zip((actual_lower, actual_upper), expected)

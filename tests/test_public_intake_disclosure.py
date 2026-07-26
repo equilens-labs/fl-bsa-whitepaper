@@ -186,7 +186,7 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
 
             with self.assertRaisesRegex(
                 DISCLOSURE.DisclosureError,
-                "does not match protected-minus-reference selection rates",
+                "does not match protected-minus-reference rates",
             ):
                 DISCLOSURE.validate_bundle(bundle, ROOT)
 
@@ -215,6 +215,175 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
 
                 with self.assertRaisesRegex(DISCLOSURE.DisclosureError, expected):
                     DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_srg_claims_bind_counts_rates_confidence_and_wilson_intervals(self) -> None:
+        artifacts = (
+            (
+                "intake/metrics_uncertainty.json",
+                lambda payload: payload["fairness_uncertainty"]["gender"],
+            ),
+            (
+                "intake/fairness_slices.json",
+                lambda payload: payload["slices"]["historical"],
+            ),
+        )
+        mutations = (
+            (
+                "non_integer_count",
+                lambda pair: pair["counts"].__setitem__("ref_n", 100.0),
+                "non-canonical SRG count",
+            ),
+            (
+                "zero_denominator",
+                lambda pair: pair["counts"].__setitem__("ref_n", 0),
+                "invalid SRG count bounds",
+            ),
+            (
+                "approved_above_n",
+                lambda pair: pair["counts"].__setitem__(
+                    "prot_approved", pair["counts"]["prot_n"] + 1
+                ),
+                "invalid SRG count bounds",
+            ),
+            (
+                "wrong_confidence",
+                lambda pair: pair.__setitem__("confidence_level", 0.9),
+                "invalid SRG confidence level",
+            ),
+            (
+                "forged_rate",
+                lambda pair: pair["selection_rates"]["ref"].__setitem__("p", 0.123),
+                "selection rates that do not match disclosed counts",
+            ),
+            (
+                "coherent_count_forgery",
+                lambda pair: pair["counts"].update(
+                    {
+                        "ref_n": 100,
+                        "prot_n": 100,
+                        "ref_approved": 0,
+                        "prot_approved": 100,
+                    }
+                ),
+                "selection rates that do not match disclosed counts",
+            ),
+        )
+
+        for relative, select_pair in artifacts:
+            for name, mutate, expected in mutations:
+                with (
+                    self.subTest(relative=relative, mutation=name),
+                    tempfile.TemporaryDirectory() as tmp,
+                ):
+                    bundle = self._bundle(Path(tmp))
+                    path = bundle / relative
+                    payload = json.loads(path.read_text(encoding="utf-8"))
+                    mutate(select_pair(payload))
+                    path.write_text(json.dumps(payload), encoding="utf-8")
+
+                    with self.assertRaisesRegex(DISCLOSURE.DisclosureError, expected):
+                        DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_srg_component_intervals_must_be_recomputed_from_counts(self) -> None:
+        artifacts = (
+            (
+                "intake/metrics_uncertainty.json",
+                lambda payload: payload["fairness_uncertainty"]["gender"],
+            ),
+            (
+                "intake/fairness_slices.json",
+                lambda payload: payload["slices"]["historical"],
+            ),
+        )
+
+        for relative, select_pair in artifacts:
+            with self.subTest(relative=relative), tempfile.TemporaryDirectory() as tmp:
+                bundle = self._bundle(Path(tmp))
+                path = bundle / relative
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                pair = select_pair(payload)
+                forged_ref_interval = [0.1, 0.2]
+                protected_interval = pair["selection_rates"]["prot"]["ci95"]
+                pair["selection_rates"]["ref"]["ci95"] = forged_ref_interval
+                pair["srg"]["ci95"] = [
+                    protected_interval[0] - forged_ref_interval[1],
+                    protected_interval[1] - forged_ref_interval[0],
+                ]
+                path.write_text(json.dumps(payload), encoding="utf-8")
+
+                with self.assertRaisesRegex(
+                    DISCLOSURE.DisclosureError,
+                    "component intervals that do not match Wilson 95%",
+                ):
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_srg_missing_counts_or_confidence_fail_closed(self) -> None:
+        mutations = (
+            ("counts", "non-canonical SRG counts"),
+            ("confidence_level", "invalid SRG confidence level"),
+        )
+        for field, expected in mutations:
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as tmp:
+                bundle = self._bundle(Path(tmp))
+                path = bundle / "intake" / "metrics_uncertainty.json"
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                pair = payload["fairness_uncertainty"]["gender"]
+                pair.pop(field)
+                path.write_text(json.dumps(payload), encoding="utf-8")
+
+                with self.assertRaisesRegex(
+                    DISCLOSURE.DisclosureError,
+                    f"{expected}|outside the reviewed public schema",
+                ):
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_srg_reviewed_boundary_counts_pass(self) -> None:
+        for root_key, pair_name in (
+            ("fairness_uncertainty", "gender"),
+            ("slices", "historical"),
+        ):
+            for ref_n, ref_approved, prot_n, prot_approved in (
+                (1, 0, 1, 1),
+                (1, 1, 1, 0),
+                (2, 0, 3, 3),
+            ):
+                with self.subTest(
+                    root_key=root_key,
+                    ref=(ref_approved, ref_n),
+                    protected=(prot_approved, prot_n),
+                ):
+                    ref_interval = DISCLOSURE._wilson_95_interval(ref_approved, ref_n)
+                    prot_interval = DISCLOSURE._wilson_95_interval(
+                        prot_approved, prot_n
+                    )
+                    ref_rate = ref_approved / ref_n
+                    prot_rate = prot_approved / prot_n
+                    pair = {
+                        "counts": {
+                            "ref_n": ref_n,
+                            "prot_n": prot_n,
+                            "ref_approved": ref_approved,
+                            "prot_approved": prot_approved,
+                        },
+                        "selection_rates": {
+                            "ref": {"p": ref_rate, "ci95": list(ref_interval)},
+                            "prot": {"p": prot_rate, "ci95": list(prot_interval)},
+                        },
+                        "srg": {
+                            "point": prot_rate - ref_rate,
+                            "ci95": [
+                                prot_interval[0] - ref_interval[1],
+                                prot_interval[1] - ref_interval[0],
+                            ],
+                            "method": DISCLOSURE._SRG_CI_METHOD,
+                        },
+                        "confidence_level": 0.95,
+                    }
+
+                    DISCLOSURE._validate_srg_artifact(
+                        {root_key: {pair_name: pair}},
+                        f"boundary:{root_key}",
+                    )
 
     def test_reviewed_srg_method_correction_history_passes(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
