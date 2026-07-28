@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import re
@@ -35,6 +36,7 @@ class PullWpIntakeContractTests(unittest.TestCase):
             '--producer-run-attempt "$SELECTED_PRODUCER_RUN_ATTEMPT"',
             '--producer-artifact-id "$SELECTED_PRODUCER_ARTIFACT_ID"',
             '--producer-artifact-digest "$SELECTED_PRODUCER_ARTIFACT_DIGEST"',
+            '--producer-contract-sha256 "$SELECTED_PRODUCER_CONTRACT_SHA256"',
             "--output intake/whitepaper_snapshot.json",
             'if [[ ! "$run_id" =~ ^[1-9][0-9]*$ ]]; then',
             'if ! run_json="$(gh api "repos/${PRODUCER_REPO}/actions/runs/${run_id}")"; then',
@@ -45,9 +47,11 @@ class PullWpIntakeContractTests(unittest.TestCase):
             '((.path // "") | split("@")[0]) == $workflow_path',
             '.head_branch == $branch',
             '.head_repository.full_name == $producer_repo',
-            'wp-evidence-nightly.yml:schedule|wp-evidence-nightly.yml:workflow_dispatch|release-evidence.yml:workflow_dispatch',
-            'gh api "repos/${PRODUCER_REPO}/git/ref/tags/${release_tag}"',
-            'gh api "repos/${PRODUCER_REPO}/git/tags/${release_tag_sha}"',
+            "scripts/whitepaper_intake_producer_contract.py validate-dispatch",
+            "scripts/whitepaper_intake_producer_contract.py validate-selector",
+            "scripts/whitepaper_intake_producer_contract.py validate-authority",
+            "contracts/whitepaper-intake-producer-contract.v1.json",
+            "SELECTED_PRODUCER_CONTRACT_SHA256",
             'run_attempt="$(jq -r \'.run_attempt | tostring\' <<<"$run_json")"',
             'wp-intake-bundle-v4-${run_attempt}',
             'artifact_match_count="$(jq --arg name "$PRODUCER_ARTIFACT"',
@@ -98,6 +102,11 @@ class PullWpIntakeContractTests(unittest.TestCase):
         self.assertNotIn("--force", workflow)
         self.assertNotIn("name: intake-bundle-used", workflow)
         self.assertNotIn("wp-bundle/**/WhitePaper_Intake_Bundle_v4.zip", workflow)
+        self.assertNotIn("release/vMAJOR.MINOR.PATCH-SHA8", workflow)
+        self.assertNotIn('git/ref/tags/${release_tag}', workflow)
+        self.assertNotIn('git/tags/${release_tag_sha}', workflow)
+        self.assertNotIn("wp-evidence-nightly.yml:workflow_dispatch", workflow)
+        self.assertNotIn("release-evidence.yml:workflow_dispatch", workflow)
         self.assertLess(
             workflow.index('if [ "$mode" = "rolling_history" ]; then'),
             workflow.index('if gh pr view "$branch"'),
@@ -237,6 +246,86 @@ class PullWpIntakeContractTests(unittest.TestCase):
         self,
     ) -> None:
         self.assert_scheduled_freshness_contract(self.workflow)
+
+    def test_repository_dispatch_requires_exact_run_and_artifact_identity(
+        self,
+    ) -> None:
+        workflow = yaml.safe_load(self.workflow)
+        download = next(
+            step
+            for step in workflow["jobs"]["fetch-build"]["steps"]
+            if step.get("name") == "Download intake bundle from producer"
+        )["run"]
+        selector_guard = download.split(
+            'token="${PRODUCER_TOKEN:-}"',
+            1,
+        )[0]
+        selector_guard += "\nprintf 'selector-validated\\n'\n"
+        contract_path = WORKFLOW.parents[2] / "contracts" / (
+            "whitepaper-intake-producer-contract.v1.json"
+        )
+        contract_digest = hashlib.sha256(contract_path.read_bytes()).hexdigest()
+        payload = {
+            "artifact_digest": "sha256:" + "a" * 64,
+            "artifact_id": "456",
+            "artifact_name": "wp-intake-bundle-v4-3",
+            "branch": "main",
+            "persist_intake_pr": "false",
+            "producer_contract_sha256": contract_digest,
+            "producer_repo": "equilens-labs/fl-bsa",
+            "producer_run_attempt": "3",
+            "producer_run_id": "123",
+            "workflow_file": "wp-evidence-nightly.yml",
+        }
+        valid_env = {
+            **os.environ,
+            "GITHUB_EVENT_NAME": "repository_dispatch",
+            "PRODUCER_REPO": "equilens-labs/fl-bsa",
+            "PRODUCER_WORKFLOW": "wp-evidence-nightly.yml",
+            "PRODUCER_ARTIFACT": "wp-intake-bundle-v4-3",
+            "PRODUCER_BRANCH": "main",
+            "PRODUCER_RUN_ID": "123",
+            "PRODUCER_RUN_ATTEMPT": "3",
+            "PRODUCER_ARTIFACT_ID": "456",
+            "PRODUCER_ARTIFACT_DIGEST": "sha256:" + "a" * 64,
+            "DISPATCH_PAYLOAD_JSON": json.dumps(payload),
+        }
+
+        accepted = subprocess.run(
+            ["bash", "-c", selector_guard],
+            env=valid_env,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(0, accepted.returncode, accepted.stderr)
+        self.assertIn("selector-validated", accepted.stdout)
+
+        for field, env_field, malformed in (
+            ("producer_run_id", "PRODUCER_RUN_ID", ""),
+            ("producer_run_id", "PRODUCER_RUN_ID", "latest"),
+            ("producer_run_attempt", "PRODUCER_RUN_ATTEMPT", "0"),
+            ("artifact_id", "PRODUCER_ARTIFACT_ID", "-1"),
+            ("artifact_digest", "PRODUCER_ARTIFACT_DIGEST", "sha256:not-a-digest"),
+        ):
+            with self.subTest(field=field, malformed=malformed):
+                malformed_payload = {**payload, field: malformed}
+                rejected = subprocess.run(
+                    ["bash", "-c", selector_guard],
+                    env={
+                        **valid_env,
+                        env_field: malformed,
+                        "DISPATCH_PAYLOAD_JSON": json.dumps(malformed_payload),
+                    },
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertNotEqual(0, rejected.returncode)
+                self.assertIn(
+                    "whitepaper intake producer contract failed",
+                    rejected.stderr,
+                )
 
     def test_scheduled_freshness_contract_is_mutation_sensitive(self) -> None:
         mutations = (
@@ -534,7 +623,7 @@ class PullWpIntakeContractTests(unittest.TestCase):
             "- name: Stage and replace managed intake/config surfaces", 1
         )[1].split("- name: Write deterministic intake snapshot record", 1)[0]
 
-        self.assertIn('"schema_version": "flbsa.whitepaper_consumer.v3"', sync)
+        self.assertIn('"schema_version": "flbsa.whitepaper_consumer.v4"', sync)
         self.assertIn('"base_commit": os.environ["GITHUB_SHA"]', sync)
         self.assertNotIn("datetime", sync)
         self.assertNotIn("ingested_at", sync)
@@ -550,6 +639,10 @@ class PullWpIntakeContractTests(unittest.TestCase):
         )
         self.assertIn(
             '"artifact_digest": os.environ.get("SELECTED_PRODUCER_ARTIFACT_DIGEST", "")',
+            sync,
+        )
+        self.assertIn(
+            '"contract_sha256": os.environ.get("SELECTED_PRODUCER_CONTRACT_SHA256", "")',
             sync,
         )
         self.assertIn('"repo": os.environ.get("SELECTED_PRODUCER_REPO", "")', sync)
@@ -827,6 +920,7 @@ class PullWpIntakeContractTests(unittest.TestCase):
                 "SELECTED_PRODUCER_ARTIFACT": "wp-intake-bundle-v4",
                 "SELECTED_PRODUCER_ARTIFACT_ID": "456",
                 "SELECTED_PRODUCER_ARTIFACT_DIGEST": "sha256:" + "d" * 64,
+                "SELECTED_PRODUCER_CONTRACT_SHA256": "e" * 64,
                 "SELECTED_PRODUCER_BRANCH": "main",
                 "SELECTED_PRODUCER_RUN_ID": "123",
                 "SELECTED_PRODUCER_RUN_ATTEMPT": "1",

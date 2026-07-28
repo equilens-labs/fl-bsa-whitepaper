@@ -1,0 +1,38 @@
+{
+  "allowed_persistence_values": [
+    "false"
+  ],
+  "authorities": [
+    {
+      "branch": "main",
+      "events": [
+        "repository_dispatch"
+      ],
+      "workflow": "release-evidence.yml"
+    },
+    {
+      "branch": "main",
+      "events": [
+        "repository_dispatch",
+        "schedule"
+      ],
+      "workflow": "wp-evidence-nightly.yml"
+    }
+  ],
+  "dispatch_event_type": "wp-intake-ready",
+  "dispatch_payload_fields": [
+    "artifact_digest",
+    "artifact_id",
+    "artifact_name",
+    "branch",
+    "persist_intake_pr",
+    "producer_contract_sha256",
+    "producer_repo",
+    "producer_run_attempt",
+    "producer_run_id",
+    "workflow_file"
+  ],
+  "primary_artifact_template": "wp-intake-bundle-v4-{run_attempt}",
+  "producer_repository": "equilens-labs/fl-bsa",
+  "schema_version": "flbsa.whitepaper_intake_producer_contract.v1"
+}

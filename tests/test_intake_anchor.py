@@ -32,7 +32,7 @@ class IntakeAnchorTests(unittest.TestCase):
             "schema_version": "wp-intake.v1",
             "commit_sha": product_sha,
             "whitepaper_consumer": {
-                "schema_version": "flbsa.whitepaper_consumer.v3",
+                "schema_version": "flbsa.whitepaper_consumer.v4",
                 "repo": ANCHOR.WHITEPAPER_REPO,
                 "base_commit": base_commit,
                 "producer": {
@@ -47,6 +47,7 @@ class IntakeAnchorTests(unittest.TestCase):
                     "head_sha": product_sha,
                     "artifact_id": "456",
                     "artifact_digest": "sha256:" + "d" * 64,
+                    "contract_sha256": "e" * 64,
                 },
             },
         }
@@ -72,6 +73,7 @@ class IntakeAnchorTests(unittest.TestCase):
             "producer_artifact": artifact,
             "producer_artifact_id": "456",
             "producer_artifact_digest": "sha256:" + "d" * 64,
+            "producer_contract_sha256": "e" * 64,
             "bundle_filename": bundle_filename,
             "bundle_sha256": bundle_sha,
             "whitepaper_repo": ANCHOR.WHITEPAPER_REPO,

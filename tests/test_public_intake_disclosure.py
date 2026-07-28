@@ -204,6 +204,18 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
                 lambda pair: pair["srg"].__setitem__("point", 2.0),
                 "SRG point is outside the reviewed point bounds",
             ),
+            (
+                lambda pair: pair["selection_rates"]["ref"].__setitem__(
+                    "p", 10**400
+                ),
+                "reference selection rate is not a reviewed finite point",
+            ),
+            (
+                lambda pair: pair["selection_rates"]["ref"]["ci95"].__setitem__(
+                    0, 10**400
+                ),
+                "reference interval is not a reviewed finite interval",
+            ),
         )
         for mutate, expected in mutations:
             with self.subTest(expected=expected), tempfile.TemporaryDirectory() as tmp:
@@ -248,6 +260,11 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
             (
                 "wrong_confidence",
                 lambda pair: pair.__setitem__("confidence_level", 0.9),
+                "invalid SRG confidence level",
+            ),
+            (
+                "overflowing_confidence",
+                lambda pair: pair.__setitem__("confidence_level", 10**400),
                 "invalid SRG confidence level",
             ),
             (

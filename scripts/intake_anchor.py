@@ -119,6 +119,7 @@ def build_snapshot_record(
     producer_artifact: str,
     producer_artifact_id: str,
     producer_artifact_digest: str,
+    producer_contract_sha256: str,
     bundle_filename: str,
     bundle_sha256: str,
     whitepaper_repo: str,
@@ -170,6 +171,11 @@ def build_snapshot_record(
         _ARTIFACT_DIGEST_RE,
         "producer artifact digest",
     )
+    producer_contract_sha256 = _require_match(
+        producer_contract_sha256,
+        _SHA256_RE,
+        "producer contract SHA-256",
+    )
     producer_head_sha = _require_match(
         producer_head_sha, _SHA_RE, "producer run head SHA"
     )
@@ -206,10 +212,11 @@ def build_snapshot_record(
         "head_sha": producer_head_sha,
         "artifact_id": producer_artifact_id,
         "artifact_digest": producer_artifact_digest,
+        "contract_sha256": producer_contract_sha256,
     }
     _require_exact(
         consumer_stamp.get("schema_version"),
-        "flbsa.whitepaper_consumer.v3",
+        "flbsa.whitepaper_consumer.v4",
         "consumer stamp schema",
     )
     _require_exact(consumer_stamp.get("repo"), whitepaper_repo, "consumer stamp repo")
@@ -254,6 +261,7 @@ def build_snapshot_record(
         "producer_artifact": producer_artifact,
         "producer_artifact_id": producer_artifact_id,
         "producer_artifact_digest": producer_artifact_digest,
+        "producer_contract_sha256": producer_contract_sha256,
         "product_sha": product_sha,
         "bundle_filename": bundle_filename,
         "bundle_sha256": bundle_sha256,
@@ -280,6 +288,7 @@ def build_snapshot_record(
             "artifact": producer_artifact,
             "artifact_id": producer_artifact_id,
             "artifact_digest": producer_artifact_digest,
+            "contract_sha256": producer_contract_sha256,
             "product_sha": product_sha,
             "bundle_filename": bundle_filename,
             "bundle_sha256": bundle_sha256,
@@ -625,6 +634,7 @@ def _snapshot_command(args: argparse.Namespace) -> int:
         producer_artifact=args.producer_artifact,
         producer_artifact_id=args.producer_artifact_id,
         producer_artifact_digest=args.producer_artifact_digest,
+        producer_contract_sha256=args.producer_contract_sha256,
         bundle_filename=args.bundle_filename,
         bundle_sha256=args.bundle_sha256,
         whitepaper_repo=args.whitepaper_repo,
@@ -690,6 +700,7 @@ def _build_parser() -> argparse.ArgumentParser:
     snapshot.add_argument("--producer-artifact", required=True)
     snapshot.add_argument("--producer-artifact-id", required=True)
     snapshot.add_argument("--producer-artifact-digest", required=True)
+    snapshot.add_argument("--producer-contract-sha256", required=True)
     snapshot.add_argument("--bundle-filename", required=True)
     snapshot.add_argument("--bundle-sha256", required=True)
     snapshot.add_argument("--whitepaper-repo", required=True)

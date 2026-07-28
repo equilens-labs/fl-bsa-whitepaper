@@ -52,26 +52,29 @@ jobs:
           PRODUCER_RUN_ATTEMPT: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.producer_run_attempt || '' }}
           PRODUCER_ARTIFACT_ID: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_id || '' }}
           PRODUCER_ARTIFACT_DIGEST: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_digest || '' }}
+          DISPATCH_PAYLOAD_JSON: ${{ toJSON(github.event.client_payload) }}
           PRODUCER_TOKEN: ${{ secrets.PRODUCER_TOKEN }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           mkdir -p wp-bundle
 
-          case "$PRODUCER_REPO" in
-            equilens-labs/fl-bsa) ;;
-            *)
-              echo "Unsupported producer_repo=${PRODUCER_REPO}; expected equilens-labs/fl-bsa." >&2
-              exit 1
-              ;;
-          esac
-          case "$PRODUCER_WORKFLOW" in
-            release-evidence.yml|wp-evidence-nightly.yml) ;;
-            *)
-              echo "Unsupported workflow_file=${PRODUCER_WORKFLOW}; expected release-evidence.yml or wp-evidence-nightly.yml." >&2
-              exit 1
-              ;;
-          esac
+          producer_contract="contracts/whitepaper-intake-producer-contract.v1.json"
+          if [ "$GITHUB_EVENT_NAME" = "repository_dispatch" ]; then
+            producer_contract_sha256="$(
+              python scripts/whitepaper_intake_producer_contract.py validate-dispatch \
+                --contract "$producer_contract" \
+                --payload-env DISPATCH_PAYLOAD_JSON
+            )"
+          else
+            producer_contract_sha256="$(
+              python scripts/whitepaper_intake_producer_contract.py validate-selector \
+                --contract "$producer_contract" \
+                --producer-repo "$PRODUCER_REPO" \
+                --workflow "$PRODUCER_WORKFLOW" \
+                --branch "$PRODUCER_BRANCH"
+            )"
+          fi
           case "$PRODUCER_ARTIFACT" in
             '')
               if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
@@ -91,16 +94,6 @@ jobs:
               exit 1
               ;;
           esac
-          case "${PRODUCER_WORKFLOW}:${PRODUCER_BRANCH}" in
-            wp-evidence-nightly.yml:main) ;;
-            release-evidence.yml:release/v[0-9]*.[0-9]*.[0-9]*-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]) ;;
-            *)
-              echo "Unapproved producer workflow/branch pair: ${PRODUCER_WORKFLOW}@${PRODUCER_BRANCH}." >&2
-              echo "Nightly intake is restricted to main; release intake requires release/vMAJOR.MINOR.PATCH-SHA8." >&2
-              exit 1
-              ;;
-          esac
-
           token="${PRODUCER_TOKEN:-}"
           if [ -z "$token" ] && [ "$PRODUCER_REPO" != "$GITHUB_REPOSITORY" ]; then
             echo "PRODUCER_TOKEN is required to read artifacts from ${PRODUCER_REPO}." >&2
@@ -221,14 +214,15 @@ jobs:
             fi
 
             run_event="$(jq -r '.event // ""' <<<"$run_json")"
-            case "${PRODUCER_WORKFLOW}:${run_event}" in
-              wp-evidence-nightly.yml:schedule|wp-evidence-nightly.yml:workflow_dispatch|release-evidence.yml:workflow_dispatch) ;;
-              *)
-                jq '{id, event, path, head_branch, head_sha, head_repository: .head_repository.full_name}' <<<"$run_json" >&2
-                echo "Producer run ${run_id} has an unapproved workflow/event pair." >&2
-                exit 1
-                ;;
-            esac
+            if ! python scripts/whitepaper_intake_producer_contract.py validate-authority \
+              --contract "$producer_contract" \
+              --producer-repo "$PRODUCER_REPO" \
+              --workflow "$PRODUCER_WORKFLOW" \
+              --branch "$PRODUCER_BRANCH" \
+              --producer-event "$run_event" >/dev/null; then
+              jq '{id, event, path, head_branch, head_sha, head_repository: .head_repository.full_name}' <<<"$run_json" >&2
+              exit 1
+            fi
 
             run_status="$(jq -r '.status' <<<"$run_json")"
             run_conclusion="$(jq -r '.conclusion // ""' <<<"$run_json")"
@@ -292,41 +286,6 @@ jobs:
           if [ -n "$PRODUCER_RUN_ATTEMPT" ] && [ "$PRODUCER_RUN_ATTEMPT" != "$run_attempt" ]; then
             echo "Dispatched producer run attempt ${PRODUCER_RUN_ATTEMPT} does not match API attempt ${run_attempt}." >&2
             exit 1
-          fi
-          if [ "$PRODUCER_WORKFLOW" = "release-evidence.yml" ]; then
-            release_suffix="-${run_head_sha:0:8}"
-            release_tag="${PRODUCER_BRANCH#release/}"
-            release_tag="${release_tag%$release_suffix}"
-            if [[ ! "$release_tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo "Unable to derive a semantic release tag from ${PRODUCER_BRANCH} and ${run_head_sha}." >&2
-              exit 1
-            fi
-            if ! tag_object="$(gh api "repos/${PRODUCER_REPO}/git/ref/tags/${release_tag}")"; then
-              echo "Unable to resolve producer release tag ${release_tag}." >&2
-              exit 1
-            fi
-            tag_object_type="$(jq -r '.object.type // ""' <<<"$tag_object")"
-            release_tag_sha="$(jq -r '.object.sha // ""' <<<"$tag_object")"
-            for _peel in 1 2 3 4 5 6 7 8; do
-              if [ "$tag_object_type" = "commit" ]; then
-                break
-              fi
-              if [ "$tag_object_type" != "tag" ] || [[ ! "$release_tag_sha" =~ ^[0-9a-f]{40}$ ]]; then
-                echo "Producer tag ${release_tag} has an unsupported Git object chain." >&2
-                exit 1
-              fi
-              tag_object="$(gh api "repos/${PRODUCER_REPO}/git/tags/${release_tag_sha}")"
-              tag_object_type="$(jq -r '.object.type // ""' <<<"$tag_object")"
-              release_tag_sha="$(jq -r '.object.sha // ""' <<<"$tag_object")"
-            done
-            if [ "$tag_object_type" != "commit" ] || [[ ! "$release_tag_sha" =~ ^[0-9a-f]{40}$ ]]; then
-              echo "Producer tag ${release_tag} did not peel to a commit within the bounded depth." >&2
-              exit 1
-            fi
-            if [ "$release_tag_sha" != "$run_head_sha" ]; then
-              echo "Producer release tag ${release_tag} resolves to ${release_tag_sha}, not run head ${run_head_sha}." >&2
-              exit 1
-            fi
           fi
 
           if ! artifacts_json="$(gh api --paginate --slurp \
@@ -492,6 +451,7 @@ jobs:
           echo "SELECTED_PRODUCER_ARTIFACT=${PRODUCER_ARTIFACT}" >> "$GITHUB_ENV"
           echo "SELECTED_PRODUCER_ARTIFACT_ID=${artifact_id}" >> "$GITHUB_ENV"
           echo "SELECTED_PRODUCER_ARTIFACT_DIGEST=${artifact_digest}" >> "$GITHUB_ENV"
+          echo "SELECTED_PRODUCER_CONTRACT_SHA256=${producer_contract_sha256}" >> "$GITHUB_ENV"
           echo "SELECTED_PRODUCER_RUN_ID=${run_id}" >> "$GITHUB_ENV"
           echo "SELECTED_PRODUCER_RUN_ATTEMPT=${run_attempt}" >> "$GITHUB_ENV"
 
@@ -761,7 +721,7 @@ jobs:
           # run/attempt/timestamp observations; putting those in the snapshot tree
           # made exact-run replays create timestamp-only branch churn.
           consumer = {
-              "schema_version": "flbsa.whitepaper_consumer.v3",
+              "schema_version": "flbsa.whitepaper_consumer.v4",
               "repo": os.environ["GITHUB_REPOSITORY"],
               "base_commit": os.environ["GITHUB_SHA"],
               "ref": os.environ["GITHUB_REF"],
@@ -778,6 +738,7 @@ jobs:
                   "head_sha": os.environ.get("SELECTED_PRODUCER_HEAD_SHA", ""),
                   "artifact_id": os.environ.get("SELECTED_PRODUCER_ARTIFACT_ID", ""),
                   "artifact_digest": os.environ.get("SELECTED_PRODUCER_ARTIFACT_DIGEST", ""),
+                  "contract_sha256": os.environ.get("SELECTED_PRODUCER_CONTRACT_SHA256", ""),
               },
           }
           manifest["whitepaper_consumer"] = consumer
@@ -803,6 +764,7 @@ jobs:
             --producer-artifact "$SELECTED_PRODUCER_ARTIFACT" \
             --producer-artifact-id "$SELECTED_PRODUCER_ARTIFACT_ID" \
             --producer-artifact-digest "$SELECTED_PRODUCER_ARTIFACT_DIGEST" \
+            --producer-contract-sha256 "$SELECTED_PRODUCER_CONTRACT_SHA256" \
             --bundle-filename "$SELECTED_BUNDLE_FILENAME" \
             --bundle-sha256 "$SELECTED_BUNDLE_SHA256" \
             --whitepaper-repo "$GITHUB_REPOSITORY" \

@@ -574,6 +574,18 @@ def _json_pointer(parts: tuple[str | int, ...]) -> str:
     return "/" + "/".join(tokens)
 
 
+def _finite_float(value: Any, *, location: str) -> float:
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        raise DisclosureError(f"{location} is not a finite number")
+    try:
+        converted = float(value)
+    except (OverflowError, TypeError, ValueError) as exc:
+        raise DisclosureError(f"{location} is not a finite number") from exc
+    if not math.isfinite(converted):
+        raise DisclosureError(f"{location} is not a finite number")
+    return converted
+
+
 def _numeric_interval(
     value: Any,
     *,
@@ -581,18 +593,13 @@ def _numeric_interval(
     lower_limit: float,
     upper_limit: float,
 ) -> tuple[float, float]:
-    if (
-        not isinstance(value, list)
-        or len(value) != 2
-        or not all(
-            isinstance(item, (int, float))
-            and not isinstance(item, bool)
-            and math.isfinite(float(item))
-            for item in value
-        )
-    ):
+    if not isinstance(value, list) or len(value) != 2:
         raise DisclosureError(f"{location} is not a reviewed finite interval")
-    lower, upper = float(value[0]), float(value[1])
+    try:
+        lower = _finite_float(value[0], location=f"{location}[0]")
+        upper = _finite_float(value[1], location=f"{location}[1]")
+    except DisclosureError as exc:
+        raise DisclosureError(f"{location} is not a reviewed finite interval") from exc
     if lower > upper or lower < lower_limit or upper > upper_limit:
         raise DisclosureError(f"{location} is outside the reviewed interval bounds")
     return lower, upper
@@ -605,13 +612,10 @@ def _numeric_point(
     lower_limit: float,
     upper_limit: float,
 ) -> float:
-    if (
-        not isinstance(value, (int, float))
-        or isinstance(value, bool)
-        or not math.isfinite(float(value))
-    ):
-        raise DisclosureError(f"{location} is not a reviewed finite point")
-    point = float(value)
+    try:
+        point = _finite_float(value, location=location)
+    except DisclosureError as exc:
+        raise DisclosureError(f"{location} is not a reviewed finite point") from exc
     if point < lower_limit or point > upper_limit:
         raise DisclosureError(f"{location} is outside the reviewed point bounds")
     return point
@@ -700,16 +704,20 @@ def _validate_srg_artifact(payload: Any, location: str) -> None:
                 raise DisclosureError(f"{location} contains invalid SRG count bounds")
 
             confidence_level = node.get("confidence_level")
-            if (
-                not isinstance(confidence_level, (int, float))
-                or isinstance(confidence_level, bool)
-                or not math.isfinite(float(confidence_level))
-                or not math.isclose(
-                    float(confidence_level),
-                    0.95,
-                    rel_tol=0.0,
-                    abs_tol=1e-12,
+            try:
+                confidence = _finite_float(
+                    confidence_level,
+                    location=f"{location}:SRG confidence level",
                 )
+            except DisclosureError as exc:
+                raise DisclosureError(
+                    f"{location} contains an invalid SRG confidence level"
+                ) from exc
+            if not math.isclose(
+                confidence,
+                0.95,
+                rel_tol=0.0,
+                abs_tol=1e-12,
             ):
                 raise DisclosureError(
                     f"{location} contains an invalid SRG confidence level"

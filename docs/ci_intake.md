@@ -22,13 +22,11 @@ boundary to:
 All intake persistence runs share the `pull-wp-intake-persistence` concurrency group and do
 not cancel an in-progress predecessor. This serializes reads and writes to the rolling branch.
 
-When a `wp-evidence-nightly.yml` dispatch explicitly sets `persist_intake_pr=true`, it uses one
-public branch: `chore/wp-intake-nightly`. Each changed snapshot is committed with both the current
-default-branch commit and the previous rolling head as parents. The previous head therefore remains
-reachable, while repeated runs with the same snapshot ID and tree are no-ops. It does not create
-per-run branches or PRs. The ordinary producer dispatch and scheduled pull keep this setting false.
+The current producer contract requires `persist_intake_pr=false`, so neither reviewed product
+workflow can write a public intake branch. The rolling-history implementation remains fail-closed
+behind that contract for a separately reviewed future publishing route.
 
-Approved `release-evidence.yml` persistence inputs use workflow-write-once branches named
+The dormant release persistence implementation uses workflow-write-once branches named
 `chore/wp-intake-<producer-sha12>-<producer-run-id>`. An exact replay is a no-op. If that branch
 already exists with different content, the workflow fails instead of rewriting it. A release
 snapshot PR is best-effort reviewer convenience; the write-once branch is the durable workflow
@@ -66,6 +64,7 @@ curl -X POST \
           "producer_run_attempt":"<exact-run-attempt>",
           "artifact_id":"<exact-actions-artifact-id>",
           "artifact_digest":"sha256:<exact-actions-artifact-digest>",
+          "producer_contract_sha256":"<exact-shared-contract-sha256>",
           "persist_intake_pr":"false"
         }
       }'
@@ -75,25 +74,21 @@ The accepted producers are deliberately narrow:
 
 - repository: `equilens-labs/fl-bsa`
 - workflows: `wp-evidence-nightly.yml` or `release-evidence.yml`
-- artifacts: attempt-qualified, attested `wp-intake-bundle-v4-<run-attempt>`; the historical
-  unqualified name is accepted only for first-attempt runs; unattested `wp-reviewer-pack-v4` is
-  restricted to explicit first-attempt legacy compatibility (never an automatic fallback)
+- artifacts: on-demand dispatch requires the attempt-qualified, attested
+  `wp-intake-bundle-v4-<run-attempt>`; scheduled transition compatibility may accept the historical
+  unqualified first-attempt artifact, but never silently falls back to the reviewer pack
 
-`persist_intake_pr` is retained as a compatibility payload name. It controls public snapshot
-persistence and defaults to `false`. Only literal `true` or `false` (case-normalized) is accepted;
-malformed or alternate truthy/falsey values fail before any Git mutation. For an explicitly approved nightly input, `true` means the
-rolling history branch and no PR. For an explicitly approved release input, it means the
-workflow-write-once branch plus a best-effort PR. Validation, PDF compilation, and Actions-artifact
-upload still run when it is false; no public intake branch is created or updated.
+`contracts/whitepaper-intake-producer-contract.v1.json` is copied byte-for-byte into both
+repositories. Both producer workflows build their payload through the matching contract helper,
+and this consumer validates the same fields and contract SHA-256 before it queries or downloads
+anything. A missing field, extra field, stale event, stale release branch, contract mismatch, or
+anything other than literal `persist_intake_pr=false` fails. Changing this boundary requires a
+reviewed contract change in both repositories.
 
-Product workflow operators use the typed `persist_public_whitepaper_snapshot` input on
-`wp-evidence-nightly.yml`; the producer maps that value to the internal compatibility payload field
-shown above. Do not treat `persist_intake_pr` as an independent publication approval.
-
-For release and other audit-sensitive rebuilds, the producer dispatches the run ID, run attempt,
-artifact ID, and API digest so the consumer cannot drift to a newer branch-head run or a retained
-artifact from another attempt. The consumer independently resolves all four values, verifies the
-outer Actions ZIP against the API digest/size, and records them in the snapshot.
+Every on-demand producer dispatch must provide the run ID, run attempt, artifact ID, and API
+digest. The consumer rejects an incomplete dispatch instead of searching for a recent successful
+run. It independently resolves all four values, verifies the outer Actions ZIP against the API
+digest/size, and records them in the snapshot.
 
 ### Scheduled pull
 
@@ -113,8 +108,8 @@ For transition compatibility only, an attempt-1 run with no qualified artifact m
 unique attested `wp-intake-bundle-v4`. There is no scheduled fallback for later attempts or to
 the unattested reviewer pack.
 
-The consuming workflow intentionally has no `workflow_dispatch` input for arbitrary producer
-artifacts. Exact on-demand rebuilds use the trusted `wp-intake-ready` dispatch instead.
+The consuming workflow has no `workflow_dispatch` input for arbitrary producer artifacts. Exact
+on-demand rebuilds use the contract-bound `wp-intake-ready` dispatch instead.
 
 ## Authentication
 
@@ -148,11 +143,11 @@ ambiguous. It validates the `wp-intake.v1`
 provenance schema and `fairness_uncertainty.v1` metrics schema. Before download, every selected
 run ID (discovered or dispatched) is resolved through the Actions API and must be numeric, match
 the exact workflow path, approved event, source repository, and branch policy, and reach
-`completed/success` within a bounded 20-minute poll. Nightly intake is restricted to `main`;
-release intake is restricted to an exact semantic release branch whose suffix and corresponding
-Git tag both resolve to the run head. Scheduled discovery additionally binds the newest run,
-regardless of status, to the current `fl-bsa@main` ref and repeats that authority check immediately
-before artifact consumption; it never substitutes an older green run.
+`completed/success` within a bounded 20-minute poll. Both reviewed producer workflows run from
+`main`: `wp-evidence-nightly.yml` may use `schedule` or `repository_dispatch`, while
+`release-evidence.yml` must use `repository_dispatch`. Scheduled discovery additionally binds the
+newest run, regardless of status, to the current `fl-bsa@main` ref and repeats that authority check
+immediately before artifact consumption; it never substitutes an older green run.
 After unpacking, the bundle product commit and every recorded commit alias must equal that
 API-verified run head SHA.
 
