@@ -88,6 +88,9 @@ class IntakeAnchorTests(unittest.TestCase):
             second = ANCHOR.build_snapshot_record(**kwargs)
 
         self.assertEqual(first, second)
+        self.assertEqual(
+            "flbsa.whitepaper_intake_snapshot.v3", first["schema_version"]
+        )
         self.assertRegex(first["snapshot_id"], r"^[0-9a-f]{64}$")
         self.assertEqual("rolling_history", first["persistence"]["mode"])
         self.assertEqual(ANCHOR.ROLLING_BRANCH, first["persistence"]["branch"])

@@ -24,7 +24,7 @@ from stable_v5_export import StableExportError, build_archive, validate_entries
 
 
 ANCHOR_SCHEMA = "flbsa.whitepaper_intake_anchor.v1"
-SNAPSHOT_SCHEMA = "flbsa.whitepaper_intake_snapshot.v2"
+SNAPSHOT_SCHEMA = "flbsa.whitepaper_intake_snapshot.v3"
 PRODUCER_REPO = "equilens-labs/fl-bsa"
 WHITEPAPER_REPO = "equilens-labs/fl-bsa-whitepaper"
 NIGHTLY_WORKFLOW = "wp-evidence-nightly.yml"

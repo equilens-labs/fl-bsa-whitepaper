@@ -9,7 +9,7 @@ not durable publication.
 
 ## Persistence contract
 
-The workflow writes a `flbsa.whitepaper_intake_snapshot.v2` record to
+The workflow writes a `flbsa.whitepaper_intake_snapshot.v3` record to
 `intake/whitepaper_snapshot.json` before it persists a source tree. The record binds the producer
 repository, workflow, branch, run ID/attempt, artifact name/ID/API digest, product commit,
 bundle filename and SHA-256 to the whitepaper base commit. It also fixes the public claim
@@ -135,11 +135,11 @@ in a dispatch payload, artifact, snapshot record, or tracked file.
 
 ## Consumption and validation
 
-The workflow downloads `WhitePaper_Intake_Bundle_v4.zip`, verifies its GitHub artifact
-attestation against `equilens-labs/fl-bsa`, and accepts the unattested legacy reviewer pack only
-when the dispatch explicitly selects it, with a warning and a valid `wp.pack_intent.v1` boundary.
-It never falls back from a missing primary artifact. Duplicate same-named artifacts fail as
-ambiguous. It validates the `wp-intake.v1`
+The workflow downloads `WhitePaper_Intake_Bundle_v4.zip` and verifies its GitHub artifact
+attestation against `equilens-labs/fl-bsa`. Current scheduled and contract-bound dispatches can
+select only the attested primary bundle; the historical reviewer-pack compatibility code is
+dormant, and there is no automatic fallback. Duplicate same-named artifacts fail as ambiguous.
+It validates the `wp-intake.v1`
 provenance schema and `fairness_uncertainty.v1` metrics schema. Before download, every selected
 run ID (discovered or dispatched) is resolved through the Actions API and must be numeric, match
 the exact workflow path, approved event, source repository, and branch policy, and reach
