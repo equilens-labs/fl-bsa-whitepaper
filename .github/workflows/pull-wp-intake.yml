@@ -146,6 +146,40 @@ jobs:
             jq -r '.[0] | [(.databaseId | tostring), .headSha] | @tsv' <<<"$runs_json"
           }
 
+          verify_scheduled_producer_contract() (
+            set -euo pipefail
+            local producer_sha="$1"
+            local contract_path="$2"
+            local expected_sha256="$3"
+            local contract_bytes contract_size actual_sha256
+
+            if [[ ! "$producer_sha" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "Cannot verify producer contract at malformed commit ${producer_sha@Q}." >&2
+              return 1
+            fi
+            contract_bytes="$(mktemp "${RUNNER_TEMP}/producer-contract.XXXXXX.json")"
+            trap 'rm -f "$contract_bytes"' EXIT
+            if ! gh api \
+              -H "Accept: application/vnd.github.raw+json" \
+              "repos/${PRODUCER_REPO}/contents/${contract_path}?ref=${producer_sha}" \
+              > "$contract_bytes"; then
+              echo "Unable to read ${contract_path} from exact producer commit ${producer_sha}." >&2
+              return 1
+            fi
+            contract_size="$(stat -c '%s' "$contract_bytes")"
+            if [[ ! "$contract_size" =~ ^[1-9][0-9]*$ ]] || [ "$contract_size" -gt 65536 ]; then
+              echo "Producer contract at ${producer_sha} has an unsafe size." >&2
+              return 1
+            fi
+            actual_sha256="$(sha256sum "$contract_bytes" | cut -d' ' -f1)"
+            if [ "$actual_sha256" != "$expected_sha256" ]; then
+              echo "Producer contract at ${producer_sha} does not match the reviewed consumer contract." >&2
+              echo "expected=${expected_sha256} actual=${actual_sha256}" >&2
+              return 1
+            fi
+            echo "Verified shared producer contract ${actual_sha256} at exact producer commit ${producer_sha}."
+          )
+
           scheduled_authority_sha=""
           run_id="$PRODUCER_RUN_ID"
           if [ -z "$run_id" ]; then
@@ -258,6 +292,12 @@ jobs:
           if [[ ! "$run_started_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]]; then
             echo "Producer run ${run_id} has malformed run_started_at=${run_started_at@Q}." >&2
             exit 1
+          fi
+          if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
+            verify_scheduled_producer_contract \
+              "$run_head_sha" \
+              "$producer_contract" \
+              "$producer_contract_sha256"
           fi
           if [ -z "$PRODUCER_ARTIFACT" ]; then
             PRODUCER_ARTIFACT="wp-intake-bundle-v4-${run_attempt}"

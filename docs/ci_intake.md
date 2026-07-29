@@ -98,6 +98,12 @@ be for that exact current commit. The consumer then waits only on that run: queu
 authority is polled, while a failed, cancelled, timed-out, stale-head, or otherwise unsuccessful
 authority fails the pull. It never searches backward for an older successful run.
 
+After the selected run succeeds, the consumer reads the producer contract from that exact immutable
+product commit, hashes its raw bytes, and requires equality with the reviewed contract in this
+repository. A missing file, inaccessible commit, oversized file, or byte drift fails before any
+artifact is selected or downloaded. The receipt therefore records a contract hash proven on both
+sides of the scheduled handoff.
+
 Immediately before downloading artifact bytes, the consumer re-resolves `fl-bsa@main`, the newest
 matching producer run, and the selected run attempt/status. Any branch, run, attempt, or conclusion
 drift fails closed so a run that became stale during the bounded wait cannot be consumed. Once the

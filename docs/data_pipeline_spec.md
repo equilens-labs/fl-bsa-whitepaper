@@ -240,15 +240,14 @@ The `.github/workflows/pull-wp-intake.yml` workflow can:
    preserving the six explicit repository-owned intake files plus `intake/archive/`
 4. Regenerate macros, figures, and PDF
 5. Upload PDF artifact
-6. Persist the source snapshot: routine nightly input goes to the append-only
-   `chore/wp-intake-nightly` history; release-evidence input goes to a workflow-write-once per-run
-   branch with a best-effort PR. No branch-protection/ruleset immutability is claimed.
+6. Write and upload an exact source receipt. The current shared producer contract disables public
+   Git snapshot persistence; the rolling-history and workflow-write-once branch implementation is
+   dormant pending a separately reviewed contract change.
 
 This workflow keeps the PDF build reproducible and up to date with the producer's latest
-evidence run. The persisted Git snapshot is the durable source record; the PR and workflow PDF
-artifact are reviewer conveniences. The raw private-producer ZIP is not re-uploaded from this
-public repository. See `docs/ci_intake.md` for the exact branch lifecycle,
-idempotency, and stable-v5 compatibility-anchor contract.
+evidence run. The exact receipt and workflow PDF are review artifacts, not publication. The raw
+private-producer ZIP is not re-uploaded from this public repository. See `docs/ci_intake.md` for
+the receipt, dormant branch lifecycle, idempotency, and stable-v5 compatibility-anchor contract.
 
 ---
 

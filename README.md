@@ -81,7 +81,7 @@ This:
 
 ### Publication (This Repo)
 
-1. Import the bundle to `intake/`, or run `pull-wp-intake.yml` so CI validates and builds review artifacts; public Git snapshot persistence requires an explicit approved payload
+1. Import the bundle to `intake/`, or run `pull-wp-intake.yml` so CI validates and builds review artifacts; the current producer contract disables public Git snapshot persistence
 2. Run `make pdf` to compile LaTeX with updated metrics
 3. CI automatically builds on push/PR
 
@@ -124,7 +124,7 @@ Defined in `config/sap.yaml`:
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
 | `latex.yml` | push, PR, manual | Build PDF/arXiv candidates; optionally stage assets on an existing draft release |
-| `pull-wp-intake.yml` | dispatch, schedule | Pull intake from producer, rebuild, and persist append-only snapshot history/artifacts |
+| `pull-wp-intake.yml` | dispatch, schedule | Pull exact intake from the producer, validate it, rebuild, and upload review artifacts |
 
 Manual dispatch without `draft_release_tag` produces candidate workflow artifacts with
 `publication_status=candidate_not_published`. With an exact existing semantic tag, it requires a
@@ -143,12 +143,9 @@ Public CI PDF artifacts enable the optional `DEMO / EVALUATION ONLY` text-layer 
 sets `\drafttrue`.
 
 Routine scheduled and ordinary dispatched intake validates and builds with public branch
-persistence disabled. An explicitly approved nightly payload can use the single append-only
-`chore/wp-intake-nightly` branch without a per-run PR; an explicitly approved release-evidence
-payload can use a workflow-write-once per-run branch and a best-effort PR. The workflow does not
-rewrite those branches, but repository administrators can move or delete them because no
-branch-protection/ruleset guarantee is claimed. Neither path force-pushes or deletes historical
-intake branches. Each selected producer run is
+persistence disabled. The existing rolling-history and write-once branch code is dormant behind the
+shared contract and would require a separate reviewed contract change before it could run. The
+workflow never force-pushes or deletes historical intake branches. Each selected producer run is
 API-verified and bounded polling must observe successful completion before stamping. Incoming
 bundle members pass explicit filename plus content/schema public-disclosure validation; the raw private-producer ZIP is never
 re-uploaded from this public repository. Producer-managed paths are replaced while the explicit

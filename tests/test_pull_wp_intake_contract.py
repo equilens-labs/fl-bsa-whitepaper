@@ -51,6 +51,11 @@ class PullWpIntakeContractTests(unittest.TestCase):
             "scripts/whitepaper_intake_producer_contract.py validate-selector",
             "scripts/whitepaper_intake_producer_contract.py validate-authority",
             "contracts/whitepaper-intake-producer-contract.v1.json",
+            "verify_scheduled_producer_contract() (",
+            "application/vnd.github.raw+json",
+            '"repos/${PRODUCER_REPO}/contents/${contract_path}?ref=${producer_sha}"',
+            'if [ "$actual_sha256" != "$expected_sha256" ]; then',
+            "does not match the reviewed consumer contract",
             "SELECTED_PRODUCER_CONTRACT_SHA256",
             'run_attempt="$(jq -r \'.run_attempt | tostring\' <<<"$run_json")"',
             'wp-intake-bundle-v4-${run_attempt}',
@@ -143,7 +148,12 @@ class PullWpIntakeContractTests(unittest.TestCase):
         )[1].split("      - name: Unpack intake bundle", 1)[0]
         newest_resolver = download.split(
             "          resolve_latest_producer_run() {", 1
-        )[1].split("\n          }\n\n          scheduled_authority_sha", 1)[0]
+        )[1].split(
+            "\n          }\n\n          verify_scheduled_producer_contract", 1
+        )[0]
+        contract_verifier = download.split(
+            "          verify_scheduled_producer_contract() (", 1
+        )[1].split("\n          )\n\n          scheduled_authority_sha", 1)[0]
 
         self.assertIn(
             'gh api "repos/${PRODUCER_REPO}/git/ref/heads/${PRODUCER_BRANCH}"',
@@ -157,6 +167,14 @@ class PullWpIntakeContractTests(unittest.TestCase):
             "scheduled discovery must consider the newest run regardless of status",
         )
         self.assertIn(
+            '"repos/${PRODUCER_REPO}/contents/${contract_path}?ref=${producer_sha}"',
+            contract_verifier,
+        )
+        self.assertIn(
+            'if [ "$actual_sha256" != "$expected_sha256" ]; then',
+            contract_verifier,
+        )
+        self.assertIn(
             'scheduled_authority_sha="$(resolve_producer_branch_sha)"', download
         )
         self.assertIn(
@@ -167,6 +185,17 @@ class PullWpIntakeContractTests(unittest.TestCase):
         self.assertIn(
             '[ "$(jq -r \'.head_sha\' <<<"$run_json")" != "$scheduled_authority_sha" ]',
             download,
+        )
+        self.assertIn(
+            'verify_scheduled_producer_contract \\\n'
+            '              "$run_head_sha" \\\n'
+            '              "$producer_contract" \\\n'
+            '              "$producer_contract_sha256"',
+            download,
+        )
+        self.assertLess(
+            download.index("verify_scheduled_producer_contract \\\n"),
+            download.index("actions/runs/${run_id}/artifacts"),
         )
 
         dispatch_selection = download.split(
@@ -246,6 +275,86 @@ class PullWpIntakeContractTests(unittest.TestCase):
         self,
     ) -> None:
         self.assert_scheduled_freshness_contract(self.workflow)
+
+    def test_scheduled_contract_bytes_are_verified_at_exact_run_head(self) -> None:
+        workflow = yaml.safe_load(self.workflow)
+        download = next(
+            step
+            for step in workflow["jobs"]["fetch-build"]["steps"]
+            if step.get("name") == "Download intake bundle from producer"
+        )["run"]
+        function = "verify_scheduled_producer_contract() (" + download.split(
+            "verify_scheduled_producer_contract() (", 1
+        )[1].split("\n)\n\nscheduled_authority_sha", 1)[0]
+        function += "\n)\n"
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            producer_contract = root / "producer-contract.json"
+            producer_contract.write_bytes(
+                b'{"schema_version":"flbsa.whitepaper_intake_producer_contract.v1"}\n'
+            )
+            expected_sha256 = hashlib.sha256(producer_contract.read_bytes()).hexdigest()
+            gh_args = root / "gh-args.txt"
+            fake_gh = fake_bin / "gh"
+            fake_gh.write_text(
+                "#!/bin/sh\n"
+                'printf "%s\\n" "$@" > "$FAKE_GH_ARGS"\n'
+                'cat "$FAKE_PRODUCER_CONTRACT"\n',
+                encoding="utf-8",
+            )
+            fake_gh.chmod(0o755)
+            producer_sha = "a" * 40
+            command = (
+                function
+                + 'verify_scheduled_producer_contract "$PRODUCER_SHA" '
+                + '"$CONTRACT_PATH" "$EXPECTED_SHA256"\n'
+            )
+            env = {
+                **os.environ,
+                "PATH": f"{fake_bin}:{os.environ['PATH']}",
+                "RUNNER_TEMP": str(root),
+                "PRODUCER_REPO": "equilens-labs/fl-bsa",
+                "PRODUCER_SHA": producer_sha,
+                "CONTRACT_PATH": (
+                    "contracts/whitepaper-intake-producer-contract.v1.json"
+                ),
+                "EXPECTED_SHA256": expected_sha256,
+                "FAKE_PRODUCER_CONTRACT": str(producer_contract),
+                "FAKE_GH_ARGS": str(gh_args),
+            }
+
+            accepted = subprocess.run(
+                ["bash", "-c", command],
+                env=env,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(0, accepted.returncode, accepted.stderr)
+            self.assertIn("Verified shared producer contract", accepted.stdout)
+            args = gh_args.read_text(encoding="utf-8")
+            self.assertIn("application/vnd.github.raw+json", args)
+            self.assertIn(
+                "repos/equilens-labs/fl-bsa/contents/"
+                "contracts/whitepaper-intake-producer-contract.v1.json"
+                f"?ref={producer_sha}",
+                args,
+            )
+
+            rejected = subprocess.run(
+                ["bash", "-c", command],
+                env={**env, "EXPECTED_SHA256": "0" * 64},
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(0, rejected.returncode)
+            self.assertIn(
+                "does not match the reviewed consumer contract", rejected.stderr
+            )
 
     def test_repository_dispatch_requires_exact_run_and_artifact_identity(
         self,
@@ -356,6 +465,11 @@ class PullWpIntakeContractTests(unittest.TestCase):
             ),
             self.workflow.replace(
                 "(.run_attempt | tostring) == $run_attempt and", "true and", 1
+            ),
+            self.workflow.replace(
+                'if [ "$actual_sha256" != "$expected_sha256" ]; then',
+                'if [ -z "$actual_sha256" ]; then',
+                1,
             ),
         )
         for mutated in mutations:
