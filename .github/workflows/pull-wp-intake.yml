@@ -193,15 +193,6 @@ jobs:
                 exit 1
               fi
               echo "Scheduled intake bound to newest producer run ${run_id} at current branch authority ${scheduled_authority_sha}."
-            else
-              run_id="$(gh run list \
-                -R "$PRODUCER_REPO" \
-                --workflow "$PRODUCER_WORKFLOW" \
-                --branch "$PRODUCER_BRANCH" \
-                --status success \
-                --limit 1 \
-                --json databaseId \
-                --jq '.[0].databaseId // empty')"
             fi
           fi
           if [ -z "$run_id" ]; then

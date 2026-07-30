@@ -112,6 +112,7 @@ class PullWpIntakeContractTests(unittest.TestCase):
         self.assertNotIn('git/tags/${release_tag_sha}', workflow)
         self.assertNotIn("wp-evidence-nightly.yml:workflow_dispatch", workflow)
         self.assertNotIn("release-evidence.yml:workflow_dispatch", workflow)
+        self.assertNotIn("--status success", workflow)
         self.assertLess(
             workflow.index('if [ "$mode" = "rolling_history" ]; then'),
             workflow.index('if gh pr view "$branch"'),
@@ -198,13 +199,10 @@ class PullWpIntakeContractTests(unittest.TestCase):
             download.index("actions/runs/${run_id}/artifacts"),
         )
 
-        dispatch_selection = download.split(
-            '            else\n              run_id="$(gh run list', 1
-        )[1].split("            fi\n", 1)[0]
-        self.assertIn(
-            "--status success",
-            dispatch_selection,
-            "dispatch discovery behavior must remain unchanged",
+        self.assertEqual(
+            1,
+            download.count("gh run list"),
+            "only scheduled latest-run discovery should remain",
         )
 
         recheck_start = (
