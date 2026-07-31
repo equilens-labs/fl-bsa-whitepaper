@@ -16,6 +16,7 @@ import ipaddress
 import json
 import math
 import re
+from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -109,6 +110,22 @@ _RANGE_VIOLATION_ITEM_SCHEMA = {
     "violation_type": "",
 }
 _RANGE_VIOLATIONS_SUFFIX = ".statistical_comparison.range_violations"
+_CERTIFICATE_SIGNATURE_SCHEMA = {
+    "certificate_signature": "",
+    "public_key_fingerprint": "",
+    "signature_algorithm": "",
+    "signed_at": "",
+}
+_CERTIFICATE_SIGNATURE_FIELDS = frozenset(_CERTIFICATE_SIGNATURE_SCHEMA)
+_CERTIFICATE_SIGNATURE_RE = re.compile(r"^[0-9a-f]{128}$")
+_CERTIFICATE_FINGERPRINT_RE = re.compile(r"^[0-9a-f]{16}$")
+_CERTIFICATE_SIGNED_AT_RE = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{6})?$"
+)
+_P256_ORDER = int(
+    "FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551",
+    16,
+)
 _CI_RUNTIME_PROVENANCE_SCHEMA = {
     "schema_version": "",
     "source_ci": {
@@ -266,6 +283,14 @@ def _scalar_kind(value: Any) -> str:
     return type(value).__name__
 
 
+def _is_certificate_root_location(location: str) -> bool:
+    return (
+        location.startswith("certificates/")
+        and location.endswith(".json")
+        and location.count("/") == 1
+    )
+
+
 def _validate_structure(
     candidate: Any, baseline: Any, location: str, *, depth: int = 0
 ) -> None:
@@ -306,6 +331,17 @@ def _validate_structure(
                 raise DisclosureError(
                     f"{location} contains a forbidden sensitive field; key redacted"
                 )
+            if (
+                _is_certificate_root_location(location)
+                and key in _CERTIFICATE_SIGNATURE_SCHEMA
+            ):
+                _validate_structure(
+                    value,
+                    _CERTIFICATE_SIGNATURE_SCHEMA[key],
+                    f"{location}.{key}",
+                    depth=depth + 1,
+                )
+                continue
             if (
                 location in _CI_RUNTIME_MANIFEST_LOCATIONS
                 and key == "ci_runtime_provenance"
@@ -867,13 +903,75 @@ def _validate_srg_provenance(payload: Any, location: str) -> None:
         )
 
 
+def _validate_certificate_signature_adornments(
+    candidate: dict[str, Any], location: str
+) -> None:
+    present = _CERTIFICATE_SIGNATURE_FIELDS.intersection(candidate)
+    if not present:
+        return
+    if present != _CERTIFICATE_SIGNATURE_FIELDS:
+        raise DisclosureError(
+            f"{location} does not contain the complete reviewed certificate "
+            "signature adornment set; keys redacted"
+        )
+
+    signature = candidate.get("certificate_signature")
+    if (
+        not isinstance(signature, str)
+        or _CERTIFICATE_SIGNATURE_RE.fullmatch(signature) is None
+    ):
+        raise DisclosureError(
+            f"{location} has an invalid reviewed certificate signature; value redacted"
+        )
+    r_component = int(signature[:64], 16)
+    s_component = int(signature[64:], 16)
+    if not (
+        1 <= r_component < _P256_ORDER
+        and 1 <= s_component < _P256_ORDER
+    ):
+        raise DisclosureError(
+            f"{location} has certificate signature components outside the reviewed "
+            "P-256 range; value redacted"
+        )
+
+    fingerprint = candidate.get("public_key_fingerprint")
+    if (
+        not isinstance(fingerprint, str)
+        or _CERTIFICATE_FINGERPRINT_RE.fullmatch(fingerprint) is None
+    ):
+        raise DisclosureError(
+            f"{location} has an invalid reviewed public-key fingerprint; value redacted"
+        )
+
+    if candidate.get("signature_algorithm") != "ECDSA-P256-SHA256":
+        raise DisclosureError(
+            f"{location} has an unreviewed certificate signature algorithm; value redacted"
+        )
+
+    signed_at = candidate.get("signed_at")
+    if (
+        not isinstance(signed_at, str)
+        or _CERTIFICATE_SIGNED_AT_RE.fullmatch(signed_at) is None
+    ):
+        raise DisclosureError(
+            f"{location} has an invalid reviewed certificate signing time; value redacted"
+        )
+    try:
+        datetime.fromisoformat(signed_at)
+    except ValueError as exc:
+        raise DisclosureError(
+            f"{location} has an invalid reviewed certificate signing time; value redacted"
+        ) from exc
+
+
 def _validate_certificate_semantics(
     candidate: Any, baseline: Any, location: str
 ) -> None:
-    """Constrain reviewed certificate aggregates that have an empty baseline."""
+    """Constrain reviewed certificate extensions and empty-baseline aggregates."""
 
     if not isinstance(candidate, dict) or not isinstance(baseline, dict):
         return
+    _validate_certificate_signature_adornments(candidate, location)
     candidate_analysis = candidate.get("correlation_analysis")
     baseline_analysis = baseline.get("correlation_analysis")
     candidate_statistical = candidate.get("statistical_comparison")

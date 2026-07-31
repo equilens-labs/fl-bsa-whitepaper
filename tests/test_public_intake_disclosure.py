@@ -121,6 +121,116 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             DISCLOSURE.validate_bundle(self._bundle(Path(tmp)), ROOT)
 
+    @staticmethod
+    def _certificate_signature_adornments() -> dict[str, str]:
+        return {
+            "certificate_signature": "a" * 128,
+            "public_key_fingerprint": "b" * 16,
+            "signature_algorithm": "ECDSA-P256-SHA256",
+            "signed_at": "2026-07-31T15:35:42.123456",
+        }
+
+    def test_reviewed_certificate_signature_adornments_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = self._bundle(Path(tmp))
+            certificate_path = (
+                bundle / "certificates" / "synthetic_quality_certificate.json"
+            )
+            certificate = json.loads(certificate_path.read_text(encoding="utf-8"))
+            certificate.update(self._certificate_signature_adornments())
+            certificate_path.write_text(json.dumps(certificate), encoding="utf-8")
+
+            DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_certificate_signature_adornments_are_complete_and_bounded(self) -> None:
+        mutations = (
+            (
+                lambda fields: fields.pop("signed_at"),
+                "complete reviewed certificate signature adornment set",
+            ),
+            (
+                lambda fields: fields.__setitem__("certificate_signature", "a" * 127),
+                "invalid reviewed certificate signature",
+            ),
+            (
+                lambda fields: fields.__setitem__("certificate_signature", "g" * 128),
+                "invalid reviewed certificate signature",
+            ),
+            (
+                lambda fields: fields.__setitem__("certificate_signature", "0" * 128),
+                "signature components outside the reviewed P-256 range",
+            ),
+            (
+                lambda fields: fields.__setitem__(
+                    "certificate_signature",
+                    f"{DISCLOSURE._P256_ORDER:064x}" + "a" * 64,
+                ),
+                "signature components outside the reviewed P-256 range",
+            ),
+            (
+                lambda fields: fields.__setitem__(
+                    "certificate_signature",
+                    "a" * 64 + f"{DISCLOSURE._P256_ORDER:064x}",
+                ),
+                "signature components outside the reviewed P-256 range",
+            ),
+            (
+                lambda fields: fields.__setitem__("public_key_fingerprint", "b" * 15),
+                "invalid reviewed public-key fingerprint",
+            ),
+            (
+                lambda fields: fields.__setitem__(
+                    "signature_algorithm", "ECDSA-P256"
+                ),
+                "unreviewed certificate signature algorithm",
+            ),
+            (
+                lambda fields: fields.__setitem__(
+                    "signed_at", "2026-02-30T15:35:42.123456"
+                ),
+                "invalid reviewed certificate signing time",
+            ),
+            (
+                lambda fields: fields.__setitem__(
+                    "signed_at", "2026-07-31T15:35:42.123456Z"
+                ),
+                "invalid reviewed certificate signing time",
+            ),
+        )
+        for mutate, expected in mutations:
+            with self.subTest(expected=expected), tempfile.TemporaryDirectory() as tmp:
+                bundle = self._bundle(Path(tmp))
+                certificate_path = (
+                    bundle / "certificates" / "synthetic_quality_certificate.json"
+                )
+                certificate = json.loads(
+                    certificate_path.read_text(encoding="utf-8")
+                )
+                fields = self._certificate_signature_adornments()
+                mutate(fields)
+                certificate.update(fields)
+                certificate_path.write_text(
+                    json.dumps(certificate), encoding="utf-8"
+                )
+
+                with self.assertRaisesRegex(DISCLOSURE.DisclosureError, expected):
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_certificate_signature_extension_is_top_level_only(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = self._bundle(Path(tmp))
+            certificate_path = (
+                bundle / "certificates" / "synthetic_quality_certificate.json"
+            )
+            certificate = json.loads(certificate_path.read_text(encoding="utf-8"))
+            certificate["statistical_comparison"]["certificate_signature"] = "a" * 128
+            certificate_path.write_text(json.dumps(certificate), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                DISCLOSURE.DisclosureError, "outside the reviewed public schema"
+            ):
+                DISCLOSURE.validate_bundle(bundle, ROOT)
+
     def test_legacy_srg_labels_fail_closed_across_consumed_surfaces(self) -> None:
         mutations = (
             (

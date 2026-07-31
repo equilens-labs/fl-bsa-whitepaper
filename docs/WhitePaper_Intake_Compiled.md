@@ -2,13 +2,14 @@
 
 Evidence/run vintage: 2025‑10‑07
 Historical intake archived: 2026‑07‑09
-Document boundary annotation updated: 2026‑07‑15
+Document boundary annotation updated: 2026‑07‑31
 
 Historical notice — This pre-v5 compilation is retained for traceability only. It is not the
 current v5 architecture, evidence inventory, claim register, or publication-approval record. For
 the current v5 intake boundary, start with `intake/pack_intent.json`,
-`intake/metrics_uncertainty.json`, `intake/manifest.json`, and the unsigned certificates under
-`intake/certificates/`.
+`intake/metrics_uncertainty.json`, `intake/manifest.json`, and the tracked certificate baselines
+under `intake/certificates/`. Those tracked baselines are unsigned; an incoming product bundle may
+carry the optional public signature metadata allowed by the disclosure validator.
 
 Status Notice — Pre‑Production
 - This whitepaper intake and attached run evidence are produced from a pre‑production (gold‑gate) environment. Outputs may contain issues and are subject to change.
@@ -470,10 +471,11 @@ Notes
  - Security scenario race AIR computed from per‑group selection rates (asian vs best group) ≈ 0.78 (< 0.80) — claim updated accordingly
 
 2026 Archival Annotation — Current v5 Intake Entry Points
-- `intake/pack_intent.json` — current intake-only scope and unsigned-certificate expectation
+- `intake/pack_intent.json` — current intake-only scope; certificate signing is not required
 - `intake/metrics_uncertainty.json` — deterministic fairness-uncertainty source of truth
 - `intake/manifest.json` — reproducibility and producer provenance
-- `intake/certificates/` — current unsigned intake certificates, governed by `pack_intent.json`
+- `intake/certificates/` — tracked unsigned baselines; signed producer replacements are accepted
+  only under the bounded public signature-field contract
 - `intake/fairness_slices.json`, `intake/selection_rates.csv`, and `intake/run_summary.json` — current run-level reviewer surfaces
 - `config/sap.yaml` — statistical-analysis plan consumed by the build
 

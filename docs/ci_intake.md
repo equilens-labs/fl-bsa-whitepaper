@@ -178,7 +178,7 @@ producer may carry a legacy-label correction history only with the exact reviewe
 contract, `interval_values_changed=false`, and a pointer to a validated current-method SRG block.
 Legacy, unknown, arithmetically inconsistent, duplicate, malformed, or unbound corrections fail
 closed.
-The validator itself carries four narrow reviewed empty-baseline/additive schemas: broken
+The validator itself carries five narrow reviewed empty-baseline/additive schemas: broken
 correlation rows and range-violation rows may reference only column names already disclosed by
 the tracked certificate, the SRG correction history may appear only on the two reviewed
 SRG-bearing artifacts, and `ci_runtime_provenance` may appear in either manifest only with the
@@ -200,6 +200,14 @@ Missing, malformed, duplicate, or unknown fields and incoherent SHA/disposition 
 closed. This records which already-verified runtime image was exercised; it does not make an
 equivalent-input image the same source build. The CI block must keep `full_ci_proven=false`; it
 cannot be used to widen the evidence or publication claim boundary.
+The fifth schema permits the product's four public ECDSA certificate-signing fields only at a
+certificate document's top level and only as a complete set. The validator requires a 128-character
+lowercase-hex signature, a 16-character lowercase-hex public-key fingerprint, the exact
+`ECDSA-P256-SHA256` algorithm label, and the product signer's UTC ISO timestamp form. Partial,
+nested, malformed, or differently labelled signature metadata fails closed.
+This is a disclosure-format and bounded-value check, not cryptographic verification. Signature
+authenticity and trust-root membership remain the responsibility of the product's release
+verification path.
 
 The consumer stages a complete replacement for the producer-managed surfaces:
 
