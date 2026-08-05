@@ -13,11 +13,11 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
         self.assertIn("includes/publication_profile.local.tex", main_tex)
         self.assertIn("DEMO / EVALUATION ONLY", main_tex)
         self.assertIn(r"\AddToShipoutPictureBG", main_tex)
-        self.assertIn(r"\ifdraft\fancyfoot[C]", main_tex)
         self.assertIn(
             r"\ifdraft\par\smallskip{\small\bfseries\DemoEvaluationWatermark}\fi",
             main_tex,
         )
+        self.assertNotIn(r"\ifdraft\fancyfoot[C]", main_tex)
 
     def test_public_ci_artifacts_enable_demo_watermark(self) -> None:
         for workflow_name, artifact_name in (
