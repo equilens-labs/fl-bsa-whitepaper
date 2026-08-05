@@ -1,12 +1,19 @@
+\section{Commit-Pinned Implementation Reference}
 
-\section{Implementation Reference}
-This whitepaper reflects the behaviour of \sysname{} as implemented in the FL-BSA codebase at commit \CodeCommitDisplay{}.
+This paper describes only product tag \ProductReleaseTag{} at commit
+\IdentityText{\ProductCommitRaw}. The commit-pinned modules relevant to the displayed surfaces are:
 
-Core metric implementations are:
-\begin{itemize}[leftmargin=*]
-\item \texttt{flbsa.metrics.mathematical\_definitions} (AIR and related fairness metrics)
-\item \texttt{flbsa.metrics.fairness\_uncertainty} (deterministic Wilson/delta uncertainty surface)
-\item \texttt{flbsa.metrics.statistical\_significance} (significance routines)
+\begin{itemize}
+  \item \path{flbsa.synthetic.generators.fl_bsa_ng} for the selected evidence-native branch path;
+  \item \path{flbsa.synthetic.fair_decisions} for the intrinsic post-label policy;
+  \item \path{flbsa.orchestrator.tasks.audit} for the publication uncertainty export and
+        highest-rate race comparator;
+  \item \path{flbsa.metrics.fairness_uncertainty} for Wilson, AIR delta, SRG, p-value, and
+        multiplicity surfaces; and
+  \item certificate hashing and release-evidence workflow code at the same commit for provenance.
 \end{itemize}
 
-The module names above provide commit-pinned traceability to the audited implementation. Detailed source review may require repository access; public handoff materials should reference release-published documentation rather than private repository paths.
+The product source also contains a separate configured-reference comparison helper. Its existence
+is why this paper distinguishes configured white from effective black and does not claim one
+uniform race method across every v5.0.1 output surface. Repository access is required for source
+review; the companion permits offline verification of the evidence actually consumed by the paper.

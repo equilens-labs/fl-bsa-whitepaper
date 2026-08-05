@@ -1,0 +1,266 @@
+{
+  "claim_scope": "synthetic_fixture_tstr_characterization_only",
+  "limitations": [
+    "The source is a generated fixture, not borrower or customer data.",
+    "All generated samples share one fitted generator and one held-out split.",
+    "Generation-seed variation does not include fixture-generator, model-fit, or deployment variation.",
+    "The intrinsic branch is excluded because its post-label policy changes the utility estimand.",
+    "The results do not establish production predictive utility, privacy, fairness, or legal compliance."
+  ],
+  "product": {
+    "branch": "amplification",
+    "commit": "cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2",
+    "generator": "first_party_evidence_native",
+    "repo": "equilens-labs/fl-bsa",
+    "tag": "v5.0.1"
+  },
+  "real_train_baseline": {
+    "accuracy_at_0_5": 0.6426666666666667,
+    "average_precision": 0.7477417101290645,
+    "brier_score": 0.21703076538065771,
+    "log_loss": 0.6232148571654698,
+    "positive_rate_train": 0.5682857142857143,
+    "roc_auc": 0.6986524512992601
+  },
+  "runtime": {
+    "numpy": "1.26.4",
+    "pandas": "2.3.3",
+    "python": "3.11.10",
+    "scikit_learn": "1.7.2"
+  },
+  "schema_version": "flbsa.whitepaper_fixture_utility.v1",
+  "source": {
+    "fixture": "evidence/v5.0.1/utility/balanced_fixture.csv.gz",
+    "fixture_sha256_gzip": "67785d0488d53d0c4a26f76f66ecb63bb582037ef207790752bd34e971831db9",
+    "fixture_sha256_uncompressed": "b04f721d789226723066b3d6ae70e4ab2a3fa17c825ef1d0e04d7d779571982b",
+    "rows": 5000,
+    "synthetic_fixture_only": true
+  },
+  "study": {
+    "classifier": "median-impute + standardize + logistic-regression",
+    "decision_threshold": 0.5,
+    "design": "train-on-synthetic-test-on-held-out-original",
+    "excluded_protected_attributes": [
+      "gender",
+      "race"
+    ],
+    "features": [
+      "age",
+      "income",
+      "credit_score",
+      "loan_amount",
+      "debt_to_income"
+    ],
+    "generated_rows_per_seed": 3500,
+    "generation_seeds": [
+      7,
+      11,
+      23,
+      42,
+      101,
+      1337,
+      2025,
+      4096,
+      8191,
+      314159
+    ],
+    "generator_fit_seed": 42,
+    "target": "loan_approved",
+    "test_rows": 1500,
+    "train_rows": 3500,
+    "train_test_seed": 50101
+  },
+  "synthetic_train_bands": {
+    "accuracy_at_0_5": {
+      "count": 10,
+      "max": 0.572,
+      "mean": 0.5688,
+      "min": 0.5666666666666667,
+      "stdev": 0.0016570090562050888
+    },
+    "average_precision": {
+      "count": 10,
+      "max": 0.724868948432829,
+      "mean": 0.5897381555773269,
+      "min": 0.4872458802880538,
+      "stdev": 0.07053451386431246
+    },
+    "brier_score": {
+      "count": 10,
+      "max": 0.2475806416426645,
+      "mean": 0.2448893862853619,
+      "min": 0.23944158025698647,
+      "stdev": 0.002653752238978922
+    },
+    "log_loss": {
+      "count": 10,
+      "max": 0.6883654961132774,
+      "mean": 0.6828670104764728,
+      "min": 0.67175763351833,
+      "stdev": 0.005409918088588603
+    },
+    "positive_rate_train": {
+      "count": 10,
+      "max": 0.5682857142857143,
+      "mean": 0.5682857142857143,
+      "min": 0.5682857142857143,
+      "stdev": 0.0
+    },
+    "roc_auc": {
+      "count": 10,
+      "max": 0.6665374140908258,
+      "mean": 0.5068372196683766,
+      "min": 0.3763206865123729,
+      "stdev": 0.08701031955752561
+    },
+    "roc_auc_retention": {
+      "count": 10,
+      "max": 0.9540328855231079,
+      "mean": 0.725449712121998,
+      "min": 0.5386378961564396,
+      "stdev": 0.12454020507008241
+    }
+  },
+  "synthetic_train_results": [
+    {
+      "generated_rows": 3500,
+      "generated_sha256": "9514be29cf8c430f232079a129f96f0c661e4413215b552b415a7164e6358690",
+      "metrics": {
+        "accuracy_at_0_5": 0.5686666666666667,
+        "average_precision": 0.5651361117380167,
+        "brier_score": 0.2455186477178709,
+        "log_loss": 0.6841658156963122,
+        "positive_rate_train": 0.5682857142857143,
+        "roc_auc": 0.49694414295576483
+      },
+      "roc_auc_retention": 0.7112894859691894,
+      "seed": 7
+    },
+    {
+      "generated_rows": 3500,
+      "generated_sha256": "f37efa16867928bd29eac81c99f6847f04b46621aa625ea4a6eac7fd3ee0df51",
+      "metrics": {
+        "accuracy_at_0_5": 0.572,
+        "average_precision": 0.724868948432829,
+        "brier_score": 0.23944158025698647,
+        "log_loss": 0.67175763351833,
+        "positive_rate_train": 0.5682857142857143,
+        "roc_auc": 0.6665374140908258
+      },
+      "roc_auc_retention": 0.9540328855231079,
+      "seed": 11
+    },
+    {
+      "generated_rows": 3500,
+      "generated_sha256": "e19030f8331eea3dcbc96a704d5aa8438940768871d456e34ed31c13f7d10d2b",
+      "metrics": {
+        "accuracy_at_0_5": 0.5666666666666667,
+        "average_precision": 0.5828337379909307,
+        "brier_score": 0.24623275318260426,
+        "log_loss": 0.6855950312503416,
+        "positive_rate_train": 0.5682857142857143,
+        "roc_auc": 0.4937967823356424
+      },
+      "roc_auc_retention": 0.7067845842626693,
+      "seed": 23
+    },
+    {
+      "generated_rows": 3500,
+      "generated_sha256": "8fa789b877a09015a11ac72d07c0a45620f60442e9f25f6b1efe0877d7cca7c4",
+      "metrics": {
+        "accuracy_at_0_5": 0.568,
+        "average_precision": 0.6042109029795362,
+        "brier_score": 0.244986716156515,
+        "log_loss": 0.6830688837064739,
+        "positive_rate_train": 0.5682857142857143,
+        "roc_auc": 0.5255439932885299
+      },
+      "roc_auc_retention": 0.752225219150371,
+      "seed": 42
+    },
+    {
+      "generated_rows": 3500,
+      "generated_sha256": "e59f071395a71d4bbe77c0d26b46d31c6221fbfcfc0f6ffebd673cad8acf9505",
+      "metrics": {
+        "accuracy_at_0_5": 0.5686666666666667,
+        "average_precision": 0.4872458802880538,
+        "brier_score": 0.2475806416426645,
+        "log_loss": 0.6883654961132774,
+        "positive_rate_train": 0.5682857142857143,
+        "roc_auc": 0.3763206865123729
+      },
+      "roc_auc_retention": 0.5386378961564396,
+      "seed": 101
+    },
+    {
+      "generated_rows": 3500,
+      "generated_sha256": "ac06d285458928006fe315b8044ad62709ae1bf69de69f1ccc3cf3978ac750f1",
+      "metrics": {
+        "accuracy_at_0_5": 0.5686666666666667,
+        "average_precision": 0.5003950631208395,
+        "brier_score": 0.2475605148634956,
+        "log_loss": 0.6883154392048242,
+        "positive_rate_train": 0.5682857142857143,
+        "roc_auc": 0.3970421695588441
+      },
+      "roc_auc_retention": 0.5682971108459983,
+      "seed": 1337
+    },
+    {
+      "generated_rows": 3500,
+      "generated_sha256": "9be9a4779334ff95a22222c2efa90c1d98b63e0d4ea140db995a0678808f8df6",
+      "metrics": {
+        "accuracy_at_0_5": 0.5713333333333334,
+        "average_precision": 0.6543202126120775,
+        "brier_score": 0.24119039575664503,
+        "log_loss": 0.675338634674933,
+        "positive_rate_train": 0.5682857142857143,
+        "roc_auc": 0.5997416156451183
+      },
+      "roc_auc_retention": 0.8584262669225583,
+      "seed": 2025
+    },
+    {
+      "generated_rows": 3500,
+      "generated_sha256": "78fefbb341d9b992bab4143631c9e2d5540ab267c0aa72fd956dabe617cfeed9",
+      "metrics": {
+        "accuracy_at_0_5": 0.5686666666666667,
+        "average_precision": 0.6274305275174832,
+        "brier_score": 0.24441395437559693,
+        "log_loss": 0.6819016697537577,
+        "positive_rate_train": 0.5682857142857143,
+        "roc_auc": 0.5536890436698552
+      },
+      "roc_auc_retention": 0.7925099849577262,
+      "seed": 4096
+    },
+    {
+      "generated_rows": 3500,
+      "generated_sha256": "f34a8e1d7471d29c52fccaaa404c32889f864b5a169620820bc3fd2c6c909901",
+      "metrics": {
+        "accuracy_at_0_5": 0.5673333333333334,
+        "average_precision": 0.599633781192288,
+        "brier_score": 0.2453484090414825,
+        "log_loss": 0.6837600331832009,
+        "positive_rate_train": 0.5682857142857143,
+        "roc_auc": 0.49657269279622246
+      },
+      "roc_auc_retention": 0.7107578193889725,
+      "seed": 8191
+    },
+    {
+      "generated_rows": 3500,
+      "generated_sha256": "b8a58d6e023a02edf979bb7625bea870cfceb4c70007a14f15c955082c0901d7",
+      "metrics": {
+        "accuracy_at_0_5": 0.568,
+        "average_precision": 0.5513063899012147,
+        "brier_score": 0.24662024985975756,
+        "log_loss": 0.6864014676632769,
+        "positive_rate_train": 0.5682857142857143,
+        "roc_auc": 0.46218365583058973
+      },
+      "roc_auc_retention": 0.6615358680429483,
+      "seed": 314159
+    }
+  ]
+}

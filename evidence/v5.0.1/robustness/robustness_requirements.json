@@ -1,0 +1,48 @@
+{
+  "allow_intrinsic_path_b": false,
+  "checks": [
+    {
+      "allowed_failures": 0,
+      "complete_metrics": 10,
+      "min_required": 10,
+      "ok": true,
+      "passed": 10,
+      "reasons": [],
+      "scenario": "balanced",
+      "total_seeds": 10
+    },
+    {
+      "allowed_failures": 2,
+      "complete_metrics": 10,
+      "min_required": 8,
+      "ok": true,
+      "passed": 10,
+      "reasons": [],
+      "scenario": "gender_bias",
+      "total_seeds": 10
+    },
+    {
+      "allowed_failures": 3,
+      "complete_metrics": 10,
+      "min_required": 7,
+      "ok": true,
+      "passed": 10,
+      "reasons": [],
+      "scenario": "outliers",
+      "total_seeds": 10
+    },
+    {
+      "allowed_failures": 0,
+      "complete_metrics": 10,
+      "min_required": 10,
+      "ok": true,
+      "passed": 10,
+      "reasons": [],
+      "scenario": "security",
+      "total_seeds": 10
+    }
+  ],
+  "passed": true,
+  "schema_version": "gold.robustness.requirements.v1",
+  "summary_path": "robustness_summary_merged.json"
+}

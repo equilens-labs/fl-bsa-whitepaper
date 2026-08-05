@@ -1,0 +1,36 @@
+{
+  "claims": {
+    "customer_evidence_disposition": "characterization_only",
+    "customer_evidence_eligible": false,
+    "publication_status": "candidate_not_published"
+  },
+  "persistence": {
+    "branch": "chore/wp-intake-cc32b3a8d13c-30765888408",
+    "mode": "workflow_write_once_release_snapshot",
+    "repository_admin_mutable": true,
+    "workflow_rewrite_allowed": false
+  },
+  "producer": {
+    "artifact": "wp-intake-bundle-v4-1",
+    "artifact_digest": "sha256:7241da6013653e96337c540d3670bed69c04454002f3e7d315a95e9c8e197615",
+    "artifact_id": "8838967644",
+    "branch": "main",
+    "bundle_filename": "WhitePaper_Intake_Bundle_v4.zip",
+    "bundle_sha256": "f6a0bd9390565f7bd852b451e11b7384b1628c24caba02865b1ec94c1e263026",
+    "contract_sha256": "71da7127165e227c17d854e523f45cecf82f758da95cdcc63b6eaee591a9a214",
+    "head_sha": "cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2",
+    "product_sha": "cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2",
+    "repo": "equilens-labs/fl-bsa",
+    "run_attempt": "1",
+    "run_id": "30765888408",
+    "workflow": "release-evidence.yml"
+  },
+  "schema_version": "flbsa.whitepaper_intake_snapshot.v3",
+  "snapshot_id": "5e58a49ac129319cd28d20ae7eb2f7cb0dee9f6aa35e4c6df5652dea6653f50a",
+  "whitepaper": {
+    "base_commit": "6b934fe21ab60f326e0601801f4e976f9d9b9f9c",
+    "manifest_sha256": "3278765fad80e0693fa5fa6c9359da9c63802b63c93e1385d894d4cb241621af",
+    "pack_intent_sha256": "1495e9ad64a13e2372be290a7b6c226b13255115b61f1e987e3040ff9d11669d",
+    "repo": "equilens-labs/fl-bsa-whitepaper"
+  }
+}

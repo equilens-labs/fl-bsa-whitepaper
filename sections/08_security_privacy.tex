@@ -1,3 +1,57 @@
+\section{Security, Privacy, and Evidence Integrity}
 
-\section{Security and Privacy}
-In the configured self-hosted/no-egress posture, raw customer data remains inside client-controlled boundaries by default. Optional marketplace metering, when enabled, sends aggregate usage counts only. Provenance captures software container digests and dataset hashes per run. This intake does not claim differential privacy accounting; the manifest records \texttt{not\_differential\_privacy}, and the synthetic-quality certificates state that near-duplicate privacy and differential privacy are not claimed.
+\subsection{Data boundary}
+
+The characterized product posture is customer-hosted: decision data and generated row-level data
+are intended to remain inside the deployment boundary, while review artifacts expose aggregates
+and declared provenance. Actual network, identity, storage, backup, logging, and operator controls
+remain deployment responsibilities and must be validated in the target environment.
+
+This publication contains no customer data. The only row-level dataset in the companion is the
+5,000-row generated balanced fixture used for utility reproduction. Its uncompressed SHA-256 is
+\IdentityText{b04f721d789226723066b3d6ae70e4ab2a3fa17c825ef1d0e04d7d779571982b}; the source manifest
+binds it to the exact v5.0.1 Gold artifact. It contains generated attributes, not names, contact
+details, account identifiers, free text, credentials, or customer records.
+
+\subsection{Bounded privacy observations}
+
+The branch certificates report an exact-output wall and zero exact training-row reproductions in
+the final amplification and intrinsic artifacts. That observation is bounded to the shared columns,
+canonical predicate, and exact files in this run. It does not cover near matches, membership
+inference, attribute inference, auxiliary information, linkage attacks, or future runs.
+
+The reported privacy score is explicitly a quality heuristic. Near-duplicate status is
+\texttt{not\_computed}; no differential-privacy mechanism, budget, accountant, or formal guarantee
+is claimed. A deployment that requires a defined privacy risk threshold must add an approved
+near-duplicate or distance-based protocol and, where appropriate, a separately designed formal
+privacy mechanism.
+
+\subsection{Four distinct integrity layers}
+
+The evidence uses several mechanisms that should not be conflated:
+
+\begin{enumerate}
+  \item \textbf{File hashes} detect a byte change relative to a known digest.
+  \item \textbf{Certificate content hashes and predecessor links} connect the 21 bundled
+        certificates internally. The companion recomputes every stored hash and resolves 20 links
+        to one root.
+  \item \textbf{Workflow and artifact identities} bind the source repository, head commit, run,
+        attempt, artifact ID, artifact API digest, inner bundle digest, and intake contract.
+  \item \textbf{Candidate companion digest} binds all co-distributed evidence files to the value
+        printed on the cover.
+\end{enumerate}
+
+The certificate JSON includes ECDSA algorithm, signature, timestamp, and key-fingerprint fields,
+but the corresponding public key is not included in this companion. The offline verifier checks
+their completeness and encoding, not their cryptographic authorship. The companion ZIP itself is
+not signed. Therefore, an untrusted party could replace both a ZIP and an unauthenticated digest.
+Independent verification requires the cover PDF or ZIP digest to arrive through a separately
+trusted channel, or a future authorized release to add a verifiable external signature.
+
+\subsection{Threats not resolved by this paper}
+
+This characterization does not test deployment hardening, authorization policy, tenant isolation,
+operator compromise, supply-chain compromise outside the recorded image, denial of service,
+maliciously selected inputs, training-data poisoning, or exfiltration through a modified deployment.
+It also does not prove that the public source and a privately operated image are identical beyond
+the recorded digest relationship. Those controls belong in a deployment-specific security review.

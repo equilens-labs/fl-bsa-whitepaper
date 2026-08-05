@@ -1,14 +1,78 @@
+\section{Independent Verification and Reproduction}
 
-\section{Reproducibility}
-Every table in this paper is tied to a run identifier and a manifest. The manifest records the dataset hash, code commit, container image digests, random number generator seed, hardware description, and start/end timestamps, as summarised in Appendix~E.
+\subsection{Offline companion verification}
 
-\subsection{How to verify this bundle}
-\begin{enumerate}[leftmargin=*]
-\item Check \path{intake/manifest.json} for the FL-BSA code commit, run identifier, dataset hash, image digests, seeds, and \path{customer_evidence_eligible=false} posture.
-\item Check \path{intake/fairness_slices.json} and \path{intake/metrics_uncertainty.json}; the historical, amplification, and intrinsic AIR values in \Cref{tab:gender_air_slices,fig:gender_air_slices} are rendered from those files.
-\item Regenerate derived TeX and figures with \texttt{make macros plots}; this rewrites \path{includes/metrics_macros.tex}, \path{includes/provenance_macros.tex}, and the PDF figures from the checked-in intake.
-\item Rebuild with \texttt{make pdf}. When the public publication profile is enabled, confirm that the rendered PDF still carries the demo/evaluation watermark.
-\item Inspect \path{intake/pack_intent.json} and \path{intake/certificates/*.json} before relying on signatures; this whitepaper bundle is intentionally unsigned review evidence, while GOLD evidence bundles carry certificate signatures when that mode is enabled.
-\end{enumerate}
+The standalone verification surface is \IdentityText{\CompanionFilenameRaw}, size
+\CompanionSizeRaw{} bytes, with SHA-256 \IdentityText{\CompanionShaRaw}. This candidate has no
+public URL; the ZIP must be delivered with the PDF. From a directory containing the ZIP:
 
-In addition, the whitepaper intake bundle includes an unsigned certificate chain (JSON) for auditability and tamper-evidence; \path{intake/pack_intent.json} records \path{certificate_signing_expected=false}. When certificate signing is enabled for GOLD evidence bundles, certificates are ECDSA P-256 signed and record signature material in fields such as \path{certificate_signature}, \path{signature_algorithm}, and \path{public_key_fingerprint}. For cryptographically verifiable certificate signatures, reviewers should use the GOLD evidence bundles and certificate-chain outputs rather than this whitepaper intake bundle.
+\begin{verbatim}
+sha256sum fl-bsa-v5.0.1-companion-evidence.zip
+python3 verify_companion_bundle.py \
+  fl-bsa-v5.0.1-companion-evidence.zip
+\end{verbatim}
+
+The first command must match the digest printed on the cover. The second command is included at
+the ZIP root and uses only Python's standard library. It rejects unsafe or duplicate archive paths,
+checks every file size and SHA-256 in \path{MANIFEST.json}, verifies the exact product and workflow
+identities, checks the customer/publication boundary in
+\path{intake/archive/v5.0.1-release-30765888408.json}, validates the corrected SRG method and race
+policy, recomputes all certificate hashes and links, and checks completeness of the 40 Gold runs
+and ten utility seeds.
+
+To run the verifier directly from the ZIP, extract only after the digest check:
+
+\begin{verbatim}
+mkdir fl-bsa-v5.0.1-companion-evidence
+cd fl-bsa-v5.0.1-companion-evidence
+python3 -m zipfile -e ../fl-bsa-v5.0.1-companion-evidence.zip .
+python3 verify_companion_bundle.py .
+\end{verbatim}
+
+No instruction depends on an unbundled repository-relative evidence file. The current regulatory
+overlay is at
+\path{evidence/v5.0.1/publication/regulatory_mapping_2026-08-05.csv}; the complete derived
+characterization is at \path{evidence/v5.0.1/publication/characterization_summary.json}.
+
+\subsection{Utility reproduction}
+
+The companion verifier confirms the supplied utility input and output bytes. Full recomputation
+also requires an exact checkout of product tag v5.0.1 and its Python dependencies. From the
+whitepaper source checkout, with the companion fixture available:
+
+\begin{verbatim}
+python3 scripts/evaluate_fixture_utility.py \
+  --product-root /path/to/exact-v5.0.1-checkout \
+  --fixture evidence/v5.0.1/utility/balanced_fixture.csv.gz \
+  --output /tmp/utility_summary.json
+sha256sum /tmp/utility_summary.json
+\end{verbatim}
+
+The product checkout is rejected unless \texttt{git describe --exact-match} returns v5.0.1 and
+HEAD is \IdentityText{\ProductCommitRaw}. A matching result has SHA-256
+\IdentityText{d48b1641bb48b1ea096decc1575899d91cbeeaf4ca201ad26d942a46936594e9} under the recorded
+Python, NumPy, pandas, and scikit-learn versions.
+
+\subsection{Whitepaper build}
+
+At whitepaper commit \IdentityText{\WhitepaperCommitRaw}, the reviewed build sequence is:
+
+\begin{verbatim}
+python3 -m unittest discover -s tests
+make pdf
+make arxiv
+\end{verbatim}
+
+The PDF target regenerates strict evidence macros, old compatibility figures, the six
+characterization visuals, the paper-owned summary, the deterministic companion, and the untracked
+self-identity include before compiling. A release candidate is rebuilt only from a clean source
+checkout so its paper commit and companion manifest agree. The PDF is built twice in verification
+to confirm deterministic bytes; fonts, bookmarks, language metadata, tags, and alternative text
+are separately inspected because byte determinism does not imply accessibility.
+
+\subsection{Source hierarchy}
+
+The exact producer intake remains unchanged except for the deterministic whitepaper-consumer stamp.
+Paper-owned corrections live under \path{evidence/v5.0.1/publication/}. This separation permits a
+reviewer to distinguish original evidence, a corrected interpretation, and a derived study. The
+companion manifest hashes all three layers and states that the candidate is not published.

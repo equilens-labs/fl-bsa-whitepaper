@@ -1,11 +1,85 @@
-
 \section{Methods}
 
-\subsection{Data Scope}
-We work with aggregated data only. For each split we use selection counts and rates, per-group confusion counts, and calibration-bin summaries. No row-level data is required for the analyses in this whitepaper.
+\subsection{Single-run fairness inference}
 
-\subsection{Estimators and Uncertainty}
-Selection-rate proportions use Wilson 95\% confidence intervals \citep{brown2001interval}. For the disparity ratio (\cref{eq:air}), we use a deterministic delta-method confidence interval on $\log(\mathrm{AIR})$; approval-rate gaps (\cref{eq:srg}) use the conservative difference of the independent Wilson endpoints, $[L_g-U_{\mathrm{ref}},\,U_g-L_{\mathrm{ref}}]$. Two-sided p-values use a two-proportion z-test by default, switching to Fisher's exact test under a small-sample policy (small group size or sparse $2\times 2$ cells).
+For each observed group count, the paper uses a two-sided 95\% Wilson score interval
+($\alpha=0.05$) without a continuity correction \citep{brown2001interval}. For AIR, the producer applies a delta-method
+interval on the log ratio. With estimated rates $\widehat p_g$ and $\widehat p_r$, the approximate
+variance is
+\begin{equation}
+  \widehat{\operatorname{Var}}\!\left[\log(\widehat p_g/\widehat p_r)\right]
+  = \frac{1-\widehat p_g}{n_g\widehat p_g}
+  + \frac{1-\widehat p_r}{n_r\widehat p_r}.
+  \label{eq:air-delta}
+\end{equation}
+The log-scale interval is exponentiated. SRG uses the endpoint construction in
+\autoref{eq:srg-interval}. Two-sided p-values use a two-proportion $z$ test. The four race comparisons
+apply Holm--Bonferroni adjustment to the AIR p-values; unadjusted values remain in the evidence.
 
-\subsection{Multiplicity Adjustment}
-For multi-class race, we perform pairwise comparisons against a fixed reference group. P-values across the race-pair family are adjusted using the Holm--Bonferroni step-down procedure at level $\alpha=0.05$. Confidence intervals are reported per pair and are not multiplicity-adjusted.
+All displayed AIR and SRG intervals come from \path{intake/metrics_uncertainty.json} and
+\path{intake/fairness_slices.json}. The bootstrap fields retained in the manifest and
+\path{intake/metrics_long.csv} are a compatibility annex; they are not the headline interval
+source. This separation matters because the two surfaces use different interval constructions.
+
+\subsection{What the intervals and p-values mean}
+
+The inference treats the generated rows as the observed dataset. The historical slice contains
+3,000 fixture rows; each generated branch contains 10,000 rows because that was the configured
+release-evidence output size. Ten thousand is a scenario choice, not a naturally occurring sample
+size. It narrows conditional intervals and contributes to the amplification branch's very small
+p-value. The p-value therefore says that equal rates are incompatible with this generated table
+under the test model; it does not measure substantive importance or the probability that a lender
+discriminated.
+
+The single-run intervals exclude uncertainty from fixture construction, generator fitting,
+scenario selection, hyperparameter choice, protected-attribute encoding, unobserved groups,
+deployment drift, and variation across generation seeds. The paper reports them because they
+reproduce the release evidence exactly, but does not relabel them as total uncertainty.
+
+\subsection{Branch-quality characterization}
+
+Each branch certificate reports an overall score, an aggregate distribution score, correlation
+preservation, demographic-proportion drift, and a privacy heuristic. The overall gate threshold is
+0.80. Scores are reported for both branches; neither branch substitutes for the other. The privacy
+number is explicitly scoped as a quality heuristic. The release claims no differential-privacy
+budget, and near-duplicate detection was not computed. The exact-output wall reports zero exact
+training-row reproductions before and after its final check in this run, a much narrower fact than
+a general privacy guarantee.
+
+The producer certificate's downstream-utility field is \texttt{not\_evaluated} for both branches.
+The separate study below fills part of that evidence gap without retroactively changing the
+certificate.
+
+\subsection{Multi-seed Gold characterization}
+
+The exact release includes ten planned and completed seeds across four scenarios: balanced,
+gender-bias positive control, outliers, and security. The companion preserves the exact merged
+summary, requirements, disposition, evidence manifest, and 40-row index. We report the minimum,
+mean, and maximum scenario disparity ratio and the gate outcome across those runs. These are
+descriptive seed bands; ten fixed seeds do not define a random-effects population or a confidence
+interval for future deployments.
+
+\subsection{Synthetic-fixture utility study}
+
+The companion adds a reproducible train-on-synthetic/test-on-held-out-original (TSTR) study. It
+uses the exact generated balanced fixture from the v5.0.1 Gold artifact. A deterministic stratified
+split assigns 3,500 rows to training and 1,500 to testing. The downstream classifier is median
+imputation, standardization, and logistic regression over age, income, credit score, loan amount,
+and debt-to-income. Gender and race are excluded. The real-train baseline and each synthetic-train
+model are evaluated on the same held-out fixture.
+
+The amplification generator is fit once on the 3,500-row training partition. It then produces ten
+training tables, one for each Gold seed, each with exactly 3,500 rows so row-count expansion does
+not advantage the synthetic models. ROC AUC, average precision, accuracy at 0.5, Brier score, and
+log loss are recorded. This design measures generation-seed variation conditional on one fixture,
+split, generator fit, and classifier family. It excludes fixture-generation uncertainty,
+generator-refit uncertainty, customer distribution shift, and the intrinsic branch because that
+branch changes the outcome through its post-label policy.
+
+\subsection{Determinism and derivation}
+
+Derived JSON, TeX tables, and figures are generated from checked-in machine-readable inputs. The
+build fixes timezone and \texttt{SOURCE\_DATE\_EPOCH}, suppresses volatile PDF engine fields, and
+uses fixed PDF metadata for Matplotlib outputs. The companion builder sorts member paths, fixes ZIP
+timestamps and permissions, hashes each member, and then runs an offline verifier. Determinism
+demonstrates repeatable transformation of fixed inputs; it does not make the inputs representative.

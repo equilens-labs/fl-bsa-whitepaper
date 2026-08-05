@@ -8,6 +8,7 @@ Thumbs.db
 *.pyc
 __pycache__/
 includes/publication_profile.local.tex
+includes/publication_identity.tex
 
 # LaTeX build artifacts
 *.aux

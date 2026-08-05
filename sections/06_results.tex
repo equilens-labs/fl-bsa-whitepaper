@@ -1,61 +1,162 @@
-
 \section{Results}
-\subsection{Fairness}
-\noindent \Cref{tab:gender_air_slices} is the main scenario readout. The historical fixture reports AIR \GenderAIRHistorical{} for \GenderProtectedGroup{} vs \GenderReferenceGroup{}, below the \AirMin{} four-fifths threshold. The amplification (bias-preserving) slice reproduces the same level of disparity at AIR \GenderAIRAmplification{}, showing that the branch preserves rather than launders the bias signal. The intrinsic (de-biased) slice restores the ratio to AIR \GenderAIRIntrinsic{}, which localizes the disparity to the decision labels in this fixture. The result should be read as a positive-control pass for detection and branch separation, not as a customer portfolio finding.
 
-\ifnum\GenderSlicesAvailable>0\relax
-\begin{table}[htbp]
-\centering
-\input{includes/table_gender_air_slices}
-\caption{Gender disparity ratio (AIR-equivalent) by data slice. We report the historical baseline (synthetic input fixture; no real borrower data), amplification (bias-preserving), and intrinsic (de-biased) slices for the configured pair (\GenderProtectedGroup{} vs \GenderReferenceGroup{}), with deterministic confidence intervals and counts.}
-\label{tab:gender_air_slices}
-\end{table}
-\fi
+\subsection{Gender selection-rate characterization}
+
+Table~\ref{tab:characterization-slices} separates the point-screen relation from the interval-screen
+relation. The historical fixture AIR is \HistoricalAIR{}. Its interval crosses 0.80, so the point
+is below the internal line while the conditional interval is not wholly below it. Amplification AIR
+is \AmplificationAIR{} with interval [\AmplificationAIRLower{}, \AmplificationAIRUpper{}], entirely
+below the line. The difference between the historical and amplification points is about
+$8.0\times10^{-5}$, which is consistent with signal preservation for this fixed run.
 
 \begin{table}[htbp]
-\centering
-\input{includes/table_air_summary}
-\caption{Disparity ratios (AIR-equivalent) by protected attribute for the amplification (bias-preserving) synthetic slice. For gender we report the configured pair (\GenderProtectedGroup{} vs \GenderReferenceGroup{}). Race is shown in the main body only when the race small-n display policy is satisfied; otherwise it remains available in the machine-readable intake files. Intervals are deterministic (delta-method on $\log(\mathrm{AIR})$), and p-values are two-sided with small-n safeguards.}
-\label{tab:air_summary}
+  \centering
+  \small
+  \input{includes/table_characterization_slices.tex}
+  \caption{Gender AIR by slice. ``Relation'' is descriptive: it is not a legal or product
+  pass/fail state. Intervals are conditional on the displayed generated tables.}
+  \label{tab:characterization-slices}
 \end{table}
 
-\IfFileExists{figures/gender_air_slices.pdf}{%
+The intrinsic parity-policy control has AIR \IntrinsicAIR{} with interval
+[\IntrinsicAIRLower{}, \IntrinsicAIRUpper{}]. That shows the equal-rate post-label step executed
+and the branches did not collapse into one output. Because parity is imposed by policy, the number
+does not show that FL-BSA discovered or repaired the cause of the historical gap.
+
+The two-sided p-values are approximately $2.54\times10^{-14}$ for the 3,000-row historical slice,
+$5.93\times10^{-44}$ for the 10,000-row amplification slice, and 0.998 for the intrinsic control.
+The amplification result's extreme significance is partly a consequence of generating 10,000
+rows. Effect size, interval, sample construction, and scenario purpose are therefore reported
+alongside the test.
+
 \begin{figure}[htbp]
-\centering
-\includegraphics[width=0.72\textwidth]{figures/gender_air_slices.pdf}
-\caption{Gender AIR across the historical, amplification (bias-preserving), and intrinsic (de-biased) slices, with deterministic 95\% confidence intervals. The dashed line marks the \AirMin{} four-fifths threshold.}
-\label{fig:gender_air_slices}
+  \centering
+  \includegraphics[
+    alt={Point and interval plot for gender AIR. Historical is 0.759 with interval 0.707 to 0.815 and crosses the 0.80 internal screen. Amplification is 0.759 with interval 0.730 to 0.789 and lies below the screen. Intrinsic parity-policy control is 1.000 with interval 0.975 to 1.026 and lies above the screen.},
+    width=0.88\linewidth
+  ]{figures/characterization_air_slices.pdf}
+  \caption{Branch AIR points and 95\% conditional intervals. The orange dashed line is an internal
+  characterization screen.}
+  \label{fig:air-slices}
 \end{figure}
-}{}
 
-\FloatBarrier
+The amplification SRG is $-0.1391$ with conservative interval
+$[-0.1665,-0.1116]$; the intrinsic SRG is approximately $0.00002$ with interval
+$[-0.02538,0.02544]$. Every displayed SRG interval and every race SRG interval declares the
+correct conservative Wilson-endpoint-difference method.
 
-\subsection{Approval-Rate Gaps}
-\noindent \Cref{tab:srg_summary} reports the protected-minus-reference approval-rate gap for the evaluated groups.
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[
+    alt={Horizontal interval plot of amplification selection rates. Female selection is 0.438 with a 95 percent Wilson interval from 0.425 to 0.452. Male selection is 0.577 with interval from 0.563 to 0.591.},
+    width=0.70\linewidth
+  ]{figures/selection_rates.pdf}
+  \caption{Amplification gender selection rates and Wilson intervals. Race is deliberately omitted
+  from the headline plot under the declared display policy.}
+  \label{fig:selection-rates}
+\end{figure}
+
+\subsection{Race method and bounded result}
+
+White is the configured provenance reference. The active highest-rate policy selected black as
+the effective reference at selection rate 0.5411. The worst pair is other versus black, AIR
+0.8818 with conditional interval [0.7814, 0.9950]. Its unadjusted two-sided p-value is 0.0405 and
+its Holm-adjusted AIR p-value is 0.1618. Hispanic has the smallest count, 273. These values are
+disclosed for method clarity but are not promoted to a headline fairness verdict.
+The complete machine-readable intake is in \path{intake/selection_rates.csv} and
+\path{intake/metrics_uncertainty.json}, both included in the companion.
+
+\subsection{Branch quality}
+
+Both branch certificates exceed their configured overall-quality threshold: amplification scores
+\AmplificationQuality{} and intrinsic scores \IntrinsicQuality{}. The component view is more
+informative than either total. Amplification distribution score is 0.999 and correlation
+preservation is 0.961; intrinsic values are 0.954 and 0.978. Maximum demographic-proportion drift
+is 0.0067 percentage points for amplification and 0.0567 percentage points for intrinsic.
+
 \begin{table}[htbp]
-\centering
-\input{includes/table_srg_summary}
-\caption{Approval-rate gaps (SRG) by protected attribute on the amplification (bias-preserving) slice. SRG is defined in \cref{eq:srg} as the protected group selection rate minus the reference group selection rate, with deterministic confidence intervals and two-sided p-values.}
-\label{tab:srg_summary}
+  \centering
+  \small
+  \input{includes/table_quality_summary.tex}
+  \caption{Quality components for both branches. The privacy value is the certificate's bounded
+  heuristic; it is neither a differential-privacy guarantee nor a near-duplicate assessment.}
+  \label{tab:quality}
 \end{table}
 
-\FloatBarrier
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[
+    alt={Grouped bar chart of amplification and intrinsic quality components. Overall scores are 0.906 and 0.900, distribution scores 0.999 and 0.954, correlation scores 0.961 and 0.978, and privacy heuristic scores about 0.666 for both. A dashed 0.80 line applies only to the overall-quality gate.},
+    width=0.86\linewidth
+  ]{figures/characterization_quality.pdf}
+  \caption{Branch quality breakdown. The 0.80 gate is drawn for context but does not convert each
+  differently scoped component into an equivalent threshold test.}
+  \label{fig:quality}
+\end{figure}
 
-\subsection{Calibration}
-\ifnum\EceEvaluated>0\relax
+The exact-output wall reports zero exact training-row reproductions before and after the final
+check for both branches. Near-duplicate status is \texttt{not\_computed}; differential privacy is
+not claimed. The producer's utility field is \texttt{not\_evaluated}, so the overall score cannot
+be described as complete-run utility or privacy evidence.
+
+\subsection{Multi-seed robustness}
+
+All 40 configured Gold scenario runs passed their release requirements. The balanced scenario AIR
+range is 0.991--1.009; the gender-bias positive-control range is 0.650--0.650; outliers is
+0.955--1.037; and security is 0.991--1.009. The deliberately biased scenario's sub-0.80 value is an
+expected test signal, not a failed gate.
+
 \begin{table}[htbp]
-\centering
-\input{includes/table_ece_summary}
-\caption{Expected calibration error summary for this run. In this synthetic audit scenario, calibration is not evaluated because no probability scores are available in the intake bundle; calibration compliance is therefore unknown.}
-\label{tab:ece_summary}
+  \centering
+  \small
+  \input{includes/table_robustness_summary.tex}
+  \caption{Exact release Gold seed bands. ``Passing'' refers to the multi-condition scenario gate,
+  not whether AIR is above 0.80.}
+  \label{tab:robustness}
 \end{table}
-\else
-\noindent\emph{Note.} Calibration (ECE) was not evaluated in this scenario; calibration compliance is therefore unknown in this whitepaper.
-\fi
 
-\noindent\emph{Equalized odds (EO).} EO summaries were generated but marked \texttt{NOT\_INFORMATIVE} because the confusion surface is degenerate for this run, meaning the true-positive and false-positive cells do not support informative group comparisons. They are diagnostic only and are not counted as a fairness pass.
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[
+    alt={Horizontal min, mean and max plot across ten seeds for four scenarios. Balanced, outliers and security cluster near one. The deliberate gender-bias scenario clusters near 0.650. All forty configured scenario runs passed their scenario-specific gates.},
+    width=0.87\linewidth
+  ]{figures/characterization_robustness.pdf}
+  \caption{Descriptive seed ranges for the exact Gold release. They do not represent confidence
+  intervals for future data or deployments.}
+  \label{fig:robustness}
+\end{figure}
 
-\FloatBarrier
+\subsection{Utility evidence}
 
-\subsection{Provenance}
-The run manifest records the dataset hash, code commit, container image digests, random seeds, and timestamps; key fields are listed in Appendix~E.
+The real-train fixture baseline ROC AUC is \UtilityBaselineAUC{}. Across ten equal-size
+synthetic-training tables, mean ROC AUC is \UtilitySyntheticAUCMean{}, ranging from
+\UtilitySyntheticAUCMin{} to \UtilitySyntheticAUCMax{}. Mean AUC retention is
+\UtilityRetentionMean{}, with range \UtilityRetentionMin{}--\UtilityRetentionMax{}. Average
+precision and log loss show the same general limitation.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \input{includes/table_utility_summary.tex}
+  \caption{TSTR utility on one held-out generated fixture. Lower log loss is better; higher AUC and
+  average precision are better.}
+  \label{tab:utility}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[
+    alt={Scatter plot of held-out fixture ROC AUC for ten generation seeds. Values range from 0.376 to 0.667 and average 0.507. A green line marks the real-train baseline of 0.699 and a grey line marks chance at 0.5.},
+    width=0.87\linewidth
+  ]{figures/characterization_utility.pdf}
+  \caption{Utility varies materially by generation seed and remains below the real-train fixture
+  baseline in every tested seed. This is a substantive limitation, not a passed utility claim.}
+  \label{fig:utility}
+\end{figure}
+
+\subsection{Explicit non-results}
+
+ECE remains unevaluated because no probability-score surface exists. EO remains non-informative
+because its confusion cells are degenerate. No conclusion is drawn for unencoded protected bases,
+intersectional combinations, customer portfolios, causal effects, production drift, or legal
+compliance.

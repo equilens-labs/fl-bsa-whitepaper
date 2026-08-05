@@ -1,3 +1,95 @@
+\section{Current Regulatory and Governance Context}
 
-\section{Compliance Mapping}
-We map framework requirements (\emph{e.g.}\ \ECOA/\RegB, SR 11-7, \EUAIAct) to controls and evidence artefacts. The detailed mapping for this run is given in Appendix~D. This paper documents model purpose, limitations, monitoring, provenance, and evidence-chain artefacts that reviewers can map to SR 11-7 \citep{sr11_7} expectations.
+\subsection{Interpretive rule}
+
+This section is current as of 5 August 2026 and uses primary official sources. It maps evidence
+features to governance questions; it does not convert a metric into a compliance conclusion.
+Applicability depends on the institution, role, jurisdiction, product, use, and effective dates.
+Legal and compliance owners must review the facts of a deployment.
+
+\subsection{Framework-by-framework mapping}
+
+The following expanded layout replaces the former compact table so that applicability boundaries
+and non-claims remain readable and accessible.
+
+\subsubsection{Federal Reserve model risk}
+
+\textbf{Current state and applicability.} SR 26-2 was issued on 17 April 2026 and supersedes and replaces
+SR 11-7 and SR 21-8. The guidance is most relevant to Federal Reserve-supervised banking
+organizations with more than \$30 billion in total consolidated assets; use-specific materiality
+and institutional scope still matter \citep{sr26_2}.
+
+\textbf{Appropriate evidence use.} Provenance, validation scope, outcome
+monitoring, limitations, change control, and independent challenge can support model-risk work.
+This paper does not assert conformance, applicability to every institution, or supervisory
+acceptance.
+
+\subsubsection{ECOA and Regulation B}
+
+\textbf{Current state and applicability.} The 2026 final rule, effective 21 July 2026, states that ECOA does not
+authorize disparate-impact liability or an effects test \citep{cfpb_regb_2026}. Other statutory,
+constitutional, contractual, state, and jurisdictional questions may still require review.
+
+\textbf{Appropriate evidence use.} AIR
+is used only as a voluntarily selected internal fairness screen and descriptive monitoring ratio.
+It is not presented as a Regulation B requirement, an ECOA disparate-impact test, or a lending-law
+verdict.
+
+\subsubsection{Employment-selection guidance}
+
+\textbf{Current state and applicability.} The four-fifths convention comes from US employment-selection
+guidance. The EEOC describes it as a rule of thumb, not a legal definition, and explains that it is
+not controlling in all circumstances \citep{eeoc_uniform_guidelines}.
+
+\textbf{Appropriate evidence use.} The convention explains
+the historical source of the paper's 0.80 line and the highest-rate comparison policy. It does not
+transfer an employment rule into a lending obligation.
+
+\subsubsection{EU AI Act}
+
+\textbf{Current state and applicability.} Regulation (EU) 2024/1689 includes data-governance, technical-documentation,
+transparency, accuracy, robustness, and human-oversight requirements for relevant systems
+\citep{eu_ai_act}. The 2026 AI Omnibus entered into force on 27 July 2026; official Commission
+materials state 2 December 2027 for Annex III high-risk rules and 2 August 2028 for
+product-integrated high-risk rules \citep{eu_ai_omnibus_2026,eu_ai_act_faq_2026}.
+
+\textbf{Appropriate evidence use.} Evidence lineage,
+declared data scope, monitoring, robustness, and human-review records may support a case-specific
+control framework. This paper does not determine provider/deployer roles, high-risk classification,
+conformity, or CE-marking status.
+
+\subsubsection{FCA Consumer Duty}
+
+\textbf{Current state and applicability.} Current FCA publications and FG22/5 materials continue to emphasize monitoring
+and evidence of good customer outcomes; perimeter and role remain firm-specific
+\citep{fca_consumer_duty_2026}.
+
+\textbf{Appropriate evidence use.} Group-level outcome monitoring, investigation records, and
+governance escalation can be supporting evidence. A generated fixture does not demonstrate good
+outcomes for customers or FCA compliance.
+
+\subsection{Control mapping, not certification}
+
+Within those limits, the companion can support a control owner who needs to answer narrower
+questions:
+
+\begin{itemize}
+  \item Which exact product source, runtime image, configuration, dataset hash, and seed produced
+        the evidence?
+  \item Were protected-group definitions and comparison policies declared before interpretation?
+  \item Were unevaluated, non-informative, small-group, utility, and privacy limitations preserved?
+  \item Can another reviewer recompute the files, certificate hashes, and displayed numbers?
+  \item Is a named human accountable for deciding whether additional investigation is required?
+\end{itemize}
+
+The answer to those questions may be useful in a compliance program, but usefulness is not itself
+compliance. The paper avoids labels such as ``compliant,'' ``certified,'' ``approved,'' or
+``regulator-ready'' for the characterization outcome.
+
+\subsection{Machine-readable dated overlay}
+
+The companion includes
+\path{evidence/v5.0.1/publication/regulatory_mapping_2026-08-05.csv}. Each row records the as-of
+date, current instrument, applicability boundary, appropriate evidence use, explicit non-claim,
+and primary source URL. The original producer regulatory matrix is retained unchanged for evidence
+provenance and is not treated as the current publication interpretation.

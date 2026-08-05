@@ -208,6 +208,8 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
                 )
                 fields = self._certificate_signature_adornments()
                 mutate(fields)
+                for field in self._certificate_signature_adornments():
+                    certificate.pop(field, None)
                 certificate.update(fields)
                 certificate_path.write_text(
                     json.dumps(certificate), encoding="utf-8"

@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class HyperparamsTableContractTests(unittest.TestCase):
-    def test_native_certificates_render_characterization_not_ctgan_defaults(self) -> None:
+    def test_native_certificates_override_legacy_tunable_defaults(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             cert_dir = root / "intake" / "certificates"
@@ -48,7 +48,7 @@ class HyperparamsTableContractTests(unittest.TestCase):
 
             stale_yaml = root / "intake" / "model_hyperparams.yaml"
             stale_yaml.write_text(
-                "model_family: CTGAN\nbranches:\n  amplification:\n    chosen:\n"
+                "model_family: legacy_tunable\nbranches:\n  amplification:\n    chosen:\n"
                 "      epochs: 100\n      pac: 10\n",
                 encoding="utf-8",
             )
@@ -75,20 +75,19 @@ class HyperparamsTableContractTests(unittest.TestCase):
 
             table = (out_dir / "table_hparams_chosen.tex").read_text(encoding="utf-8")
             self.assertIn("first-party evidence-native", table)
-            self.assertIn("No tunable GAN hyperparameters", table)
+            self.assertIn("No search dimensions declared", table)
             self.assertNotIn("None & 0 & None", table)
-            self.assertNotIn("CTGAN", table)
+            self.assertNotIn("legacy tunable", table)
 
-    def test_checked_in_native_intake_is_not_stale_ctgan(self) -> None:
+    def test_checked_in_native_intake_has_no_obsolete_generator_narrative(self) -> None:
         yaml_text = (ROOT / "intake" / "model_hyperparams.yaml").read_text(encoding="utf-8")
         table = (ROOT / "includes" / "table_hparams_chosen.tex").read_text(encoding="utf-8")
         appendix = (ROOT / "sections" / "appendix_f_hyperparams.tex").read_text(
             encoding="utf-8"
         )
 
-        self.assertNotIn("model_family: CTGAN", yaml_text)
+        self.assertIn("backend_id: first_party_evidence_native", yaml_text)
         self.assertNotIn("None & 0 & None", table)
-        self.assertNotIn("Model Hyperparameters (CTGAN)", appendix)
         self.assertIn("first-party evidence-native", table)
 
 

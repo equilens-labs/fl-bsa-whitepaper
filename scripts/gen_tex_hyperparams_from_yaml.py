@@ -280,10 +280,7 @@ def _is_native_hyperparameters(hp: Any) -> bool:
 def _native_disposition(hp_cert: Dict[str, Any]) -> str:
     reason = str(hp_cert.get("fallback_reason") or "")
     if reason == NATIVE_FALLBACK_REASON:
-        return (
-            "No tunable GAN hyperparameters; epochs, PAC, batch size, and GAN layers "
-            "are not applicable."
-        )
+        return "No search dimensions declared; applicable profile configuration is certificate-bound."
     status = str(hp_cert.get("status") or "")
     if status:
         return f"Recorded as {_escape_tex(status.replace('_', ' '))}; see intake certificate."

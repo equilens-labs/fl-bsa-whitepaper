@@ -1,183 +1,80 @@
-# FL-BSA Whitepaper Evidence Repository
+# FL-BSA v5.0.1 Characterization Whitepaper
 
-This repository houses the evidence, reviewer packs, and publication assets for the FL-BSA (Fair-Lending Bias-Simulation Appliance) regulatory whitepaper.
+This repository builds the review candidate, figures, and standalone companion evidence for the
+FL-BSA v5.0.1 characterization paper. The candidate is bound to:
 
----
+- annotated product tag `v5.0.1` (`3a0ea6e4faea9d61aabcedebab2a838624fb587d`);
+- peeled product commit `cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2`;
+- release-evidence workflow run `30765888408`, attempt `1`; and
+- primary intake ZIP SHA-256
+  `f6a0bd9390565f7bd852b451e11b7384b1628c24caba02865b1ec94c1e263026`.
 
-## Quick Start
+Its status is `candidate_not_published` and `characterization_only`. Nothing in the build creates,
+publishes, or merges a release.
 
-### Build PDF from Existing Metrics
+## Build
+
+Install the locked Python dependencies and a TeX Live distribution that provides `latexmk`, then:
+
 ```bash
-# Generate LaTeX macros from current intake data
-make macros
-
-# Build the whitepaper PDF
-make pdf
-# Output: dist/whitepaper.pdf
-
-# Package for arXiv submission
-make arxiv
-# Output: dist/whitepaper_arxiv_source.zip
-```
-
-### Update Evidence from fl-bsa
-```bash
-# 1. In fl-bsa repo, generate fresh evidence bundle
-cd /path/to/fl-bsa
-make gate-wp
-# Produces: artifacts/WhitePaper_Intake_Bundle_v4.zip
-
-# 2. In this repo, import the bundle
-unzip /path/to/WhitePaper_Intake_Bundle_v4.zip -d /tmp/bundle
-cp /tmp/bundle/intake/*.csv intake/
-cp /tmp/bundle/provenance/manifest.json intake/manifest.json
-
-# 3. Rebuild PDF with updated metrics
+python3 -m unittest discover -s tests
 make pdf
 ```
 
----
+Outputs:
 
-## Repository Structure
+- `dist/fl-bsa-v5.0.1-characterization-candidate.pdf`
+- `dist/fl-bsa-v5.0.1-companion-evidence.zip`
+- compatibility alias `dist/whitepaper.pdf`
 
-```
-fl-bsa-whitepaper/
-├── main.tex                    # LaTeX entry point
-├── sections/                   # Document sections (12 files)
-├── includes/                   # Macros and auto-generated tables
-├── bib/                        # Bibliography (references.bib)
-├── intake/                     # Evidence data (CSVs, manifests)
-├── baselines/                  # Reviewed evidence-baseline descriptors
-├── config/                     # SAP thresholds (sap.yaml)
-├── scripts/                    # Build helpers
-├── docs/                       # Detailed specifications
-├── ops/                        # Bundle spec
-├── tasks/                      # Task documentation
-├── artifacts/                  # Reviewer bundles (current + archive)
-├── templates/                  # Intake templates for future cycles
-├── Makefile                    # Build targets
-└── .github/workflows/          # CI (LaTeX build, intake pull)
-```
-
----
-
-## Workflow
-
-### Evidence Generation (Producer: fl-bsa)
-
-The `fl-bsa` repository contains the FL-BSA runtime and the `gate-wp` target that generates deterministic evidence bundles:
+`make pdf` regenerates strict intake macros, plots, characterization assets, the deterministic
+companion ZIP, and an untracked self-identity include before compiling. Development builds record a
+dirty source state. After all tracked generated files are reviewed and committed, `make candidate`
+fails unless the checkout is clean and then embeds the exact whitepaper commit.
 
 ```bash
-make gate-wp
+make candidate
+sha256sum dist/fl-bsa-v5.0.1-characterization-candidate.pdf \
+  dist/fl-bsa-v5.0.1-companion-evidence.zip
 ```
 
-This:
-1. Starts FL-BSA services (API, Worker, Redis)
-2. Generates a seeded synthetic dataset
-3. Runs full bias analysis pipeline
-4. Computes fairness metrics (AIR, EO, ECE) with 95% CIs
-5. Captures provenance (dataset hash, container digests, seeds)
-6. Validates and packages: `WhitePaper_Intake_Bundle_v4.zip`
+## Offline companion verification
 
-### Publication (This Repo)
+The companion contains the exact release intake, all 21 certificates, the 40-run Gold robustness
+aggregate, the generated utility fixture and ten-seed TSTR result, current regulatory overlay,
+interpretation ledger, file manifest, and a standard-library verifier.
 
-1. Import the bundle to `intake/`, or run `pull-wp-intake.yml` so CI validates and builds review artifacts; the current producer contract disables public Git snapshot persistence
-2. Run `make pdf` to compile LaTeX with updated metrics
-3. CI automatically builds on push/PR
+```bash
+mkdir /tmp/flbsa-wp-companion
+python3 -m zipfile -e dist/fl-bsa-v5.0.1-companion-evidence.zip \
+  /tmp/flbsa-wp-companion
+python3 /tmp/flbsa-wp-companion/verify_companion_bundle.py \
+  dist/fl-bsa-v5.0.1-companion-evidence.zip
+```
 
-The stable-v5 characterization intake has a repository-owned durability descriptor at
-`baselines/stable-v5-characterization.json`. It pins the original producer release-evidence
-identity and the exact historical whitepaper `intake` / `config` Git trees, and can reconstruct a
-deterministic compatibility ZIP without relying on expiring Actions artifacts or a bounded
-release search. A separate selected-input projection binds publication candidates while allowing
-traceability-only `intake/archive/` changes. See `docs/ci_intake.md` for validation/export
-commands.
+The verifier checks every member hash and size, source identities, bounded claim flags, corrected
+SRG method, race reference policy, certificate hashes and predecessor links, robustness
+completeness, and utility seed completeness. Certificate signature fields are checked for complete
+encoding only because the public verification key is not bundled; the companion therefore claims
+integrity linkage, not independent authentication.
 
----
+## Evidence layers
 
-## Key Files
+- `intake/`: exact producer-managed v5.0.1 whitepaper intake plus deterministic consumer stamp.
+- `evidence/v5.0.1/robustness/`: exact release Gold aggregate and index.
+- `evidence/v5.0.1/utility/`: generated fixture, source identity, reproducible TSTR script output.
+- `evidence/v5.0.1/publication/`: paper-owned current interpretation, identities, and derived
+  characterization. These files do not rewrite producer metrics.
+- `companion/`: offline handoff instructions.
 
-| Location | Description |
-|----------|-------------|
-| `intake/metrics_long.csv` | Fairness metrics with confidence intervals |
-| `intake/manifest.json` | Provenance (hashes, commits, seeds) |
-| `config/sap.yaml` | Statistical Analysis Plan thresholds |
-| `includes/metrics_macros.tex` | Auto-generated LaTeX macros |
-| `dist/whitepaper.pdf` | Compiled whitepaper |
+The 0.80 AIR line is an internally selected fairness-screening heuristic, not an ECOA or Regulation
+B compliance test. ECE is unevaluated, EO is non-informative, and the intrinsic parity result is a
+mechanical post-label control rather than a causal conclusion.
 
----
+## Publication boundary
 
-## SAP Thresholds
-
-Defined in `config/sap.yaml`:
-- **AIR** ≥ 0.80 (four-fifths rule)
-- **TPR gap** ≤ 0.05 (equalized odds)
-- **FPR gap** ≤ 0.05 (equalized odds)
-- **ECE** ≤ 0.02 (calibration error)
-
----
-
-## CI/CD
-
-### GitHub Actions Workflows
-
-| Workflow | Trigger | Purpose |
-|----------|---------|---------|
-| `latex.yml` | push, PR, manual | Build PDF/arXiv candidates; optionally stage assets on an existing draft release |
-| `pull-wp-intake.yml` | dispatch, schedule | Pull exact intake from the producer, validate it, rebuild, and upload review artifacts |
-
-Manual dispatch without `draft_release_tag` produces candidate workflow artifacts with
-`publication_status=candidate_not_published`. With an exact existing semantic tag, it requires a
-single still-unpublished draft release bound to the built tag commit, then stages and byte-verifies
-the PDF/arXiv assets. For an independently authorized `v5.0.0` draft it also stages the explicitly
-reconstructed compatibility ZIP and a hash-bound receipt whose status still says draft assets
-staged. Draft staging must be dispatched from that tag itself, for example
-`gh workflow run latex.yml --ref v5.0.0 -f draft_release_tag=v5.0.0`; dispatching from `main` is
-rejected even when the checkout could otherwise resolve the tag. If staging fails, use a full
-re-run of all jobs or a new exact-tag dispatch; partial failed-job re-runs are rejected so artifact
-and receipt attempts cannot diverge. The workflow never creates a
-release/tag, publishes a draft, or submits to arXiv. Only the
-draft-staging job has `contents: write`; the build job remains read-only.
-Public CI PDF artifacts enable the optional `DEMO / EVALUATION ONLY` text-layer watermark via
-`includes/publication_profile.local.tex`; local builds remain unmarked unless that local include
-sets `\drafttrue`.
-
-Routine scheduled and ordinary dispatched intake validates and builds with public branch
-persistence disabled. The existing rolling-history and write-once branch code is dormant behind the
-shared contract and would require a separate reviewed contract change before it could run. The
-workflow never force-pushes or deletes historical intake branches. Each selected producer run is
-API-verified and bounded polling must observe successful completion before stamping. Incoming
-bundle members pass explicit filename plus content/schema public-disclosure validation; the raw private-producer ZIP is never
-re-uploaded from this public repository. Producer-managed paths are replaced while the explicit
-repository-owned intake files and `intake/archive/` tree are preserved.
-When product CI supplies the optional bounded runtime-provenance block, the public validator also
-requires the image configuration's full source SHA and an exact build/reuse disposition, with the
-source-SHA relationship enforced for each disposition. See `docs/ci_intake.md`; this metadata does
-not change the bounded evidence or publication claim.
-
----
-
-## Documentation
-
-| Document | Description |
-|----------|-------------|
-| `docs/data_pipeline_spec.md` | Evidence pipeline architecture |
-| `docs/ci_intake.md` | Durable intake and stable-v5 anchor contract |
-| `docs/stable_v5_publication.md` | Stable-v5 PDF/arXiv candidate and publication boundary |
-| `docs/SAP.md` | Statistical Analysis Plan narrative |
-| `ops/Bundle_Spec_v4.md` | Reviewer bundle format spec |
-| `tasks/Intake.md` | Bundle consumption instructions |
-| `tasks/LaTeX-Structure.md` | LaTeX project structure |
-
----
-
-## Provenance
-
-Evidence bundles include full reproducibility metadata:
-- **Dataset hash**: SHA256 of input data
-- **Code commit**: Git SHA of producer code
-- **Container digests**: Exact image versions
-- **RNG seeds**: All random number generator seeds
-- **Timestamps**: Start and end times
-
-This ensures any evidence can be reproduced exactly.
+The PDF and companion must be reviewed and distributed together. This candidate has no public
+companion URL and is not signed. Public publication requires explicit owner approval, current legal
+review, a durable co-distribution route, and a trusted digest or signature channel. The workflows
+must not be used to merge a pull request or publish a release without the designated owner's own
+review and approval.

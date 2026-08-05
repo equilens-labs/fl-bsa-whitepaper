@@ -13,41 +13,58 @@ class PublicClaimBoundariesContractTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("customer\\_evidence\\_eligible=false", summary)
-        self.assertIn("customer\\_evidence\\_disposition=characterization\\_only", summary)
+        self.assertIn("customer_evidence_eligible=false", summary)
+        self.assertIn("customer_evidence_disposition=characterization_only", summary)
+        joined = "\n".join(
+            (ROOT / path).read_text(encoding="utf-8")
+            for path in (
+                "main.tex",
+                "sections/01_executive_summary.tex",
+                "sections/07_compliance.tex",
+                "sections/08_security_privacy.tex",
+                "sections/10_limitations_monitoring.tex",
+            )
+        )
+        joined = " ".join(joined.split())
         for non_claim in (
-            "legal/compliance certification",
-            "near-duplicate privacy",
-            "formal differential privacy",
-            "regulator approval",
+            "compliance determination",
+            "Near-duplicate",
+            "formal guarantee",
+            "supervisory acceptance",
         ):
             with self.subTest(non_claim=non_claim):
-                self.assertIn(non_claim, summary)
+                self.assertIn(non_claim, joined)
 
-    def test_unsigned_whitepaper_intake_certificates_are_not_claimed_signed(self) -> None:
+    def test_signature_metadata_is_not_claimed_as_standalone_authentication(self) -> None:
         pack_intent = json.loads((ROOT / "intake" / "pack_intent.json").read_text())
         self.assertIs(pack_intent["certificate_signing_expected"], False)
 
         signature_fields = {
             "certificate_signature",
+            "public_key_fingerprint",
             "signature_algorithm",
-            "signature",
             "signed_at",
-            "signer",
         }
         certs = sorted((ROOT / "intake" / "certificates").glob("*.json"))
         self.assertEqual(21, len(certs))
         for cert in certs:
             with self.subTest(cert=cert.name):
                 data = json.loads(cert.read_text(encoding="utf-8"))
-                self.assertTrue(signature_fields.isdisjoint(data.keys()))
+                self.assertTrue(signature_fields.issubset(data.keys()))
+                self.assertEqual("ECDSA-P256-SHA256", data["signature_algorithm"])
 
-        reproducibility = (ROOT / "sections" / "09_reproducibility.tex").read_text(
-            encoding="utf-8"
+        integrity = "\n".join(
+            (ROOT / path).read_text(encoding="utf-8")
+            for path in (
+                "sections/04_model_algorithm.tex",
+                "sections/08_security_privacy.tex",
+                "sections/09_reproducibility.tex",
+            )
         )
-        self.assertIn("unsigned certificate chain", reproducibility)
-        self.assertIn("certificate_signing_expected=false", reproducibility)
-        self.assertNotIn("Each certificate is cryptographically signed", reproducibility)
+        self.assertIn("public key is not included", integrity)
+        self.assertIn("encoding, not their cryptographic authorship", integrity)
+        self.assertIn("integrity linkage", integrity)
+        self.assertNotIn("Each certificate is cryptographically signed", integrity)
 
     def test_pre_v5_intake_files_are_archived_not_current_claim_surfaces(self) -> None:
         stale_root_names = {
@@ -116,7 +133,10 @@ class PublicClaimBoundariesContractTests(unittest.TestCase):
         privacy = (ROOT / "sections" / "08_security_privacy.tex").read_text(
             encoding="utf-8"
         )
-        self.assertIn("does not claim differential privacy accounting", privacy)
+        self.assertIn(
+            "no differential-privacy mechanism, budget, accountant, or formal guarantee",
+            privacy,
+        )
         self.assertNotIn("(if applicable) differential privacy accounting", privacy)
 
     def test_race_small_n_text_points_to_machine_readable_intake(self) -> None:
@@ -141,15 +161,26 @@ class PublicClaimBoundariesContractTests(unittest.TestCase):
         ) as handle:
             frameworks = {row["framework"] for row in csv.DictReader(handle)}
 
-        appendix = (ROOT / "sections" / "appendix_d_regulatory_matrix.tex").read_text(
+        current = (ROOT / "sections" / "07_compliance.tex").read_text(
             encoding="utf-8"
         )
         self.assertEqual({"EU AI Act", "CFPB/ECOA", "FCA Consumer Duty"}, frameworks)
-        self.assertIn(r"\EUAIAct", appendix)
-        self.assertIn(r"CFPB/\ECOA", appendix)
-        self.assertIn("FCA Consumer Duty", appendix)
-        self.assertIn("Controls and evidence (this run)", appendix)
-        self.assertNotIn("reproduces the regulatory mapping", appendix)
+        overlay_path = (
+            ROOT
+            / "evidence"
+            / "v5.0.1"
+            / "publication"
+            / "regulatory_mapping_2026-08-05.csv"
+        )
+        with overlay_path.open(newline="", encoding="utf-8") as handle:
+            overlay = list(csv.DictReader(handle))
+        self.assertEqual(5, len(overlay))
+        self.assertTrue(all(row["as_of"] == "2026-08-05" for row in overlay))
+        self.assertTrue(all(row["source_url"].startswith("https://") for row in overlay))
+        self.assertIn("SR 26-2", current)
+        self.assertIn("effective 21 July 2026", current)
+        self.assertIn("rule of thumb, not a legal definition", current)
+        self.assertIn("not presented as a Regulation B requirement", current)
 
     def test_alpha_source_uses_math_macro_not_literal_backslash(self) -> None:
         methods = (ROOT / "sections" / "03_methods.tex").read_text(encoding="utf-8")

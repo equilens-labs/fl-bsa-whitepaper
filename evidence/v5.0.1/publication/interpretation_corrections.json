@@ -1,0 +1,49 @@
+{
+  "as_of": "2026-08-05",
+  "corrections": [
+    {
+      "id": "srg-method",
+      "publication_interpretation": "The SRG interval is a conservative difference of separate Wilson endpoints.",
+      "producer_field": "conservative_wilson_endpoint_difference",
+      "values_changed": false
+    },
+    {
+      "id": "race-reference",
+      "publication_interpretation": "White is the configured provenance reference; the active pairwise screen uses the group with the highest observed selection rate, which is black in this run.",
+      "producer_field": "highest_selection_rate_four_fifths",
+      "values_changed": false
+    },
+    {
+      "id": "intrinsic-estimand",
+      "publication_interpretation": "Near-parity after the intrinsic branch demonstrates operation of the equal-rate post-label policy; it is not a causal counterfactual or proof that historical disparity originates in labels.",
+      "producer_field": "post_generation_equal_rate_policy",
+      "values_changed": false
+    },
+    {
+      "id": "internal-screen",
+      "publication_interpretation": "AIR 0.80 is an internally selected characterization screen. It is not an ECOA or Regulation B compliance verdict.",
+      "producer_field": "air_threshold=0.8",
+      "values_changed": false
+    },
+    {
+      "id": "single-run-inference",
+      "publication_interpretation": "Confidence intervals and p-values are conditional on this generated fixture and its configured row count; they do not include fixture-generator or across-run uncertainty.",
+      "producer_field": "confidence_level=0.95",
+      "values_changed": false
+    },
+    {
+      "id": "integrity-language",
+      "publication_interpretation": "Certificate hashes and predecessor links provide integrity linkage. Without an independently trusted signature or external digest they are not standalone tamper proof.",
+      "producer_field": "certificate_hash/previous_certificate_hash",
+      "values_changed": false
+    },
+    {
+      "id": "regulatory-current-state",
+      "publication_interpretation": "The paper-owned regulatory mapping dated 2026-08-05 supersedes the producer's run-time narrative mapping for publication interpretation while retaining the original producer file unchanged for provenance.",
+      "producer_field": "intake/regulatory_matrix.csv",
+      "values_changed": false
+    }
+  ],
+  "producer_evidence_mutated": false,
+  "schema_version": "flbsa.whitepaper_interpretation_corrections.v1"
+}

@@ -1,7 +1,8 @@
 {
   "branch_mode": "amplification",
-  "certificate_hash": "625795363cdf852be117ce4b5aeba48a77f1f19c5ba8021a76f13f4a8b3e14dd",
-  "certificate_id": "lc11_contract_amplification_3123918c-d62b-48a7-89d7-9a91f10c82ab",
+  "certificate_hash": "3a95255eb2f3eee5a1bc5d481fbfe369b3b5da389ad43ee6d5a141878cc462c7",
+  "certificate_id": "lc11_contract_amplification_50ba82a3-afc0-4310-be9a-ebd9e084af11",
+  "certificate_signature": "359fdb49495b19db7348d5b966d620089c36bb8ea37a40b307180514eb1c7814640dc4811535318a1becada28896f08e2752360337d3efadb0d7d674d70ef4ba",
   "certificate_type": "lc11_contract_certificate",
   "certificate_version": "1.0",
   "config_hash": "0b4541d1dc81c9dc7e3b7dae261d16846cee214c1e918075d932c228458830b0",
@@ -146,12 +147,12 @@
   },
   "effective_thresholds": {},
   "mechanism_family": "strict_post_generation_bias_preserving_resampling",
-  "model_certificate_hash": "b6fcb7bbf56f4286b3a0940ee0899f2674d02ad1eca3f0220337d674369fae81",
+  "model_certificate_hash": "fd03b30cda518bb1b035800429a6f4fdc39d4c1f720b7db09137fbebf13c5392",
   "performance_metrics": {
-    "training_time_minutes": 0.0021219571431477864
+    "training_time_minutes": 0.0021021763483683267
   },
-  "pipeline_id": "3123918c-d62b-48a7-89d7-9a91f10c82ab",
-  "previous_certificate_hash": "b6fcb7bbf56f4286b3a0940ee0899f2674d02ad1eca3f0220337d674369fae81",
+  "pipeline_id": "50ba82a3-afc0-4310-be9a-ebd9e084af11",
+  "previous_certificate_hash": "fd03b30cda518bb1b035800429a6f4fdc39d4c1f720b7db09137fbebf13c5392",
   "profile_data_class": "native_generator_profile_data_bearing_state",
   "profile_exportable_as_evidence": false,
   "protected_group_scope": {
@@ -210,15 +211,18 @@
       }
     ]
   },
+  "public_key_fingerprint": "213d00b0074ef773",
   "runtime_switches": {
     "use_lc11_productization": true,
     "use_refactored_audit": false,
     "use_refactored_calibration": false
   },
   "schema_version": "lc11_contract_certificate.v1",
-  "software_commit": "09f6ca91dc9cf92c143559046e4517eb9576182c",
+  "signature_algorithm": "ECDSA-P256-SHA256",
+  "signed_at": "2026-08-02T20:37:14.296002",
+  "software_commit": "cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2",
   "software_version": "0.1.0",
-  "timestamp": "2026-07-07T17:18:39.095516+00:00",
+  "timestamp": "2026-08-02T20:37:14.106303+00:00",
   "tolerance_multiplier_applied": 1.0,
   "training_metadata": {
     "backend_id": "first_party_evidence_native",
@@ -241,7 +245,7 @@
     "records_trained": 3000,
     "training_mode": "empirical_profile"
   },
-  "training_time_minutes": 0.0021219571431477864,
+  "training_time_minutes": 0.0021021763483683267,
   "validation_results": {
     "backend_id": "first_party_evidence_native",
     "checks": {
@@ -255,7 +259,7 @@
     "training_convergence": {
       "backend_id": "first_party_evidence_native",
       "branch_mode": "amplification",
-      "certificate_hash": "b61a3ddd814f7b5d3f92b2fdb3eb110f58bd2572e3ee4f5a407705cc8c9fa00a",
+      "certificate_hash": "bda8b1f8bd57ac45c70f659440efa83bead80a954263260644fe8d69c2b0c191",
       "convergence_claim": "not_applicable",
       "convergence_criteria_met": null,
       "convergence_epoch": null,
@@ -283,6 +287,6 @@
   "validation_surface": "first_party_evidence_native_producer",
   "validator": {
     "identity": "AmplificationBranchValidator",
-    "result_digest": "123ecd9336511babc8b6f562ba2c027471016471b4bd44053b0bdb251e350330"
+    "result_digest": "2efe67a096369db7ab83643abf55f68c1fa0598549b7b5ff1f0b1303ab05e0b5"
   }
 }

@@ -24,9 +24,9 @@ class EditorialClaimsContractTests(unittest.TestCase):
         expected_order = (
             r"\input{sections/01_executive_summary}",
             r"\input{sections/04_model_algorithm}",
-            r"\input{sections/05_evaluation}",
             r"\input{sections/02_problem_estimands}",
             r"\input{sections/03_methods}",
+            r"\input{sections/05_evaluation}",
             r"\input{sections/06_results}",
         )
         positions = [main_tex.index(fragment) for fragment in expected_order]
@@ -44,16 +44,15 @@ class EditorialClaimsContractTests(unittest.TestCase):
             )
         )
 
-        self.assertIn("Adverse Impact Ratio (AIR)", joined)
-        self.assertIn("four-fifths selection-rate screening line", joined)
-        self.assertIn("the gap between branches is the primary audit object", joined)
-        self.assertIn("positive control", joined)
-        self.assertIn("not as a customer portfolio finding", joined)
-        self.assertIn(r"\GenderAIRUpliftRelPct{}\%", joined)
-        self.assertNotIn("31.8", joined)
-        self.assertNotIn("31.8\\%", joined)
+        self.assertIn("generated fixture", joined)
+        self.assertIn("internal screen", joined)
+        self.assertIn("mechanical control", joined)
+        self.assertIn("not a causal counterfactual", joined)
+        self.assertIn("not a generic product claim", joined)
+        self.assertIn("material utility variation", joined)
         self.assertNotIn("Gate-WP", joined)
         self.assertNotIn("synthetic audit test split", joined)
+        self.assertNotIn("localized to the decision labels", joined)
 
     def test_layout_contract_removes_known_float_and_link_issues(self) -> None:
         main_tex = (ROOT / "main.tex").read_text(encoding="utf-8")
@@ -63,12 +62,15 @@ class EditorialClaimsContractTests(unittest.TestCase):
         )
 
         self.assertIn("colorlinks=true", main_tex)
-        self.assertIn(r"\setlength{\@fptop}{0pt}", main_tex)
+        self.assertIn("pdfstandard=UA-1", main_tex)
+        self.assertIn("lang=en-US", main_tex)
         self.assertIn("round-pad=true", main_tex)
         self.assertNotIn("round-pad=false", main_tex)
+        self.assertNotIn(r"\begin{longtable}", section_text)
         self.assertNotIn(r"\begin{table}[t]", section_text)
         self.assertNotIn(r"\begin{figure}[t]", section_text)
         self.assertNotIn(r"\clearpage" + "\n" + r"\section{Limitations", section_text)
+        self.assertGreaterEqual(section_text.count("alt={"), 7)
 
     def test_oci_digest_display_chunks_only_digest_hex(self) -> None:
         module = _load_preamble_module()
@@ -79,8 +81,8 @@ class EditorialClaimsContractTests(unittest.TestCase):
 
         rendered = module._tex_texttt_breakable(digest)
 
-        self.assertIn("ghcr.io/equilens-labs/fl-bsa-runtime@sha256:", rendered)
-        self.assertIn("01234567 89abcdef", rendered)
+        self.assertEqual(r"\nolinkurl{" + digest + "}", rendered)
+        self.assertNotIn("01234567 89abcdef", rendered)
         self.assertNotIn("fl-bsa-run time", rendered)
         self.assertNotIn("sha 256", rendered)
 
@@ -102,9 +104,10 @@ class EditorialClaimsContractTests(unittest.TestCase):
     def test_regulatory_bib_titles_are_case_protected(self) -> None:
         bib = (ROOT / "bib" / "references.bib").read_text(encoding="utf-8")
 
-        self.assertIn("{{Equal Credit Opportunity Act} ({Regulation B})}", bib)
+        self.assertIn("{{Equal Credit Opportunity Act (Regulation B)}; Final Rule", bib)
         self.assertIn("{{Regulation} ({EU}) 2024/1689", bib)
-        self.assertIn("{{Uniform Guidelines on Employee Selection Procedures} (1978)}", bib)
+        self.assertIn("Common Interpretation of the Uniform Guidelines", bib)
+        self.assertIn("{Revised Guidance on Model Risk Management}", bib)
 
     def test_gender_slice_counts_render_as_integers(self) -> None:
         table = (ROOT / "includes" / "table_gender_air_slices.tex").read_text(

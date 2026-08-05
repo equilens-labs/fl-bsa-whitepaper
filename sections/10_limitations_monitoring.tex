@@ -1,14 +1,74 @@
-\section{Limitations and Monitoring}
-This section documents known limits of this synthetic audit scenario and the monitoring posture that should accompany any customer deployment.
+\section{Limitations, Monitoring, and Publication Decision}
+\label{sec:limitations}
 
-\paragraph{Synthetic quality is advisory in this run.}
-The synthetic-quality certificate reports a threshold of \SqThresholdUsed{} and an observed score of \SqScore{}. In this scenario the threshold is \ifnum\SqThresholdMet>0 met\else not met\fi, and the results should be interpreted as an evidence-backed \emph{audit} rather than a blanket compliance claim.
+\subsection{Evidence limitations}
 
-\paragraph{Small-group visibility for race.}
-Race uncertainty is displayed in the main text only when all race groups exceed minimum size and proportion thresholds. In this run, the observed minimum group size is \RaceObservedMinGroupN{} and minimum proportion is \RaceObservedMinGroupPct{}, so race is not rendered in the main PDF when the display policy is not satisfied. The race rows remain available in \path{intake/selection_rates.csv}, \path{intake/metrics_uncertainty.json}, and \path{intake/group_confusion.csv} in the source snapshot.
+\begin{itemize}
+  \item \textbf{Generated fixture.} No borrower or customer portfolio is evaluated. External
+        validity, representativeness, and deployment drift are unknown.
+  \item \textbf{Conditional inference.} Single-run confidence intervals and p-values condition on
+        the generated rows and configured sample sizes. They exclude generator, scenario,
+        seed-plan, model-selection, and deployment uncertainty.
+  \item \textbf{Fixed seed suite.} Ten Gold seeds per scenario demonstrate completion under a
+        declared suite; they are not a probabilistic sample of all future runs.
+  \item \textbf{Mechanically imposed parity.} Intrinsic near-parity follows the equal-rate
+        post-label policy. It is not causal evidence, an applicant-level counterfactual, or a
+        finding that disparity was localized to decision labels.
+  \item \textbf{Protected-group scope.} The fixture covers only declared gender and race encodings.
+        It omits other protected bases, intersectional claims, encoding error, missingness
+        mechanisms, and subgroup instability.
+  \item \textbf{Race-policy split.} The headline evidence exporter uses the highest observed
+        selection-rate group, while a separate configured-reference helper remains in the exact
+        product source. The companion truthfully records white as configured and black as
+        effective, but product-wide policy convergence is unresolved.
+  \item \textbf{Utility weakness.} Synthetic-training ROC AUC ranges from
+        \UtilitySyntheticAUCMin{} to \UtilitySyntheticAUCMax{} and is below the fixture baseline
+        for every tested seed. This evidence does not support a production-utility claim.
+  \item \textbf{Privacy scope.} Exact-row checks are narrow. Near-duplicate risk, membership
+        inference, attribute inference, linkage, and formal privacy are not evaluated.
+  \item \textbf{Decision-only metrics.} ECE is unevaluated and EO is non-informative. No score
+        calibration, ranking quality, threshold optimization, adverse-action validity, or causal
+        fairness analysis is established.
+\end{itemize}
 
-\paragraph{Data coverage, label noise, and covariate shift.}
-The synthetic scenario exercises a defined lending-audit fixture. It does not prove coverage of every geography, product line, credit policy, or protected-class intersection that may appear in a production portfolio. Operators should review data dictionaries, missingness, label provenance, and segment coverage before treating a customer run as deployment evidence. Material distribution drift or label-policy changes should trigger a rerun.
+\subsection{Deployment monitoring pattern}
 
-\paragraph{Monitoring plan.}
-Customer deployments should define control limits for the primary fairness metric, approval-rate gaps, data-quality checks, and evidence-chain validity before production use. Retraining, threshold changes, feature-policy changes, or sustained drift beyond those limits should trigger governance review and fresh evidence generation.
+A customer-specific use would require a separately approved analysis plan. At minimum, control
+owners should define the eligible population and decision point; validate protected-attribute
+collection and lawful use; pre-specify group/reference policy, minimum counts, multiplicity,
+missing-data handling and action thresholds; measure source and output drift; evaluate predictive
+utility and calibration where scores exist; investigate exact and near duplicates; and retain
+review, exception, remediation, and override records.
+
+Monitoring should distinguish a statistical alert from a legal or business decision. An AIR point
+below an internal line can trigger investigation without being labelled unlawful; an AIR above the
+line cannot close an investigation where other evidence suggests harm. Confidence intervals,
+effect sizes, data quality, operational context, and affected-person outcomes belong in the review.
+
+\subsection{Remaining publication blockers}
+
+The technical candidate can be reviewed, but the following items remain blockers to public
+publication or stronger product claims:
+
+\begin{enumerate}
+  \item an authorized owner must approve the paper, exact PDF, companion ZIP, distribution route,
+        and current legal wording;
+  \item the PDF and companion require a durable co-distribution location; this candidate has no
+        public companion URL;
+  \item a trusted external digest channel or verifiable release signature is required before
+        describing the delivered companion as independently authenticated;
+  \item the product's configured-reference and highest-rate race paths should be unified or
+        explicitly versioned before claiming one product-wide race method;
+  \item customer-evidence and promotion dispositions remain false; and
+  \item production utility, broader protected-group coverage, near-duplicate privacy, calibration,
+        and deployment security require additional evidence before related claims can be made.
+\end{enumerate}
+
+\subsection{Conclusion}
+
+The exact v5.0.1 evidence supports a precise characterization: the amplification branch preserves
+the fixture's gender disparity signal, the intrinsic parity-policy control operates as configured,
+and the declared release Gold suite completes across 40 runs. The same evidence also exposes
+important boundaries: conditional single-run inference, a split race-reference policy, incomplete
+privacy and calibration surfaces, and materially variable downstream utility. Preserving both the
+positive controls and the negative findings is the central governance value of this paper.

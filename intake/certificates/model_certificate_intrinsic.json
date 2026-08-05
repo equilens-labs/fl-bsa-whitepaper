@@ -1,7 +1,8 @@
 {
   "branch_mode": "intrinsic",
-  "certificate_hash": "a3963ab8efa18a2612bbd507307d628467e8b1378ca185c7939da5230e4055ea",
-  "certificate_id": "model_cert_3123918c-d62b-48a7-89d7-9a91f10c82ab_intrinsic",
+  "certificate_hash": "9133129db14786833e22efdce775bd62b43204ac2d0358535adec5ad2cc53c81",
+  "certificate_id": "model_cert_50ba82a3-afc0-4310-be9a-ebd9e084af11_intrinsic",
+  "certificate_signature": "7fd8539a32fe602e4d35412e60769fc552a5114def878701ae03f19deb1aa7b4628f353f61da0e7eadba48671710cdf6af4d30fff2d795af6f7ba29de112963a",
   "config_version": "1.0.0",
   "data_fingerprint": "c533c4300c515a8a287691e6d5833ba161aa2141d047f3e1f5d83c161fa71bb1",
   "hyperparameters": {
@@ -14,12 +15,15 @@
   },
   "model_type": "first_party_evidence_native",
   "performance_metrics": {
-    "training_time_minutes": 0.0021219571431477864
+    "training_time_minutes": 0.0021021763483683267
   },
-  "pipeline_id": "3123918c-d62b-48a7-89d7-9a91f10c82ab",
-  "previous_certificate_hash": "625795363cdf852be117ce4b5aeba48a77f1f19c5ba8021a76f13f4a8b3e14dd",
-  "timestamp": "2026-07-07T17:18:39.096996+00:00",
-  "training_duration_minutes": 0.0021219571431477864,
+  "pipeline_id": "50ba82a3-afc0-4310-be9a-ebd9e084af11",
+  "previous_certificate_hash": "3a95255eb2f3eee5a1bc5d481fbfe369b3b5da389ad43ee6d5a141878cc462c7",
+  "public_key_fingerprint": "213d00b0074ef773",
+  "signature_algorithm": "ECDSA-P256-SHA256",
+  "signed_at": "2026-08-02T20:37:14.671583",
+  "timestamp": "2026-08-02T20:37:14.485916+00:00",
+  "training_duration_minutes": 0.0021021763483683267,
   "training_metadata": {
     "backend_id": "first_party_evidence_native",
     "branch_purpose": "intrinsic fairness test",
@@ -64,7 +68,7 @@
     "training_convergence": {
       "backend_id": "first_party_evidence_native",
       "branch_mode": "intrinsic",
-      "certificate_hash": "b462b0222cdfbff9482375e4ffb27a4de45c116d80d59e21220af6ce616f7f06",
+      "certificate_hash": "438496c0b856d0ba70ae6b9c8494f74d7845e46fc686a61ffc9498122f069333",
       "convergence_claim": "not_applicable",
       "convergence_criteria_met": null,
       "convergence_epoch": null,

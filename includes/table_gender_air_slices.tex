@@ -1,9 +1,9 @@
 \begin{tabular}{lrrSSSl}
 \toprule
-slice & {$n_{ref}$} & {$n_{prot}$} & {AIR} & {LCI} & {UCI} & {compliance}\\
+slice & {$n_{ref}$} & {$n_{prot}$} & {AIR} & {LCI} & {UCI} & {point vs 0.80}\\
 \midrule
-Historical & 1451 & 1549 & \num{0.759} & \num{0.707} & \num{0.815} & FAIL\\
-Amplification (bias-preserving) & 4837 & 5163 & \num{0.759} & \num{0.73} & \num{0.789} & FAIL\\
-Intrinsic (de-biased) & 4835 & 5165 & \num{1} & \num{0.975} & \num{1.026} & PASS\\
+Historical fixture & 1451 & 1549 & \num{0.759} & \num{0.707} & \num{0.815} & below\\
+Amplification branch & 4837 & 5163 & \num{0.759} & \num{0.73} & \num{0.789} & below\\
+Intrinsic parity-policy control & 4835 & 5165 & \num{1} & \num{0.975} & \num{1.026} & at/above\\
 \bottomrule
 \end{tabular}

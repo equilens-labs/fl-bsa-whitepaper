@@ -268,10 +268,9 @@ def _tex_texttt_breakable(value: str) -> str:
     cleaned = str(value or "").strip()
     if not cleaned:
         return ""
-    if _UUID_RE.match(cleaned):
-        return f"\\texttt{{{_latex_escape(cleaned)}}}"
-    chunked = _chunk_digest_for_display(cleaned)
-    return f"\\texttt{{{_latex_escape(chunked)}}}"
+    # url's discretionary break points preserve the actual character stream.
+    # Inserting visible spaces every eight characters made copied digests invalid.
+    return f"\\nolinkurl{{{cleaned}}}"
 
 
 def _fmt_float_for_siunitx(val: float, *, decimals: int = 6, sci_threshold: float = 1e-4) -> str:

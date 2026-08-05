@@ -1,37 +1,70 @@
+\section{Audit Questions and Estimands}
 
-\section{Problem and Estimands}
-We work with aggregated selection counts by protected group. We use the following notation:
-\begin{itemize}
-\item $A$ denotes a protected attribute (e.g.\ gender or race), with group values $g\in\mathcal{A}$;
-\item $g_{\mathrm{ref}}$ denotes a reference group, fixed deterministically by configuration and recorded in the provenance manifest; and
-\item $\hat{Y}\in\{0,1\}$ denotes the observed approval decision in this audit scenario (1 = approved).
-\end{itemize}
+\subsection{Decision surface}
 
-\subsection{Selection Rates}
-For each group $g\in\mathcal{A}$, define the selection rate
+Let $A$ be a declared protected attribute, $g$ one of its observed groups, and
+$\widehat{Y}\in\{0,1\}$ the observed decision label in the characterization data. For each group,
+the selection rate is
 \begin{equation}
-p_g=\Pr(\hat{Y}=1\mid A=g).
+  \widehat p_g = \frac{y_g}{n_g},
+  \label{eq:selection-rate}
 \end{equation}
+where $y_g$ is the number of selected rows and $n_g$ is the number of eligible rows in the group.
+These are row-level fixture summaries, not estimates of applicant eligibility, creditworthiness, or
+causal treatment effects.
 
-\subsection{Disparity Ratio (AIR-equivalent)}
-For a protected group $g$ relative to a fixed reference group $g_{\mathrm{ref}}$, define the disparity ratio
-\begin{equation}
-\mathrm{AIR}(g) \;=\; \frac{p_g}{p_{g_{\mathrm{ref}}}}.
-\label{eq:air}
-\end{equation}
-For gender (binary), we report a single pair (\GenderProtectedGroup{} vs \GenderReferenceGroup{}). For race (multi-class), we compute pairwise ratios vs the configured reference group and report the worst-case pair in the main body only when the small-n display policy is satisfied.
+\subsection{Disparity ratio}
 
-\subsection{Approval-Rate Gap}
-For a protected group $g$ relative to a fixed reference group $g_{\mathrm{ref}}$, define the approval-rate gap
+For a comparison group $g$ and reference group $r$, the paper reports
 \begin{equation}
-\mathrm{SRG}(g) \;=\; p_g - p_{g_{\mathrm{ref}}}.
-\label{eq:srg}
+  \operatorname{AIR}(g,r) = \frac{\widehat p_g}{\widehat p_r}.
+  \label{eq:air}
 \end{equation}
+The label ``AIR'' is retained for continuity with the machine-readable evidence. It is a descriptive
+selection-rate ratio. A value of one means equal observed rates; it does not by itself identify
+fairness, discrimination, harm, causation, or legal compliance.
 
-\subsection{Calibration (ECE)}
-For bins $B_k$ with counts $n_k$, mean score $\bar s_k$, and empirical positive rate $\hat p_k$, the expected calibration error (ECE) is
+For binary gender, the configured comparison is female versus male. Race is multi-group. The
+publication evidence keeps white as the configured reference in provenance, but its active
+pairwise screen selects the group with the highest observed rate. Black has the highest rate in
+this run and is therefore the effective reference. The worst observed pair is other versus black.
+The separate configured-reference helper still present in the product source is not used to create
+the headline race uncertainty object; the coexistence of those two policies remains a product-side
+consistency issue described in \autoref{sec:limitations}.
+
+\subsection{Selection-rate gap}
+
+The signed selection-rate gap is
 \begin{equation}
-\mathrm{ECE} \;=\; \sum_k \frac{n_k}{\sum_j n_j} \,\lvert \hat p_k - \bar s_k\rvert.
-\label{eq:ece}
+  \operatorname{SRG}(g,r) = \widehat p_g - \widehat p_r.
+  \label{eq:srg}
 \end{equation}
-ECE requires probability scores and calibration bins; it is not evaluated in this scenario.
+Its 95\% interval is the conservative difference of the separate Wilson endpoints:
+\begin{equation}
+  [L_g-U_r,\; U_g-L_r],
+  \label{eq:srg-interval}
+\end{equation}
+where $[L_g,U_g]$ and $[L_r,U_r]$ are Wilson score intervals. The exact machine value is
+\path{conservative_wilson_endpoint_difference}. This construction is conservative and is not
+the classical Newcombe interval; the numeric endpoints themselves were not changed by correcting
+the method label.
+
+\subsection{Internal screen and interval relation}
+
+The statistical analysis plan chooses 0.80 as an internal AIR screen. The point relation is either
+``below'' or ``at/above.'' Independently, the confidence interval can be entirely below, cross, or
+be entirely above the line. Reporting both prevents a point estimate from silently becoming a
+binary compliance label.
+
+The 0.80 convention originates in US employment-selection guidance. The EEOC describes the
+four-fifths convention as a rule of thumb rather than a legal definition and notes that it is not
+controlling in all circumstances \citep{eeoc_uniform_guidelines}. It is not presented here as a
+lending requirement.
+
+\subsection{Unevaluated and non-informative surfaces}
+
+Expected calibration error requires probability scores and calibration bins. Neither exists for
+this decision-label fixture, so ECE is \texttt{NOT\_EVALUATED}; no calibration conclusion follows.
+Equalized-odds summaries were requested, but the generated confusion surface contains degenerate
+cells by construction. EO is therefore \texttt{NOT\_INFORMATIVE}, not a pass. These explicit states
+are preferable to imputing zeros or treating missing evidence as favorable evidence.

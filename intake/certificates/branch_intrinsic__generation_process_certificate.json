@@ -1,16 +1,17 @@
 {
   "branch_mode": "intrinsic",
-  "certificate_hash": "3a59438ab0115f994fabbdabf6da911cde6247500a5e4cacbaf86332dfdddece",
-  "certificate_id": "77348237-e231-4ba1-9905-f6b0ed19a520",
+  "certificate_hash": "22a019976083d6d54cf6834655a4fd5c3d39616a59459b4d386d3df02c39e49d",
+  "certificate_id": "6b6ec167-4e81-4bc2-9208-81b46753af6b",
+  "certificate_signature": "e540a9c4ff77b49d2ae2ce233d3bb6dc9d6e3edeb9e7a55246e17c53ea67e94c5f5e59fbe0693addba03c448435e58369bb18113a163762093b9a9816c68567a",
   "certificate_type": "generation_process_certificate",
   "certificate_version": "1.0",
-  "generation_completed_at": "2026-07-07T17:18:55.166486+00:00",
+  "generation_completed_at": "2026-08-02T20:37:31.634708+00:00",
   "generation_environment": {
     "cpu_count": 128,
     "ctgan_version": "unknown",
     "cuda_available": false,
     "cuda_version": null,
-    "memory_available_gb": 202.87,
+    "memory_available_gb": 182.93,
     "numpy_version": "1.26.4",
     "pandas_version": "2.3.3",
     "python_version": "3.11.2",
@@ -29,7 +30,7 @@
     "stratification_column": "gender,race",
     "temperature": 1.0
   },
-  "generation_started_at": "2026-07-07T17:18:53.131880+00:00",
+  "generation_started_at": "2026-08-02T20:37:29.610847+00:00",
   "generator_backend": {
     "backend_family": "evidence_native_tabular",
     "backend_id": "first_party_evidence_native",
@@ -61,15 +62,15 @@
     },
     "metadata_version": "1"
   },
-  "issued_at": "2026-07-07T17:18:55.165844+00:00",
+  "issued_at": "2026-08-02T20:37:31.634270+00:00",
   "issued_by": "FL-BSA Generation Process Validation System",
-  "model_certificate_hash": "a3963ab8efa18a2612bbd507307d628467e8b1378ca185c7939da5230e4055ea",
-  "model_path": "generator_3123918c-d62b-48a7-89d7-9a91f10c82ab_both.pkl",
+  "model_certificate_hash": "9133129db14786833e22efdce775bd62b43204ac2d0358535adec5ad2cc53c81",
+  "model_path": "generator_50ba82a3-afc0-4310-be9a-ebd9e084af11_both.pkl",
   "model_type": "first_party_evidence_native",
   "output_file_hash": "66a0ed84b8daba12837768c09bf49e7fccc84e0577791620d5fec8b12c6640e8",
   "output_file_path": "synthetic_data.csv",
   "output_file_size_mb": 0.4909048080444336,
-  "pipeline_id": "3123918c-d62b-48a7-89d7-9a91f10c82ab",
+  "pipeline_id": "50ba82a3-afc0-4310-be9a-ebd9e084af11",
   "post_processing": {
     "native_final_exact_output_wall": {
       "applied": true,
@@ -101,15 +102,18 @@
       "valid": true
     }
   },
-  "previous_certificate_hash": "b41a63b04b8c741f1d682e3f7746f5fc1b78e0dbd5772d649e8b3d90f6c7d624",
+  "previous_certificate_hash": "820ce9766a67c51cf2436c3e5cc14d2f9b55c9ad1ecea9387fa4186895200691",
+  "public_key_fingerprint": "213d00b0074ef773",
   "recommendations": [
     "Successfully generated 10000 samples for intrinsic branch"
   ],
+  "signature_algorithm": "ECDSA-P256-SHA256",
+  "signed_at": "2026-08-02T20:37:32.005641",
   "status": "valid",
-  "total_generation_time": 2.0346062183380127,
+  "total_generation_time": 2.0238609313964844,
   "validation_results": {
     "actual_model_hash": "",
-    "available_memory_gb": 202.87,
+    "available_memory_gb": 182.93,
     "error_message": null,
     "error_occurred": false,
     "estimated_memory_gb": 0.009313225746154785,
@@ -133,7 +137,7 @@
       "race"
     ],
     "generation_completed": true,
-    "generation_time_seconds": 2.0346062183380127,
+    "generation_time_seconds": 2.0238609313964844,
     "memory_sufficient": true,
     "model_hash_verified": true,
     "model_loaded_successfully": true,

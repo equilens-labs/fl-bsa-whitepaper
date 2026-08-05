@@ -1,0 +1,263 @@
+import csv
+import gzip
+import hashlib
+import importlib.util
+import json
+import tempfile
+import unittest
+import zipfile
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+PRODUCT_TAG = "v5.0.1"
+PRODUCT_TAG_OBJECT = "3a0ea6e4faea9d61aabcedebab2a838624fb587d"
+PRODUCT_COMMIT = "cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2"
+PRODUCT_RUN_ID = 30765888408
+PRIMARY_BUNDLE_SHA256 = (
+    "f6a0bd9390565f7bd852b451e11b7384b1628c24caba02865b1ec94c1e263026"
+)
+SRG_METHOD = "conservative_wilson_endpoint_difference"
+
+
+def _read_json(relative: str) -> dict:
+    return json.loads((ROOT / relative).read_text(encoding="utf-8"))
+
+
+def _load_module(name: str, relative: str):
+    path = ROOT / relative
+    spec = importlib.util.spec_from_file_location(name, path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+class V501CharacterizationContractTests(unittest.TestCase):
+    maxDiff = None
+
+    def test_exact_product_and_release_evidence_identity(self) -> None:
+        identity = _read_json(
+            "evidence/v5.0.1/publication/evidence_identity.json"
+        )
+        product = identity["product"]
+        workflow = identity["producer_workflow"]
+        intake = identity["primary_intake"]
+
+        self.assertEqual(PRODUCT_TAG, product["tag"])
+        self.assertEqual(PRODUCT_TAG_OBJECT, product["tag_object"])
+        self.assertEqual(PRODUCT_COMMIT, product["commit"])
+        self.assertEqual(PRODUCT_COMMIT, workflow["head_commit"])
+        self.assertEqual(PRODUCT_RUN_ID, workflow["run_id"])
+        self.assertEqual(1, workflow["attempt"])
+        self.assertEqual("wp-intake-bundle-v4-1", intake["artifact_name"])
+        self.assertEqual(8838967644, intake["artifact_id"])
+        self.assertEqual(PRIMARY_BUNDLE_SHA256, intake["bundle_sha256"])
+
+        manifest = _read_json("intake/manifest.json")
+        self.assertEqual(PRODUCT_COMMIT, manifest["source_commit"])
+        self.assertEqual(PRODUCT_COMMIT, manifest["commit_sha"])
+
+    def test_release_disposition_comes_from_the_snapshot_not_pack_intent(self) -> None:
+        snapshot = _read_json("intake/archive/v5.0.1-release-30765888408.json")
+        self.assertEqual(str(PRODUCT_RUN_ID), snapshot["producer"]["run_id"])
+        self.assertIs(snapshot["claims"]["customer_evidence_eligible"], False)
+        self.assertEqual(
+            "characterization_only",
+            snapshot["claims"]["customer_evidence_disposition"],
+        )
+        self.assertEqual(
+            "candidate_not_published", snapshot["claims"]["publication_status"]
+        )
+        pack_intent = _read_json("intake/pack_intent.json")
+        self.assertNotIn("customer_evidence_eligible", pack_intent)
+        self.assertNotIn("customer_evidence_disposition", pack_intent)
+
+    def test_corrected_srg_method_is_consistent_on_every_consumed_surface(self) -> None:
+        slices = _read_json("intake/fairness_slices.json")
+        for name, row in slices["slices"].items():
+            with self.subTest(surface="fairness_slices", name=name):
+                self.assertEqual(SRG_METHOD, row["srg"]["method"])
+
+        uncertainty = _read_json("intake/metrics_uncertainty.json")
+        fairness = uncertainty["fairness_uncertainty"]
+        self.assertEqual(SRG_METHOD, fairness["gender"]["srg"]["method"])
+        for name, row in fairness["race"]["pairs"].items():
+            with self.subTest(surface="race", name=name):
+                self.assertEqual(SRG_METHOD, row["srg"]["method"])
+
+        for relative in ("intake/manifest.json", "intake/run_summary.json"):
+            payload = _read_json(relative)
+            self.assertEqual(
+                SRG_METHOD,
+                payload["inference"]["headline_interval_methods"]["srg"],
+            )
+
+    def test_race_configured_and_effective_references_are_not_conflated(self) -> None:
+        race = _read_json("intake/metrics_uncertainty.json")[
+            "fairness_uncertainty"
+        ]["race"]
+        self.assertEqual("white", race["configured_reference_group"])
+        self.assertEqual("black", race["reference_group"])
+        self.assertEqual(
+            "highest_selection_rate_four_fifths",
+            race["reference_group_selection_policy"],
+        )
+        self.assertEqual("other", race["worst_case_pair"])
+        self.assertEqual(273, race["observed"]["min_group_n"])
+        self.assertIs(race["display_in_main_pdf"], False)
+
+        summary = _read_json(
+            "evidence/v5.0.1/publication/characterization_summary.json"
+        )["fairness"]["race"]
+        self.assertEqual("hispanic", summary["minimum_count_group"])
+        self.assertEqual("other", summary["lowest_selection_rate_group"])
+
+    def test_point_and_interval_screen_relations_are_separate(self) -> None:
+        slices = _read_json(
+            "evidence/v5.0.1/publication/characterization_summary.json"
+        )["fairness"]["slices"]
+        by_id = {row["id"]: row for row in slices}
+        self.assertEqual("below", by_id["historical"]["point_screen_relation"])
+        self.assertEqual("crosses", by_id["historical"]["interval_screen_relation"])
+        self.assertEqual(
+            "entirely below",
+            by_id["amplification"]["interval_screen_relation"],
+        )
+        self.assertEqual(
+            "entirely above", by_id["intrinsic"]["interval_screen_relation"]
+        )
+        self.assertAlmostEqual(0.759080055358229, by_id["amplification"]["air"])
+        self.assertAlmostEqual(1.0000283291063825, by_id["intrinsic"]["air"])
+
+    def test_quality_reports_both_branches_and_preserves_unevaluated_states(self) -> None:
+        summary = _read_json(
+            "evidence/v5.0.1/publication/characterization_summary.json"
+        )
+        quality = summary["quality"]
+        self.assertEqual({"amplification", "intrinsic"}, set(quality))
+        self.assertAlmostEqual(
+            0.9061600112479465, quality["amplification"]["overall_quality_score"]
+        )
+        self.assertAlmostEqual(
+            0.8996413774113724, quality["intrinsic"]["overall_quality_score"]
+        )
+        for branch in quality.values():
+            self.assertEqual("not_evaluated", branch["certified_utility_status"])
+            self.assertEqual("not_computed", branch["near_duplicate_status"])
+            self.assertIs(branch["differential_privacy_claimed"], False)
+
+    def test_gold_and_utility_seed_evidence_is_complete_and_bounded(self) -> None:
+        summary = _read_json(
+            "evidence/v5.0.1/publication/characterization_summary.json"
+        )
+        robustness = summary["robustness"]
+        self.assertIs(robustness["complete"], True)
+        self.assertEqual(40, robustness["total_runs"])
+        self.assertEqual(40, robustness["total_passes"])
+        self.assertEqual(4, len(robustness["scenarios"]))
+
+        utility = summary["utility"]
+        self.assertEqual(10, len(utility["synthetic_train_results"]))
+        self.assertEqual(3500, utility["study"]["train_rows"])
+        self.assertEqual(3500, utility["study"]["generated_rows_per_seed"])
+        auc = utility["synthetic_train_bands"]["roc_auc"]
+        self.assertAlmostEqual(0.5068372196683766, auc["mean"])
+        self.assertLess(auc["max"], utility["real_train_baseline"]["roc_auc"])
+
+    def test_utility_fixture_hashes_are_exact(self) -> None:
+        utility = _read_json("evidence/v5.0.1/utility/utility_summary.json")
+        path = ROOT / utility["source"]["fixture"]
+        compressed = path.read_bytes()
+        uncompressed = gzip.decompress(compressed)
+        self.assertEqual(
+            utility["source"]["fixture_sha256_gzip"],
+            hashlib.sha256(compressed).hexdigest(),
+        )
+        self.assertEqual(
+            utility["source"]["fixture_sha256_uncompressed"],
+            hashlib.sha256(uncompressed).hexdigest(),
+        )
+
+    def test_regulatory_overlay_is_dated_and_uses_primary_sources(self) -> None:
+        path = (
+            ROOT
+            / "evidence/v5.0.1/publication/regulatory_mapping_2026-08-05.csv"
+        )
+        with path.open(newline="", encoding="utf-8") as handle:
+            rows = list(csv.DictReader(handle))
+        self.assertEqual(5, len(rows))
+        self.assertTrue(all(row["as_of"] == "2026-08-05" for row in rows))
+        self.assertTrue(all(row["source_url"].startswith("https://") for row in rows))
+        joined = "\n".join(
+            row["current_instrument"] + " " + row["current_state"] for row in rows
+        )
+        self.assertIn("SR 26-2", joined)
+        self.assertIn("July 21 2026", joined)
+        self.assertIn("rule of thumb", joined)
+
+    def test_forward_facing_sources_drop_obsolete_generator_names(self) -> None:
+        joined = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in [ROOT / "main.tex", ROOT / "README.md"]
+            + sorted((ROOT / "sections").glob("*.tex"))
+        ).lower()
+        obsolete = "ct" + "gan"
+        self.assertNotIn(obsolete, joined)
+        self.assertNotIn("no-" + obsolete, joined)
+
+    def test_accessibility_and_visual_contract_is_explicit(self) -> None:
+        main = (ROOT / "main.tex").read_text(encoding="utf-8")
+        sections = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in sorted((ROOT / "sections").glob("*.tex"))
+        )
+        self.assertIn("pdfstandard=UA-1", main)
+        self.assertIn("lang=en-US", main)
+        self.assertIn("pdftitle={FL-BSA v5.0.1 Characterization Whitepaper}", main)
+        self.assertNotIn(r"\begin{longtable}", sections)
+        self.assertGreaterEqual(sections.count("alt={"), 7)
+        for name in (
+            "characterization_architecture.pdf",
+            "characterization_evidence_chain.pdf",
+            "characterization_air_slices.pdf",
+            "characterization_quality.pdf",
+            "characterization_robustness.pdf",
+            "characterization_utility.pdf",
+            "selection_rates.pdf",
+        ):
+            self.assertTrue((ROOT / "figures" / name).is_file(), name)
+
+    def test_companion_is_deterministic_self_verifying_and_tamper_detecting(self) -> None:
+        builder = _load_module(
+            "companion_builder_under_test", "scripts/build_companion_bundle.py"
+        )
+        verifier = _load_module(
+            "companion_verifier_under_test", "scripts/verify_companion_bundle.py"
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            first = Path(tmp) / "first.zip"
+            second = Path(tmp) / "second.zip"
+            first_result = builder.build(ROOT, first)
+            second_result = builder.build(ROOT, second)
+            self.assertEqual(first.read_bytes(), second.read_bytes())
+            self.assertEqual(first_result["sha256"], second_result["sha256"])
+            verified = verifier.verify(first)
+            self.assertEqual("verified", verified["status"])
+            self.assertEqual(21, verified["certificate_files"])
+            self.assertEqual(40, verified["robustness_runs"])
+            self.assertEqual(10, verified["utility_seeds"])
+
+            extracted = Path(tmp) / "extracted"
+            with zipfile.ZipFile(first) as archive:
+                archive.extractall(extracted)
+            target = extracted / "intake" / "fairness_slices.json"
+            target.write_bytes(target.read_bytes() + b"\n")
+            with self.assertRaisesRegex(
+                verifier.VerificationError, "(size|SHA-256) mismatch"
+            ):
+                verifier.verify(extracted)
+
+
+if __name__ == "__main__":
+    unittest.main()

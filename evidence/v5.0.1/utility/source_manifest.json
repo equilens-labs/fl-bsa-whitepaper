@@ -1,0 +1,24 @@
+{
+  "artifact": {
+    "api_digest": "sha256:1ea221c8bb77313ac0fddfe7703496d191d666c0555fdb5d9b5d1d9f3e94e2f4",
+    "artifact_id": "8839094646",
+    "name": "gold-full-artifacts-cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2-30765888408",
+    "repository": "equilens-labs/fl-bsa",
+    "run_attempt": 1,
+    "run_id": 30765888408,
+    "workflow": "release-evidence.yml"
+  },
+  "fixture": {
+    "gzip_sha256": "67785d0488d53d0c4a26f76f66ecb63bb582037ef207790752bd34e971831db9",
+    "path_in_artifact": "artifacts/gold/20260802T203945Z/01_balanced/original_data.csv",
+    "rows": 5000,
+    "sha256": "b04f721d789226723066b3d6ae70e4ab2a3fa17c825ef1d0e04d7d779571982b",
+    "synthetic_fixture_only": true
+  },
+  "product": {
+    "commit": "cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2",
+    "tag": "v5.0.1",
+    "tag_object": "3a0ea6e4faea9d61aabcedebab2a838624fb587d"
+  },
+  "schema_version": "flbsa.whitepaper_utility_source.v1"
+}

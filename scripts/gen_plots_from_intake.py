@@ -444,9 +444,9 @@ def _generate_gender_air_slices_fig(fairness_slices: dict, out_path: Path) -> No
         return
 
     ordered = [
-        ("historical", "Historical"),
-        ("amplification", "Amplification\n(bias-preserving)"),
-        ("intrinsic", "Intrinsic\n(de-biased)"),
+        ("historical", "Historical\nfixture"),
+        ("amplification", "Amplification\nbranch"),
+        ("intrinsic", "Intrinsic\nparity-policy"),
     ]
     rows: list[dict[str, object]] = []
     for key, label in ordered:
@@ -495,7 +495,7 @@ def _generate_gender_air_slices_fig(fairness_slices: dict, out_path: Path) -> No
         linestyle="--",
         color="#a33a3a",
         linewidth=0.9,
-        label=f"{threshold:.2f} threshold",
+        label=f"Internal screen {threshold:.2f}",
     )
     ax.set_xticks(list(x_pos))
     ax.set_xticklabels(df["label"].tolist())

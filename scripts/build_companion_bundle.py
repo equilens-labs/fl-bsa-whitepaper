@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+"""Build a deterministic, self-verifying whitepaper companion evidence ZIP."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import subprocess
+import time
+import zipfile
+from pathlib import Path
+from typing import Any
+
+
+DOCUMENT_VERSION = "WP-5.0.1-candidate.1"
+PRODUCT_COMMIT = "cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2"
+PRODUCT_TAG = "v5.0.1"
+PRODUCT_TAG_OBJECT = "3a0ea6e4faea9d61aabcedebab2a838624fb587d"
+MAX_FILE_BYTES = 20 * 1024 * 1024
+
+
+class CompanionError(ValueError):
+    """Raised when the companion bundle cannot be built truthfully."""
+
+
+def _sha256(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def _git(root: Path, *args: str) -> str:
+    completed = subprocess.run(
+        ["git", "-C", str(root), *args],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if completed.returncode:
+        raise CompanionError(completed.stderr.strip() or "unable to resolve Git identity")
+    return completed.stdout.strip()
+
+
+def _source_date_epoch(root: Path) -> int:
+    value = os.environ.get("SOURCE_DATE_EPOCH") or _git(root, "show", "-s", "--format=%ct", "HEAD")
+    try:
+        epoch = int(value)
+    except ValueError as exc:
+        raise CompanionError("SOURCE_DATE_EPOCH must be an integer") from exc
+    return max(epoch, 315532800)
+
+
+def _zip_info(name: str, epoch: int) -> zipfile.ZipInfo:
+    info = zipfile.ZipInfo(name, time.gmtime(epoch)[:6])
+    info.compress_type = zipfile.ZIP_DEFLATED
+    info.create_system = 3
+    info.external_attr = (0o100644 & 0xFFFF) << 16
+    return info
+
+
+def _collect(root: Path) -> dict[str, bytes]:
+    exact_files = [
+        "config/fairness_config.yaml",
+        "config/sap.yaml",
+        "contracts/whitepaper-intake-producer-contract.v1.json",
+        "intake/air_status.json",
+        "intake/ece_status.json",
+        "intake/eo_status.json",
+        "intake/fairness_slices.json",
+        "intake/group_confusion.csv",
+        "intake/manifest.json",
+        "intake/metrics_long.csv",
+        "intake/metrics_uncertainty.json",
+        "intake/pack_intent.json",
+        "intake/regulatory_matrix.csv",
+        "intake/run_summary.json",
+        "intake/selection_rates.csv",
+        "intake/archive/v5.0.1-release-30765888408.json",
+        "scripts/evaluate_fixture_utility.py",
+    ]
+    members: dict[str, bytes] = {}
+    for relative in exact_files:
+        path = root / relative
+        if not path.is_file() or path.is_symlink():
+            raise CompanionError(f"required companion source missing or unsafe: {relative}")
+        members[relative] = path.read_bytes()
+    for relative_root in (
+        "intake/certificates",
+        "evidence/v5.0.1/robustness",
+        "evidence/v5.0.1/utility",
+        "evidence/v5.0.1/publication",
+    ):
+        directory = root / relative_root
+        for path in sorted(directory.rglob("*")):
+            if path.is_symlink():
+                raise CompanionError(f"symlink companion source is forbidden: {path}")
+            if path.is_file():
+                relative = path.relative_to(root).as_posix()
+                members[relative] = path.read_bytes()
+    members["README.md"] = (root / "companion" / "README.md").read_bytes()
+    members["verify_companion_bundle.py"] = (
+        root / "scripts" / "verify_companion_bundle.py"
+    ).read_bytes()
+    for name, data in members.items():
+        if len(data) > MAX_FILE_BYTES:
+            raise CompanionError(f"companion member exceeds size limit: {name}")
+    return dict(sorted(members.items()))
+
+
+def build(root: Path, output: Path) -> dict[str, Any]:
+    root = root.resolve()
+    commit = _git(root, "rev-parse", "HEAD")
+    dirty = bool(_git(root, "status", "--porcelain"))
+    members = _collect(root)
+    files = [
+        {"path": name, "sha256": _sha256(data), "size": len(data)}
+        for name, data in members.items()
+    ]
+    manifest = {
+        "schema_version": "flbsa.whitepaper_companion.v1",
+        "claim_boundary": {
+            "customer_evidence_disposition": "characterization_only",
+            "customer_evidence_eligible": False,
+            "publication_status": "candidate_not_published",
+        },
+        "product": {
+            "repository": "equilens-labs/fl-bsa",
+            "tag": PRODUCT_TAG,
+            "tag_object": PRODUCT_TAG_OBJECT,
+            "commit": PRODUCT_COMMIT,
+        },
+        "whitepaper": {
+            "repository": "equilens-labs/fl-bsa-whitepaper",
+            "commit": commit,
+            "source_tree_dirty_at_build": dirty,
+            "document_version": DOCUMENT_VERSION,
+            "publication_status": "candidate_not_published",
+        },
+        "evidence": {
+            "producer_workflow": "release-evidence.yml",
+            "producer_run_id": 30765888408,
+            "producer_run_attempt": 1,
+            "primary_bundle_sha256": "f6a0bd9390565f7bd852b451e11b7384b1628c24caba02865b1ec94c1e263026",
+            "robustness_runs": 40,
+            "utility_generation_seeds": 10,
+        },
+        "files": files,
+    }
+    manifest_bytes = (json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode("utf-8")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    epoch = _source_date_epoch(root)
+    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+        archive.writestr(_zip_info("MANIFEST.json", epoch), manifest_bytes, compresslevel=9)
+        for name, data in members.items():
+            archive.writestr(_zip_info(name, epoch), data, compresslevel=9)
+    return {
+        "output": str(output),
+        "sha256": _sha256(output.read_bytes()),
+        "size": output.stat().st_size,
+        "file_count": len(files),
+        "whitepaper_commit": commit,
+        "source_tree_dirty_at_build": dirty,
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--repo-root", type=Path, default=Path.cwd())
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args()
+    result = build(args.repo_root, args.output)
+    print(json.dumps(result, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

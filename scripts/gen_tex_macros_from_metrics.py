@@ -29,6 +29,9 @@ import pandas as pd
 import yaml
 
 
+_SRG_METHOD = "conservative_wilson_endpoint_difference"
+
+
 def _strict_load_json(path: Path, label: str) -> dict[str, Any]:
     if not path.is_file():
         raise ValueError(f"required {label} file is missing: {path}")
@@ -111,6 +114,8 @@ def _strict_validate_uncertainty(payload: dict[str, Any]) -> None:
     _strict_metric_block(
         gender.get("srg"), "uncertainty.fairness_uncertainty.gender.srg"
     )
+    if (gender.get("srg") or {}).get("method") != _SRG_METHOD:
+        raise ValueError("uncertainty gender SRG method is unsupported")
 
     race = uncertainty.get("race")
     if not isinstance(race, dict):
@@ -140,6 +145,9 @@ def _strict_validate_uncertainty(payload: dict[str, Any]) -> None:
         pairs[worst_case_pair].get("srg"),
         "uncertainty.fairness_uncertainty.race.pairs[worst_case_pair].srg",
     )
+    for pair_name, pair in pairs.items():
+        if not isinstance(pair, dict) or (pair.get("srg") or {}).get("method") != _SRG_METHOD:
+            raise ValueError(f"uncertainty race SRG method is unsupported for {pair_name}")
     observed = race.get("observed")
     if not isinstance(observed, dict):
         raise ValueError("uncertainty.fairness_uncertainty.race.observed must be an object")
@@ -179,6 +187,9 @@ def _strict_validate_slices(payload: dict[str, Any]) -> None:
             if count <= 0 or not count.is_integer():
                 raise ValueError(f"{location}.counts.{count_name} must be a positive integer")
         _strict_metric_block(entry.get("air"), f"{location}.air")
+        _strict_metric_block(entry.get("srg"), f"{location}.srg")
+        if (entry.get("srg") or {}).get("method") != _SRG_METHOD:
+            raise ValueError(f"{location}.srg method is unsupported")
 
     for section, fields in (
         ("bias_preservation", ("abs_delta_air", "rel_delta_air")),
@@ -473,16 +484,16 @@ def main() -> int:
                 prot_n = 0
             return ref_n, prot_n
 
-        def _compliance_label(point: Any) -> str:
+        def _screen_label(point: Any) -> str:
             try:
-                return "PASS" if float(point) >= air_thr else "FAIL"
+                return "at/above" if float(point) >= air_thr else "below"
             except Exception:
                 return "TBD"
 
         for key, label in (
-            ("historical", "Historical"),
-            ("amplification", "Amplification (bias-preserving)"),
-            ("intrinsic", "Intrinsic (de-biased)"),
+            ("historical", "Historical fixture"),
+            ("amplification", "Amplification branch"),
+            ("intrinsic", "Intrinsic parity-policy control"),
         ):
             pair = slices.get(key)
             if not isinstance(pair, dict):
@@ -498,7 +509,7 @@ def main() -> int:
                     _fmt_num(pt),
                     _fmt_num(lo),
                     _fmt_num(hi),
-                    _latex_escape(_compliance_label(pt)),
+                    _latex_escape(_screen_label(pt)),
                 ]
             )
 
@@ -840,7 +851,7 @@ def main() -> int:
         outdir / "table_gender_air_slices.tex",
         column_spec="lrrSSSl",
         empty_span_cols=7,
-        header="slice & {$n_{ref}$} & {$n_{prot}$} & {AIR} & {LCI} & {UCI} & {compliance}\\\\",
+        header="slice & {$n_{ref}$} & {$n_{prot}$} & {AIR} & {LCI} & {UCI} & {point vs 0.80}\\\\",
         rows=slice_rows,
     )
 

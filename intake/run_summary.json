@@ -1,8 +1,8 @@
 {
-  "run_id": "3123918c-d62b-48a7-89d7-9a91f10c82ab",
+  "run_id": "50ba82a3-afc0-4310-be9a-ebd9e084af11",
   "split": "wp_evidence",
   "model_id": "gate-wp-42",
-  "generated_at": "2026-07-07T17:19:05.721666+00:00",
+  "generated_at": "2026-08-02T20:37:44.375096+00:00",
   "violations": {
     "air": {
       "count": 1,
@@ -155,7 +155,7 @@
     "ci_excludes_threshold": null,
     "ci_degenerate": null
   },
-  "commit_sha": "09f6ca91dc9cf92c143559046e4517eb9576182c",
+  "commit_sha": "cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2",
   "dataset_hash": "sha256:ebceb84310e0702075e0fd6fc31bacfe6046faef2316fd890a208a3b620ae9b0",
   "fairness_reference_groups": {
     "gender": "male",
@@ -179,18 +179,18 @@
     }
   },
   "inference": {
-    "method": "bca",
-    "replicates": 2000,
     "alpha": 0.05,
-    "seed": 42,
-    "smoothing": 1e-06,
     "bootstrap_usage": "metrics_long_annex_or_backcompat",
-    "primary_interval_source": "validation/metrics_uncertainty.json",
     "headline_interval_methods": {
-      "selection_rate": "wilson",
       "air": "wilson+delta",
-      "srg": "newcombe_wilson"
+      "selection_rate": "wilson",
+      "srg": "conservative_wilson_endpoint_difference"
     },
-    "method_note": "The legacy method/replicates fields describe bootstrap annex generation; whitepaper headline intervals are read from validation/metrics_uncertainty.json."
+    "method": "bca",
+    "method_note": "The legacy method/replicates fields describe bootstrap annex generation; whitepaper headline intervals are read from validation/metrics_uncertainty.json.",
+    "primary_interval_source": "validation/metrics_uncertainty.json",
+    "replicates": 2000,
+    "seed": 42,
+    "smoothing": 1e-06
   }
 }

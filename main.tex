@@ -1,4 +1,10 @@
-% Suppress volatile engine metadata; SOURCE_DATE_EPOCH binds the remaining
+\DocumentMetadata{
+  lang=en-US,
+  pdfstandard=UA-1,
+  testphase={phase-III,math,table}
+}
+
+% Suppress volatile engine metadata. SOURCE_DATE_EPOCH binds the remaining
 % reproducible-build timestamp inputs to the checked-out source commit.
 \ifdefined\pdfinfoomitdate\pdfinfoomitdate=1\fi
 \ifdefined\pdftrailerid\pdftrailerid{}\fi
@@ -6,8 +12,7 @@
 
 \documentclass[11pt]{article}
 
-% --- Packages (arXiv-friendly) ---
-\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[a4paper,margin=22mm,headheight=26pt,headsep=9mm,footskip=12mm]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
@@ -17,31 +22,39 @@
 \usepackage{xcolor}
 \usepackage{xspace}
 \usepackage{booktabs}
-\usepackage[font=small]{caption}
+\usepackage{array}
+\usepackage{ragged2e}
+\usepackage[font=small,labelfont=bf]{caption}
 \usepackage{fancyhdr}
 \usepackage[section]{placeins}
 \usepackage{siunitx}
-\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{amsmath,amssymb,mathtools}
 \usepackage{enumitem}
-\usepackage{hyperref}
-\hypersetup{
-  pdftitle={Equilens - Synthetic Audit and Fairness Evaluation for FL-BSA},
-  pdfauthor={Equilens},
-  pdfsubject={Synthetic Audit and Fairness Evaluation for FL-BSA},
-  pdfkeywords={FL-BSA, fairness, synthetic audit, AIR, SRG, EU AI Act, ECOA, CFPB},
-  colorlinks=true,
-  linkcolor=blue!50!black,
-  citecolor=blue!50!black,
-  urlcolor=blue!50!black
-}
-\usepackage[capitalise]{cleveref}
-\usepackage[numbers]{natbib}
 \usepackage{url}
-\setlength{\headheight}{24pt}
-\addtolength{\topmargin}{-4pt}
-\makeatletter
-\setlength{\@fptop}{0pt}
-\makeatother
+\usepackage{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+
+\definecolor{EquilensNavy}{HTML}{1B365D}
+\definecolor{EquilensBlue}{HTML}{0072B2}
+\definecolor{EquilensGreen}{HTML}{007A5E}
+\definecolor{EquilensOrange}{HTML}{C87800}
+\definecolor{EquilensLight}{HTML}{EEF3F7}
+\definecolor{EquilensText}{HTML}{1E2732}
+\color{EquilensText}
+
+\hypersetup{
+  pdftitle={FL-BSA v5.0.1 Characterization Whitepaper},
+  pdfauthor={Equilens},
+  pdfsubject={Dual-branch synthetic fairness evidence and bounded characterization},
+  pdfkeywords={FL-BSA, v5.0.1, fairness characterization, AIR, SRG, synthetic data, evidence provenance},
+  pdfdisplaydoctitle=true,
+  bookmarksopen=true,
+  bookmarksnumbered=true,
+  colorlinks=true,
+  linkcolor=EquilensNavy,
+  citecolor=EquilensNavy,
+  urlcolor=EquilensBlue
+}
 
 \sisetup{
   detect-all,
@@ -50,70 +63,139 @@
   round-pad=true,
   table-number-alignment=center
 }
+\setlist{itemsep=2pt,topsep=4pt,leftmargin=1.5em}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt}
+\renewcommand{\arraystretch}{1.16}
+\setcounter{tocdepth}{2}
 
-\crefname{equation}{Eq.}{Eqs.}
-\Crefname{equation}{Equation}{Equations}
-\crefname{table}{Table}{Tables}
-\Crefname{table}{Table}{Tables}
-\crefname{figure}{Figure}{Figures}
-\Crefname{figure}{Figure}{Figures}
-
-% --- Includes ---
 \input{includes/macros}
 \InputIfFileExists{includes/publication_profile.local.tex}{}{}
 \input{includes/provenance_macros}
 \input{includes/metrics_macros}
+\input{includes/characterization_macros}
+\InputIfFileExists{includes/publication_identity.tex}{}{
+  \newcommand{\DocumentVersion}{WP-5.0.1-candidate.1}
+  \newcommand{\PublicationStatus}{CANDIDATE — NOT PUBLISHED}
+  \newcommand{\PublicationAsOf}{5 August 2026}
+  \newcommand{\ProductReleaseTag}{v5.0.1}
+  \newcommand{\ProductCommitRaw}{cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2}
+  \newcommand{\ProductTagObjectRaw}{3a0ea6e4faea9d61aabcedebab2a838624fb587d}
+  \newcommand{\WhitepaperCommitRaw}{SOURCE-COMMIT-NOT-GENERATED}
+  \newcommand{\WhitepaperTreeState}{identity-include-missing}
+  \newcommand{\EvidenceRunRaw}{30765888408}
+  \newcommand{\EvidenceRunAttemptRaw}{1}
+  \newcommand{\EvidenceArtifactIdRaw}{8838967644}
+  \newcommand{\EvidenceBundleShaRaw}{f6a0bd9390565f7bd852b451e11b7384b1628c24caba02865b1ec94c1e263026}
+  \newcommand{\RuntimeImageDigestRaw}{sha256:550efe26626cd58c88b61bbde4b778f718f34d7fb764695137488b0cef8f09ce}
+  \newcommand{\CompanionFilenameRaw}{fl-bsa-v5.0.1-companion-evidence.zip}
+  \newcommand{\CompanionShaRaw}{COMPANION-DIGEST-NOT-GENERATED}
+  \newcommand{\CompanionSizeRaw}{0}
+}
+
+% Identity values are compact enough to remain an unbroken, copyable token.
+\newcommand{\IdentityText}[1]{\mbox{\scriptsize\ttfamily #1}}
+\newcommand{\StatusPill}[1]{%
+  \begingroup\setlength{\fboxsep}{6pt}%
+  \colorbox{EquilensOrange!16}{\textcolor{EquilensNavy}{\bfseries #1}}%
+  \endgroup
+}
+\newsavebox{\KeyBoxStorage}
+\newenvironment{KeyBox}{%
+  \par\medskip\noindent
+  \setlength{\fboxsep}{9pt}%
+  \begin{lrbox}{\KeyBoxStorage}\begin{minipage}{0.94\linewidth}%
+}{%
+  \end{minipage}\end{lrbox}%
+  \fcolorbox{EquilensBlue!45}{EquilensLight}{\usebox{\KeyBoxStorage}}%
+  \par\medskip
+}
 
 \newcommand{\DemoEvaluationWatermark}{DEMO / EVALUATION ONLY}
 \ifdraft
 \AddToShipoutPictureBG{%
   \put(\LenToUnit{0.5\paperwidth},\LenToUnit{0.52\paperheight}){%
-    \makebox(0,0){%
-      \rotatebox{35}{%
-        \textcolor{black!10}{\bfseries\fontsize{36}{42}\selectfont \DemoEvaluationWatermark}%
-      }%
-    }%
+    \makebox(0,0){\rotatebox{35}{%
+      \textcolor{black!8}{\bfseries\fontsize{36}{42}\selectfont\DemoEvaluationWatermark}}}%
   }%
 }
 \fi
 
-% --- Title ---
-\title{\papertitle}
-\author{FL-BSA Team \\ Equilens}
-\date{July 7, 2026}
-
-\begin{document}
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\raisebox{-0.35\height}{\includegraphics[height=0.6cm]{figures/equilens-wordmark-light.png}}}
-\fancyhead[R]{\scriptsize Equilens \textbar{} Synthetic Audit \& Fairness Evaluation for \sysname}
-\fancyfoot[L]{\scriptsize Equilens}
+\fancyhead[L]{\includegraphics[artifact,height=0.58cm]{figures/equilens-wordmark-light.png}}
+\fancyhead[R]{\scriptsize FL-BSA v5.0.1 \textbar{} Characterization Whitepaper}
+\fancyfoot[L]{\scriptsize \DocumentVersion{} \textbar{} \PublicationStatus}
 \ifdraft\fancyfoot[C]{\scriptsize\textbf{\DemoEvaluationWatermark}}\fi
-\fancyfoot[R]{\scriptsize page~\thepage}
+\fancyfoot[R]{\scriptsize \thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 \renewcommand{\footrulewidth}{0pt}
-\fancypagestyle{plain}{%
-  \fancyhf{}
-  \fancyhead[L]{\raisebox{-0.35\height}{\includegraphics[height=0.6cm]{figures/equilens-wordmark-light.png}}}
-  \fancyhead[R]{\scriptsize Equilens \textbar{} Synthetic Audit \& Fairness Evaluation for \sysname}
-  \fancyfoot[L]{\scriptsize Equilens}
-  \ifdraft\fancyfoot[C]{\scriptsize\textbf{\DemoEvaluationWatermark}}\fi
-  \fancyfoot[R]{\scriptsize page~\thepage}
-  \renewcommand{\headrulewidth}{0.4pt}
-  \renewcommand{\footrulewidth}{0pt}
-}
 
+\title{\includegraphics[artifact,width=0.31\textwidth]{figures/equilens-wordmark-dark.png}\\[9mm]
+  \textcolor{EquilensNavy}{\bfseries\LARGE FL-BSA v5.0.1\\[5pt]Characterization Whitepaper}\\[10pt]
+  \large Dual-branch synthetic fairness evidence, robustness, utility, and provenance}
+\author{Equilens}
+\date{\PublicationAsOf}
+
+\begin{document}
+
+\hypersetup{pageanchor=false}
+\thispagestyle{empty}
 \maketitle
+\thispagestyle{empty}
+\begin{center}
+  \vspace{-10mm}
+  \StatusPill{\PublicationStatus}
+\end{center}
+
+\vfill
+\begin{KeyBox}
+  \small
+  \begin{tabular}{@{}>{\bfseries}p{0.27\linewidth}p{0.64\linewidth}@{}}
+    Document & \DocumentVersion{}; source \IdentityText{\WhitepaperCommitRaw} (\WhitepaperTreeState) \\
+    Product & \ProductReleaseTag{} at \IdentityText{\ProductCommitRaw}; annotated tag object \IdentityText{\ProductTagObjectRaw} \\
+    Evidence & release workflow run \EvidenceRunRaw{}, attempt \EvidenceRunAttemptRaw{}; primary artifact ID \EvidenceArtifactIdRaw{} \\
+    Companion & \IdentityText{\CompanionFilenameRaw} \\
+    Companion SHA-256 & \IdentityText{\CompanionShaRaw} \\
+  \end{tabular}
+\end{KeyBox}
+
+\vspace{3mm}
+\small
+This paper characterizes a generated credit-decision fixture and the exact v5.0.1 release
+evidence. It is not customer evidence, a legal opinion, a compliance determination, a
+production-utility claim, or a publication authorization.
+\clearpage
+\hypersetup{pageanchor=true}
+
+\pagenumbering{roman}
+\setcounter{page}{1}
 
 \begin{abstract}
-We present a review-oriented, statistically rigorous evaluation of Equilens' Fair Lending Bias-Simulation Appliance (FL-BSA), a self-hosted fair-outcomes evidence appliance for regulated credit decisions. The paper formalises core selection-rate fairness estimands---including the Adverse Impact Ratio (AIR) and approval-rate gaps---and reports deterministic uncertainty using Wilson confidence intervals for group rates and a delta-method confidence interval for AIR. We describe the data-privacy and provenance boundaries, and demonstrate the framework on a synthetic fair-lending audit scenario, surfacing threshold exceptions when present with quantified uncertainty suitable for governance and regulatory review. Calibration is out of scope for this scenario.
+FL-BSA is a customer-hosted evidence appliance that generates two deliberately different
+synthetic branches for fairness review. This paper binds its claims to product tag
+\ProductReleaseTag{} at commit \IdentityText{\ProductCommitRaw} and reports the corresponding
+release-evidence run. On the generated fixture, the historical and amplification gender disparity
+ratios are both about \AmplificationAIR{}, while the intrinsic branch reaches
+\IntrinsicAIR{} after an equal-rate post-label policy. The latter is a mechanical control showing
+that branch separation operates; it is not a causal counterfactual. Release Gold robustness passed
+\RobustnessTotalPasses{}/\RobustnessTotalRuns{} configured scenario runs. A new ten-seed
+train-on-synthetic/test-on-held-out-fixture study finds material utility variation: mean ROC AUC
+\UtilitySyntheticAUCMean{} versus a real-train fixture baseline of \UtilityBaselineAUC{}. The
+paper treats AIR 0.80 as an internal screen rather than a lending-law verdict, states the limits of
+single-run inference, reports both branches' quality, and supplies a hash-bound offline companion.
 \end{abstract}
+
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
 
 \input{sections/01_executive_summary}
 \input{sections/04_model_algorithm}
-\input{sections/05_evaluation}
 \input{sections/02_problem_estimands}
 \input{sections/03_methods}
+\input{sections/05_evaluation}
 \input{sections/06_results}
 \input{sections/07_compliance}
 \input{sections/08_security_privacy}
@@ -124,8 +206,6 @@ We present a review-oriented, statistically rigorous evaluation of Equilens' Fai
 \bibliography{bib/references}
 
 \clearpage
-\section*{Appendices}
-\addcontentsline{toc}{section}{Appendices}
 \appendix
 \input{sections/appendix_a_sap}
 \input{sections/appendix_b_metrics_defs}

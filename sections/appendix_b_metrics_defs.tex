@@ -1,8 +1,20 @@
+\section{Metric and Status Reference}
 
-\section{Metric Definitions (Quick Reference)}
-\begin{itemize}[leftmargin=*]
-\item \textbf{AIR (disparity ratio)}: $p_g/p_{g_{\mathrm{ref}}}$, the selection-rate ratio for a protected group relative to a fixed reference group.
-\item \textbf{SRG (approval-rate gap)}: $p_g - p_{g_{\mathrm{ref}}}$, the selection-rate difference for a protected group relative to a fixed reference group.
-\item \textbf{ECE}: weighted absolute gap between empirical rate and predicted probability over calibration bins (expected calibration error).
-\item \textbf{SAP}: pre-specified Statistical Analysis Plan describing estimands, thresholds, and inference methods for this audit scenario.
-\end{itemize}
+\begin{description}[style=nextline,leftmargin=0pt]
+  \item[AIR (disparity ratio)] Selection rate of the comparison group divided by the reference
+  rate. Undefined if the reference rate is zero. In this paper it is descriptive.
+  \item[SRG (selection-rate gap)] Comparison-group selection rate minus reference-group rate.
+  Negative values indicate a lower comparison-group rate under the declared ordering.
+  \item[Point relation] Whether the AIR point estimate is below or at/above the internally selected
+  0.80 line.
+  \item[Interval relation] Whether the entire 95\% interval is below, crosses, or is entirely above
+  the line. This is reported independently of point relation.
+  \item[Overall quality] Branch-certificate composite. It does not include every possible quality,
+  privacy, fairness, or utility dimension.
+  \item[TSTR] Train on synthetic, test on a held-out partition of the original generated fixture.
+  The reported study uses equal-sized training tables and excludes protected attributes from the
+  downstream model.
+  \item[Not evaluated] Required inputs or a declared evaluation were absent; no conclusion follows.
+  \item[Not informative] A metric object exists, but the scenario's degenerate cells do not support
+  the intended comparison; it is not counted as favorable evidence.
+\end{description}

@@ -1,10 +1,20 @@
-\section{Generator Configuration}
-This appendix summarises the branch generator configuration recorded in the intake certificates for this run. The current native/no-CTGAN evidence path uses the first-party evidence-native generator; CTGAN-specific fields such as epochs, PAC, batch size, and GAN layer widths are therefore not applicable and are not reported as chosen hyperparameters.
+\section{Selected Generator Configuration}
 
-\subsection{Branch Configuration}
+The exact release uses the first-party evidence-native generator for both branches. The branch
+certificates record a profile-based fit, deterministic seeds, categorical columns, protected
+attributes, outcome handling, output-size targets, and branch-specific label policy. Parameters
+that do not apply to the selected algorithm are reported as not applicable rather than populated
+with values from another model family.
+
 \begin{table}[htbp]
-\centering
-\input{includes/table_hparams_chosen}
-\caption{Generator configuration and hyperparameter disposition for each branch in this synthetic audit run, derived from the intake certificates when available.}
-\label{tab:generator_config_branches}
+  \centering
+  \small
+  \input{includes/table_hparams_chosen}
+  \caption{Branch generator configuration and selection disposition derived from the exact v5.0.1
+  certificates.}
+  \label{tab:generator-config}
 \end{table}
+
+The utility study fixes the generator-fit seed at 42 and uses generation seeds 7, 11, 23, 42, 101,
+1337, 2025, 4096, 8191, and 314159. Those choices are recorded in the utility summary and verifier;
+they are not presented as an optimized seed search.

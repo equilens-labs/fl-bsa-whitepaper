@@ -1,5 +1,63 @@
-
 \section{Evaluation Design}
-This whitepaper evaluates three data slices produced by the v5.0.0 release-evidence pipeline: (i) the historical baseline (input dataset), (ii) the amplification (bias-preserving) synthetic slice, and (iii) the intrinsic (de-biased) synthetic slice with deterministic post-labelling when enabled. We report selection-rate fairness (disparity ratios and approval-rate gaps) using aggregated counts with deterministic uncertainty. Calibration requires probability scores and calibration bins and is out of scope for this scenario.
 
-This fixture is used as a positive control: the product generation path supports controlled bias injection, and the intake for this run carries a known gender AIR below the four-fifths threshold. A below-threshold AIR in the historical and amplification slices is therefore the detection target, not a product failure. The interpretive question is whether the amplification (bias-preserving) branch preserves that signal while the intrinsic (de-biased) branch removes decision-label disparity under its post-label policy. This framing is limited to the synthetic fixture and the configured gender pair in this evidence bundle.
+\subsection{Exact release identity}
+
+The evaluation is reconstructed from the successful v5.0.1 release-evidence workflow, run
+\EvidenceRunRaw{} attempt \EvidenceRunAttemptRaw{}, whose head is the peeled tag commit
+\IdentityText{\ProductCommitRaw}. The annotated tag object is
+\IdentityText{\ProductTagObjectRaw}. The primary whitepaper artifact is
+\texttt{wp-intake-bundle-v4-1}, artifact ID \EvidenceArtifactIdRaw{}. Its inner ZIP SHA-256 is
+\IdentityText{\EvidenceBundleShaRaw}; its attested GitHub artifact digest and the contract digest
+are retained in the companion identity file.
+
+The main characterization run UUID is \IdentityText{\RunId}. The canonical generated-fixture hash
+is \IdentityText{\DatasetHash}. The runtime image digest is
+\IdentityText{\RuntimeImageDigestRaw}. These values are checked by build tests and by the companion
+verifier rather than copied only into prose.
+
+\subsection{Primary fixture}
+
+The generated credit-decision fixture has eight fields: five numeric predictors, gender, race, and
+the binary decision label. The historical slice has 3,000 rows. Amplification and intrinsic each
+have 10,000 generated rows. The gender comparison is female versus male. Race contains Asian,
+black, Hispanic, other, and white categories as declared by this fixture; it is not a general
+ontology and does not cover all legally protected bases or intersectional combinations.
+
+The evaluation questions are deliberately separated:
+
+\begin{enumerate}
+  \item Does the evidence path detect the fixture's known gender selection-rate disparity?
+  \item Does amplification retain that signal at the configured output size?
+  \item Does the intrinsic post-label control execute and remain separated from amplification?
+  \item What distribution, correlation, demographic, exact-reproduction, and utility limitations
+        accompany those fairness summaries?
+  \item Do the configured Gold scenarios complete consistently across their fixed seed plan?
+\end{enumerate}
+
+\subsection{Evidence surfaces and priority}
+
+When similarly named fields disagree, this paper uses an explicit source priority:
+
+\begin{enumerate}
+  \item \path{intake/metrics_uncertainty.json} and \path{intake/fairness_slices.json} for headline
+        fairness values and methods;
+  \item branch-specific quality certificates for branch quality and privacy-scope fields;
+  \item the exact Gold merged summary and index for multi-seed characterization;
+  \item the paper-owned utility summary for the additional TSTR study; and
+  \item the paper-owned regulatory mapping dated 5 August 2026 for current legal and governance
+        context.
+\end{enumerate}
+
+The producer's original \path{intake/regulatory_matrix.csv} remains byte-preserved to maintain
+provenance, but its narrative mapping is superseded for this publication by the dated paper-owned
+overlay. Interpretive corrections do not alter any producer metric, interval, count, certificate,
+or hash.
+
+\subsection{Display and disclosure rules}
+
+Gender is the headline protected-attribute result because the fixture and scenario are designed
+around that positive control. Race remains machine-readable but is not plotted in the main result
+figures because the Hispanic group has 273 of 10,000 rows, below the configured 5\% display floor.
+The paper still discloses the configured and effective reference groups, selection policy, worst
+pair, minimum group count, and reason for suppression. Suppression is a presentation rule, not a
+claim that the race result is favorable, immaterial, or absent.
