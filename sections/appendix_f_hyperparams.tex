@@ -18,3 +18,38 @@ with values from another model family.
 The utility study fixes the generator-fit seed at 42 and uses generation seeds 7, 11, 23, 42, 101,
 1337, 2025, 4096, 8191, and 314159. Those choices are recorded in the utility summary and verifier;
 they are not presented as an optimized seed search.
+
+\paragraph{Branch difference register.}
+The following certificate fields make the experimental separation explicit. They also explain why
+the intrinsic branch is a policy control rather than an alternative estimate of historical labels.
+
+\begin{table}[htbp]
+  \centering
+  \footnotesize
+  \begin{tabular}{@{}>{\RaggedRight\arraybackslash}p{0.24\linewidth}
+                       >{\RaggedRight\arraybackslash}p{0.34\linewidth}
+                       >{\RaggedRight\arraybackslash}p{0.34\linewidth}@{}}
+    \toprule
+    Certificate field & Amplification & Intrinsic control \\
+    \midrule
+    Fit population & 3,000 generated-fixture records & 3,000 generated-fixture records \\
+    Fit columns & Seven feature/protected columns plus \texttt{loan\_approved}
+      & The same seven columns; decision aliases excluded \\
+    Sampling & Random branch-profile sampling
+      & Protected-anchor profile resampling, stratified by gender and race \\
+    Requested/generated & 10,000 / 10,000 rows; generation seed 42
+      & 10,000 / 10,000 rows; generation seed 42 \\
+    Decision handling & Retains the sampled decision signal
+      & Applies the equal-rate decision policy after feature generation \\
+    Convergence claim & Not applicable to empirical-profile fitting
+      & Not applicable to empirical-profile fitting \\
+    Exact-row check & 0 exact training-row matches among 10,000 checked
+      & 0 exact training-row matches among 10,000 checked \\
+    Utility surface & Ten-seed TSTR fixture study reported
+      & Excluded because the post-label policy changes the target estimand \\
+    \bottomrule
+  \end{tabular}
+  \caption{Branch-specific configuration and scope read from the exact release certificates. The
+  exact-row result is not a near-duplicate or formal privacy result.}
+  \label{tab:branch-difference-register}
+\end{table}
