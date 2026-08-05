@@ -82,9 +82,6 @@ class HyperparamsTableContractTests(unittest.TestCase):
     def test_checked_in_native_intake_has_no_obsolete_generator_narrative(self) -> None:
         yaml_text = (ROOT / "intake" / "model_hyperparams.yaml").read_text(encoding="utf-8")
         table = (ROOT / "includes" / "table_hparams_chosen.tex").read_text(encoding="utf-8")
-        appendix = (ROOT / "sections" / "appendix_f_hyperparams.tex").read_text(
-            encoding="utf-8"
-        )
 
         self.assertIn("backend_id: first_party_evidence_native", yaml_text)
         self.assertNotIn("None & 0 & None", table)

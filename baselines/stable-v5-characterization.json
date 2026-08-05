@@ -6,11 +6,11 @@
     "publication_status": "candidate_not_published"
   },
   "consumer": {
-    "config_tree_git_oid": "86d51b0ee92662bf6470ca0120d41022161423bd",
-    "intake_commit": "a451eae4284c4c592783f108e206e5ba1c0e5747",
-    "intake_tree_git_oid": "1131128a8882b8112089c60ebd5eff4aa4a1a6b8",
-    "manifest_sha256": "60ced620171ed4ec86ece50974930c4ccd84c6a20fe5859f19953c75eba3b6ff",
-    "pack_intent_sha256": "c451b52a0cdefbe73eacda0d1250ddfdcf66678b5402efc76c57887f67c578b1",
+    "config_tree_git_oid": "98223995a8c3614254d6a99988644d1615591ff8",
+    "intake_commit": "4e3071112c6deee1d29239007bfa65c67b6b5a64",
+    "intake_tree_git_oid": "b95cd1e8950820236f6e12a737dc87aa9aac5375",
+    "manifest_sha256": "3278765fad80e0693fa5fa6c9359da9c63802b63c93e1385d894d4cb241621af",
+    "pack_intent_sha256": "1495e9ad64a13e2372be290a7b6c226b13255115b61f1e987e3040ff9d11669d",
     "repo": "equilens-labs/fl-bsa-whitepaper"
   },
   "export": {
@@ -76,26 +76,31 @@
         "target": "provenance/manifest.json"
       }
     ],
-    "expected_sha256": "42bcdcc72043a9ddd70f1821cf88b2c9963d34bd8f4444ee3b4093ed34276060",
+    "expected_sha256": "a60911bf4f720ac046580ea22aad2a182151b10c3ed3dd6cdca5e1035af51468",
     "filename": "WhitePaper_Intake_Bundle_v4.zip",
     "format": "whitepaper_intake_bundle_v4_compat",
     "script": "scripts/stable_v5_export.py",
     "script_sha256": "b05dd5af4f61280ada904f52c8afc18e41ab28be930ea30355884b9f47401a78"
   },
   "producer": {
-    "artifact": "wp-intake-bundle-v4",
-    "branch": "release/v5.0.0-09f6ca91",
+    "artifact": "wp-intake-bundle-v4-1",
+    "artifact_digest": "sha256:7241da6013653e96337c540d3670bed69c04454002f3e7d315a95e9c8e197615",
+    "artifact_id": "8838967644",
+    "branch": "main",
     "bundle_filename": "WhitePaper_Intake_Bundle_v4.zip",
-    "bundle_sha256": "f33b55d32a5bb60b63a53fde583463ac5015d59b0d086f89ac972de45cece063",
-    "product_sha": "09f6ca91dc9cf92c143559046e4517eb9576182c",
-    "release_tag": "v5.0.0",
+    "bundle_sha256": "f6a0bd9390565f7bd852b451e11b7384b1628c24caba02865b1ec94c1e263026",
+    "contract_sha256": "71da7127165e227c17d854e523f45cecf82f758da95cdcc63b6eaee591a9a214",
+    "product_sha": "cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2",
+    "release_tag": "v5.0.1",
     "repo": "equilens-labs/fl-bsa",
-    "run_id": "28884829824",
+    "run_attempt": "1",
+    "run_id": "30765888408",
+    "tag_object": "3a0ea6e4faea9d61aabcedebab2a838624fb587d",
     "workflow": "release-evidence.yml"
   },
   "publication_inputs": {
     "algorithm": "git-object-projection-sha256.v1",
-    "expected_sha256": "7ee3709869d398eb3e2aa548a47b361fc74d5a61cfb7619c2eb03fc8b0de2f1d",
+    "expected_sha256": "4ba53f9727cfd80c40f42770edea1d0f61332d58a9ec934d4811df29d764e8ca",
     "paths": [
       "config",
       "intake/air_status.json",

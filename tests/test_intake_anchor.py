@@ -1,6 +1,7 @@
 import hashlib
 import importlib.util
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -9,7 +10,6 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARCHIVE_ONLY_COMMIT = "e93a0fef4c88d7cb4c2c38df6f7dd26a11b75837"
 MODULE_PATH = ROOT / "scripts" / "intake_anchor.py"
 sys.path.insert(0, str(MODULE_PATH.parent))
 SPEC = importlib.util.spec_from_file_location("intake_anchor_under_test", MODULE_PATH)
@@ -204,36 +204,75 @@ class IntakeAnchorTests(unittest.TestCase):
         self.assertNotIn("intake/whitepaper_snapshot.json", names)
         self.assertEqual({zipfile.ZIP_STORED}, compression_types)
 
-    def test_publication_projection_accepts_pr26_archive_only_tree_change(self) -> None:
+    def test_publication_projection_accepts_archive_only_tree_change(self) -> None:
         anchor_path = ROOT / "baselines" / "stable-v5-characterization.json"
         anchor = ANCHOR.validate_anchor(anchor_path, ROOT)
         historical_commit = anchor["consumer"]["intake_commit"]
+        with tempfile.TemporaryDirectory() as tmp:
+            clone = Path(tmp) / "repo"
+            subprocess.run(
+                ["git", "clone", "--quiet", "--no-hardlinks", str(ROOT), str(clone)],
+                check=True,
+            )
+            subprocess.run(
+                ["git", "-C", str(clone), "config", "user.name", "Test"], check=True
+            )
+            subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(clone),
+                    "config",
+                    "user.email",
+                    "test@example.invalid",
+                ],
+                check=True,
+            )
+            archive_note = clone / "intake" / "archive" / "projection-test.json"
+            archive_note.write_text('{"traceability_only":true}\n', encoding="utf-8")
+            subprocess.run(
+                ["git", "-C", str(clone), "add", archive_note.relative_to(clone)],
+                check=True,
+            )
+            subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(clone),
+                    "commit",
+                    "--quiet",
+                    "-m",
+                    "archive-only fixture",
+                ],
+                check=True,
+            )
+            archive_commit = str(ANCHOR._git(clone, "rev-parse", "HEAD"))
 
-        historical = ANCHOR.build_publication_input_projection(
-            anchor, ROOT, historical_commit
-        )
-        archived = ANCHOR.build_publication_input_projection(
-            anchor, ROOT, ARCHIVE_ONLY_COMMIT
-        )
-        historical_intake_tree = ANCHOR._git(
-            ROOT, "rev-parse", f"{historical_commit}:intake"
-        )
-        archived_intake_tree = ANCHOR._git(
-            ROOT, "rev-parse", f"{ARCHIVE_ONLY_COMMIT}:intake"
-        )
+            historical = ANCHOR.build_publication_input_projection(
+                anchor, clone, historical_commit
+            )
+            archived = ANCHOR.build_publication_input_projection(
+                anchor, clone, archive_commit
+            )
+            historical_intake_tree = ANCHOR._git(
+                clone, "rev-parse", f"{historical_commit}:intake"
+            )
+            archived_intake_tree = ANCHOR._git(
+                clone, "rev-parse", f"{archive_commit}:intake"
+            )
 
-        self.assertNotEqual(historical_intake_tree, archived_intake_tree)
-        self.assertEqual(historical, archived)
-        publication_source = ANCHOR.validate_publication_source(
-            anchor, ROOT, ARCHIVE_ONLY_COMMIT
-        )
-        self.assertEqual(
-            archived_intake_tree, publication_source["intake_tree_git_oid"]
-        )
-        self.assertEqual(
-            anchor["publication_inputs"]["expected_sha256"],
-            publication_source["publication_input_projection"]["sha256"],
-        )
+            self.assertNotEqual(historical_intake_tree, archived_intake_tree)
+            self.assertEqual(historical, archived)
+            publication_source = ANCHOR.validate_publication_source(
+                anchor, clone, archive_commit
+            )
+            self.assertEqual(
+                archived_intake_tree, publication_source["intake_tree_git_oid"]
+            )
+            self.assertEqual(
+                anchor["publication_inputs"]["expected_sha256"],
+                publication_source["publication_input_projection"]["sha256"],
+            )
 
     def test_publication_projection_excludes_traceability_archive(self) -> None:
         source = ROOT / "baselines" / "stable-v5-characterization.json"

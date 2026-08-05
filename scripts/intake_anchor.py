@@ -35,7 +35,7 @@ PRIMARY_BUNDLE = "WhitePaper_Intake_Bundle_v4.zip"
 LEGACY_BUNDLE = "WhitePaper_Reviewer_Pack_v4.zip"
 ROLLING_BRANCH = "chore/wp-intake-nightly"
 STABLE_ANCHOR_ID = "stable-v5-characterization"
-STABLE_RELEASE_TAG = "v5.0.0"
+STABLE_RELEASE_TAG = "v5.0.1"
 PUBLICATION_PROJECTION_ALGORITHM = "git-object-projection-sha256.v1"
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -416,7 +416,15 @@ def validate_anchor(anchor_path: Path, repo_root: Path) -> dict[str, Any]:
     _require_exact(
         producer.get("workflow"), RELEASE_WORKFLOW, "anchor producer workflow"
     )
-    _require_exact(producer.get("artifact"), PRIMARY_ARTIFACT, "anchor artifact")
+    producer_run_attempt = _require_match(
+        producer.get("run_attempt"), _RUN_ID_RE, "anchor producer run attempt"
+    )
+    producer_artifact = str(producer.get("artifact") or "")
+    if producer_artifact not in {
+        PRIMARY_ARTIFACT,
+        f"{PRIMARY_ARTIFACT}-{producer_run_attempt}",
+    }:
+        raise AnchorError(f"unsupported anchor artifact: {producer_artifact!r}")
     _require_exact(producer.get("bundle_filename"), PRIMARY_BUNDLE, "anchor bundle")
     _require_exact(
         producer.get("release_tag"), STABLE_RELEASE_TAG, "anchor release tag"
@@ -424,13 +432,27 @@ def validate_anchor(anchor_path: Path, repo_root: Path) -> dict[str, Any]:
     product_sha = _require_match(
         producer.get("product_sha"), _SHA_RE, "anchor producer product SHA"
     )
-    _require_exact(
-        producer.get("branch"),
-        f"release/{STABLE_RELEASE_TAG}-{product_sha[:8]}",
-        "anchor producer branch",
+    producer_branch = _require_match(
+        producer.get("branch"), _REPO_PATH_RE, "anchor producer branch"
     )
     producer_run_id = _require_match(
         producer.get("run_id"), _RUN_ID_RE, "anchor producer run ID"
+    )
+    producer_artifact_id = _require_match(
+        producer.get("artifact_id"), _RUN_ID_RE, "anchor producer artifact ID"
+    )
+    producer_artifact_digest = _require_match(
+        producer.get("artifact_digest"),
+        _ARTIFACT_DIGEST_RE,
+        "anchor producer artifact digest",
+    )
+    producer_contract_sha256 = _require_match(
+        producer.get("contract_sha256"),
+        _SHA256_RE,
+        "anchor producer contract SHA-256",
+    )
+    _require_match(
+        producer.get("tag_object"), _SHA_RE, "anchor producer tag object"
     )
     bundle_sha256 = _require_match(
         producer.get("bundle_sha256"), _SHA256_RE, "anchor bundle SHA-256"
@@ -487,12 +509,29 @@ def validate_anchor(anchor_path: Path, repo_root: Path) -> dict[str, Any]:
     _require_exact(
         stamp_producer.get("workflow"), RELEASE_WORKFLOW, "consumer workflow"
     )
-    _require_exact(
-        stamp_producer.get("branch"), producer["branch"], "consumer producer branch"
-    )
+    _require_exact(stamp_producer.get("branch"), producer_branch, "consumer producer branch")
     _require_exact(stamp_producer.get("run_id"), producer_run_id, "consumer run ID")
     _require_exact(
-        stamp_producer.get("artifact"), PRIMARY_ARTIFACT, "consumer artifact"
+        stamp_producer.get("run_attempt"), producer_run_attempt, "consumer run attempt"
+    )
+    _require_exact(
+        stamp_producer.get("head_sha"), product_sha, "consumer producer head SHA"
+    )
+    _require_exact(
+        stamp_producer.get("artifact"), producer_artifact, "consumer artifact"
+    )
+    _require_exact(
+        stamp_producer.get("artifact_id"), producer_artifact_id, "consumer artifact ID"
+    )
+    _require_exact(
+        stamp_producer.get("artifact_digest"),
+        producer_artifact_digest,
+        "consumer artifact digest",
+    )
+    _require_exact(
+        stamp_producer.get("contract_sha256"),
+        producer_contract_sha256,
+        "consumer contract SHA-256",
     )
     _require_exact(
         stamp_producer.get("bundle_filename"), PRIMARY_BUNDLE, "consumer bundle"

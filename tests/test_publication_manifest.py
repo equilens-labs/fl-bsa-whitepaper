@@ -62,9 +62,9 @@ class PublicationManifestTests(unittest.TestCase):
         receipt["release_receipt"] = {
             "repo": repository,
             "release_id": 99,
-            "release_url": "https://github.com/equilens-labs/fl-bsa-whitepaper/releases/tag/v5.0.0",
+            "release_url": "https://github.com/equilens-labs/fl-bsa-whitepaper/releases/tag/v5.0.1",
             "release_created_at": "2026-07-18T00:00:00Z",
-            "tag": "v5.0.0",
+            "tag": "v5.0.1",
             "tag_commit": commit,
             "draft": True,
             "published_at": None,
@@ -124,7 +124,7 @@ class PublicationManifestTests(unittest.TestCase):
             "RELEASE_ID": "99",
             "RELEASE_URL": receipt["release_receipt"]["release_url"],
             "RELEASE_CREATED_AT": "2026-07-18T00:00:00Z",
-            "RELEASE_TAG": "v5.0.0",
+            "RELEASE_TAG": "v5.0.1",
             "EXPECTED_BUILD_COMMIT": commit,
             "RECEIPT_ALREADY_STAGED": "true",
         }
@@ -197,9 +197,11 @@ print(json.dumps(fixture))
         ).strip()
         with tempfile.TemporaryDirectory() as tmp:
             pdf = Path(tmp) / "whitepaper.pdf"
+            companion = Path(tmp) / "fl-bsa-v5.0.1-companion-evidence.zip"
             arxiv = Path(tmp) / "whitepaper_arxiv_source.zip"
             compatibility = Path(tmp) / "stable-v5-intake-compatibility.zip"
             pdf.write_bytes(b"stable-v5 pdf candidate")
+            companion.write_bytes(b"stable-v5 companion candidate")
             arxiv.write_bytes(b"stable-v5 arxiv candidate")
             subprocess.run(
                 [
@@ -224,10 +226,15 @@ print(json.dumps(fixture))
                     whitepaper_commit=commit,
                     publication_status="candidate_not_published",
                     pdf_path=pdf,
+                    companion_path=companion,
                     arxiv_path=arxiv,
                     compatibility_intake_path=compatibility,
                 )
-                marker.assert_called_once_with(pdf, "pdftotext")
+                marker.assert_called_once_with(
+                    pdf,
+                    "pdftotext",
+                    hashlib.sha256(b"stable-v5 companion candidate").hexdigest(),
+                )
 
         self.assertEqual(
             "flbsa.whitepaper_publication_candidate.v1", manifest["schema_version"]
@@ -243,7 +250,7 @@ print(json.dumps(fixture))
             manifest["whitepaper"]["publication_input_projection"]["algorithm"],
         )
         self.assertEqual(
-            "7ee3709869d398eb3e2aa548a47b361fc74d5a61cfb7619c2eb03fc8b0de2f1d",
+            "4ba53f9727cfd80c40f42770edea1d0f61332d58a9ec934d4811df29d764e8ca",
             manifest["whitepaper"]["publication_input_projection"]["sha256"],
         )
         self.assertEqual(
@@ -252,8 +259,12 @@ print(json.dumps(fixture))
         )
         self.assertEqual(23, manifest["artifacts"]["pdf"]["size_bytes"])
         self.assertEqual(
-            "42bcdcc72043a9ddd70f1821cf88b2c9963d34bd8f4444ee3b4093ed34276060",
+            "a60911bf4f720ac046580ea22aad2a182151b10c3ed3dd6cdca5e1035af51468",
             manifest["artifacts"]["compatibility_intake"]["sha256"],
+        )
+        self.assertEqual(
+            hashlib.sha256(b"stable-v5 companion candidate").hexdigest(),
+            manifest["artifacts"]["companion"]["sha256"],
         )
         self.assertEqual(
             "git_reconstructed_projection_not_original_attested_zip",
@@ -270,10 +281,12 @@ print(json.dumps(fixture))
             tmp_path = Path(tmp)
             intake = tmp_path / "manifest.json"
             pdf = tmp_path / "whitepaper.pdf"
+            companion = tmp_path / "companion.zip"
             arxiv = tmp_path / "source.zip"
             compatibility = tmp_path / "compatibility.zip"
             intake.write_text(json.dumps(original), encoding="utf-8")
             pdf.write_bytes(b"pdf")
+            companion.write_bytes(b"companion")
             arxiv.write_bytes(b"zip")
             compatibility.write_bytes(b"not reached")
             with mock.patch.object(PUBLICATION, "_assert_pdf_marker"):
@@ -290,6 +303,7 @@ print(json.dumps(fixture))
                         whitepaper_commit=commit,
                         publication_status="candidate_not_published",
                         pdf_path=pdf,
+                        companion_path=companion,
                         arxiv_path=arxiv,
                         compatibility_intake_path=compatibility,
                     )
@@ -301,7 +315,7 @@ print(json.dumps(fixture))
             with self.assertRaisesRegex(
                 PUBLICATION.AnchorError, "inspect publication PDF"
             ):
-                PUBLICATION._assert_pdf_marker(pdf, "pdftotext")
+                PUBLICATION._assert_pdf_marker(pdf, "pdftotext", "a" * 64)
 
     def test_source_checkout_must_be_exact_head_and_clean(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -369,6 +383,10 @@ print(json.dumps(fixture))
         )
         self.assertIn("Generate TeX macros from pinned intake (strict)", workflow)
         self.assertNotIn("make macros", workflow)
+        self.assertIn("make assets", workflow)
+        self.assertIn("Build and verify companion evidence identity", workflow)
+        self.assertIn("scripts/verify_companion_bundle.py", workflow)
+        self.assertIn("scripts/gen_publication_identity.py", workflow)
         self.assertIn('commit="$(git rev-parse HEAD)"', workflow)
         self.assertIn("Tracked publication sources changed during the build", workflow)
         self.assertIn("python scripts/build_publication_manifest.py", workflow)
@@ -376,6 +394,7 @@ print(json.dumps(fixture))
         self.assertIn("--publication-status candidate_not_published", workflow)
         self.assertIn("Build stable-v5 compatibility intake", workflow)
         self.assertIn("dist/stable-v5-intake-compatibility.zip", workflow)
+        self.assertIn("dist/fl-bsa-v5.0.1-companion-evidence.zip", workflow)
         self.assertIn(
             "name: stable-v5-publication-candidate-${{ github.run_attempt }}",
             workflow,
@@ -410,6 +429,12 @@ print(json.dumps(fixture))
         self.assertIn("verify_candidate_artifact()", workflow)
         self.assertIn(
             "verify_candidate_artifact pdf dist/whitepaper.pdf whitepaper.pdf",
+            workflow,
+        )
+        self.assertIn(
+            "verify_candidate_artifact companion "
+            "dist/fl-bsa-v5.0.1-companion-evidence.zip "
+            "fl-bsa-v5.0.1-companion-evidence.zip",
             workflow,
         )
         self.assertIn('"run_attempt": int(os.environ["SOURCE_RUN_ATTEMPT"])', workflow)
@@ -473,6 +498,14 @@ print(json.dumps(fixture))
         )[1]
         self.assertLess(
             publish_step.index(
+                "publish_or_verify dist/fl-bsa-v5.0.1-companion-evidence.zip"
+            ),
+            publish_step.index(
+                'receipt["publication_status"] = "github_draft_release_assets_staged_characterization_only"'
+            ),
+        )
+        self.assertLess(
+            publish_step.index(
                 "publish_or_verify dist/stable-v5-intake-compatibility.zip"
             ),
             publish_step.index(
@@ -485,10 +518,10 @@ print(json.dumps(fixture))
             encoding="utf-8"
         )
         exact_dispatch = (
-            "gh workflow run latex.yml --ref v5.0.0 "
-            "-f draft_release_tag=v5.0.0"
+            "gh workflow run latex.yml --ref v5.0.1 "
+            "-f draft_release_tag=v5.0.1"
         )
-        self.assertIn(exact_dispatch, readme)
+        self.assertNotIn("gh workflow run latex.yml", readme)
         self.assertIn(exact_dispatch, publication_doc)
         self.assertLess(
             publish_step.index(
@@ -511,7 +544,7 @@ print(json.dumps(fixture))
         candidate, receipt, fixtures, environment = self._receipt_fixture()
         fixtures[
             "repos/equilens-labs/fl-bsa-whitepaper/actions/runs/123/attempts/2"
-        ]["path"] = ".github/workflows/latex.yml@v5.0.0"
+        ]["path"] = ".github/workflows/latex.yml@v5.0.1"
         with tempfile.TemporaryDirectory() as tmp:
             result = self._run_receipt_inline(
                 Path(tmp), candidate, receipt, fixtures, environment

@@ -83,20 +83,8 @@ jobs:
       - name: Generate TeX macros from pinned intake (strict)
         run: |
           set -euo pipefail
-          python scripts/gen_tex_macros_from_metrics.py \
-            --strict \
-            --metrics intake/metrics_long.csv \
-            --sap config/sap.yaml \
-            --outdir includes
-          python scripts/gen_tex_preamble_from_manifest.py \
-            --strict \
-            --manifest intake/manifest.json \
-            --sap config/sap.yaml \
-            --out includes/provenance_macros.tex
-          python scripts/gen_tex_hyperparams_from_yaml.py \
-            --strict \
-            --config intake/model_hyperparams.yaml \
-            --outdir includes
+          make assets
+          git diff --exit-code -- config evidence figures includes intake
       - name: Enable public demo watermark
         run: |
           mkdir -p includes
@@ -108,6 +96,20 @@ jobs:
           echo "SOURCE_DATE_EPOCH=$(git show -s --format=%ct HEAD)" >> "$GITHUB_ENV"
           echo "FORCE_SOURCE_DATE=1" >> "$GITHUB_ENV"
           echo "TZ=UTC" >> "$GITHUB_ENV"
+      - name: Build and verify companion evidence identity
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          python scripts/build_companion_bundle.py \
+            --repo-root . \
+            --output dist/fl-bsa-v5.0.1-companion-evidence.zip
+          python scripts/verify_companion_bundle.py \
+            dist/fl-bsa-v5.0.1-companion-evidence.zip
+          python scripts/gen_publication_identity.py \
+            --require-clean \
+            --repo-root . \
+            --companion dist/fl-bsa-v5.0.1-companion-evidence.zip \
+            --output includes/publication_identity.tex
       - name: Compile LaTeX
         uses: xu-cheng/latex-action@e2f99d4b3685b0da93f97e1b86ad8fab81105098 # v3.3.0
         with:
@@ -134,6 +136,7 @@ jobs:
         run: |
           mkdir -p dist
           cp main.pdf dist/whitepaper.pdf
+          cp main.pdf dist/fl-bsa-v5.0.1-characterization-candidate.pdf
       - name: Upload PDF artifact
         id: upload_pdf
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -144,14 +147,14 @@ jobs:
         run: |
           bash scripts/arxiv_pack.sh
       - name: Build stable-v5 compatibility intake
-        if: github.event_name == 'workflow_dispatch' && (inputs.draft_release_tag == '' || inputs.draft_release_tag == 'v5.0.0')
+        if: github.event_name == 'workflow_dispatch' && (inputs.draft_release_tag == '' || inputs.draft_release_tag == 'v5.0.1')
         run: |
           python -S scripts/intake_anchor.py export \
             --anchor baselines/stable-v5-characterization.json \
             --repo-root . \
             --output dist/stable-v5-intake-compatibility.zip
       - name: Write stable-v5 publication manifest
-        if: github.event_name == 'workflow_dispatch' && (inputs.draft_release_tag == '' || inputs.draft_release_tag == 'v5.0.0')
+        if: github.event_name == 'workflow_dispatch' && (inputs.draft_release_tag == '' || inputs.draft_release_tag == 'v5.0.1')
         run: |
           set -euo pipefail
           if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
@@ -162,6 +165,7 @@ jobs:
           python scripts/build_publication_manifest.py \
             --whitepaper-commit "$BUILD_COMMIT" \
             --publication-status candidate_not_published \
+            --companion dist/fl-bsa-v5.0.1-companion-evidence.zip \
             --compatibility-intake dist/stable-v5-intake-compatibility.zip
       - name: Upload arXiv source
         id: upload_arxiv
@@ -171,13 +175,14 @@ jobs:
           path: dist/whitepaper_arxiv_source.zip
       - name: Upload stable-v5 publication candidate
         id: upload_stable_candidate
-        if: github.event_name == 'workflow_dispatch' && (inputs.draft_release_tag == '' || inputs.draft_release_tag == 'v5.0.0')
+        if: github.event_name == 'workflow_dispatch' && (inputs.draft_release_tag == '' || inputs.draft_release_tag == 'v5.0.1')
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: stable-v5-publication-candidate-${{ github.run_attempt }}
           path: |
             dist/publication-manifest.json
             dist/stable-v5-intake-compatibility.zip
+            dist/fl-bsa-v5.0.1-companion-evidence.zip
 
   release-assets:
     if: github.event_name == 'workflow_dispatch' && inputs.draft_release_tag != ''
@@ -211,7 +216,7 @@ jobs:
           name: arxiv-source-${{ needs.build.outputs.run_attempt }}
           path: release-assets/arxiv
       - name: Download stable-v5 publication candidate
-        if: inputs.draft_release_tag == 'v5.0.0'
+        if: inputs.draft_release_tag == 'v5.0.1'
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: stable-v5-publication-candidate-${{ needs.build.outputs.run_attempt }}
@@ -225,9 +230,10 @@ jobs:
           mkdir -p dist
           cp release-assets/pdf/main.pdf dist/whitepaper.pdf
           cp release-assets/arxiv/whitepaper_arxiv_source.zip dist/whitepaper_arxiv_source.zip
-          if [ "$RELEASE_TAG" = "v5.0.0" ]; then
+          if [ "$RELEASE_TAG" = "v5.0.1" ]; then
             cp release-assets/stable-v5/publication-manifest.json dist/publication-manifest.json
             cp release-assets/stable-v5/stable-v5-intake-compatibility.zip dist/stable-v5-intake-compatibility.zip
+            cp release-assets/stable-v5/fl-bsa-v5.0.1-companion-evidence.zip dist/fl-bsa-v5.0.1-companion-evidence.zip
             verify_candidate_artifact() {
               local key="$1"
               local path="$2"
@@ -252,6 +258,7 @@ jobs:
               fi
             }
             verify_candidate_artifact pdf dist/whitepaper.pdf whitepaper.pdf
+            verify_candidate_artifact companion dist/fl-bsa-v5.0.1-companion-evidence.zip fl-bsa-v5.0.1-companion-evidence.zip
             verify_candidate_artifact arxiv_source dist/whitepaper_arxiv_source.zip whitepaper_arxiv_source.zip
             verify_candidate_artifact compatibility_intake dist/stable-v5-intake-compatibility.zip stable-v5-intake-compatibility.zip
           fi
@@ -294,7 +301,7 @@ jobs:
           }
           echo "SOURCE_PDF_ARTIFACT_DIGEST=${pdf_digest}" >> "$GITHUB_ENV"
           echo "SOURCE_ARXIV_ARTIFACT_DIGEST=${arxiv_digest}" >> "$GITHUB_ENV"
-          if [ "$RELEASE_TAG" = "v5.0.0" ]; then
+          if [ "$RELEASE_TAG" = "v5.0.1" ]; then
             if [[ ! "$STABLE_CANDIDATE_ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]]; then
               echo "Build job did not expose the stable-v5 candidate artifact ID." >&2
               exit 1
@@ -445,9 +452,10 @@ jobs:
           }
 
           publish_or_verify dist/whitepaper.pdf
+          publish_or_verify dist/fl-bsa-v5.0.1-companion-evidence.zip
           publish_or_verify dist/whitepaper_arxiv_source.zip
 
-          if [ "$RELEASE_TAG" = "v5.0.0" ]; then
+          if [ "$RELEASE_TAG" = "v5.0.1" ]; then
             publish_or_verify dist/stable-v5-intake-compatibility.zip
             release="$(release_json)"
             export RELEASE_ID="$(jq -r '.id' <<<"$release")"

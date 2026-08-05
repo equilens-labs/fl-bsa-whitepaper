@@ -79,7 +79,9 @@ def _assert_source_checkout(repo_root: Path, whitepaper_commit: str) -> None:
         )
 
 
-def _assert_pdf_marker(pdf_path: Path, pdftotext_command: str) -> None:
+def _assert_pdf_marker(
+    pdf_path: Path, pdftotext_command: str, companion_sha256: str
+) -> None:
     try:
         completed = subprocess.run(
             [pdftotext_command, str(pdf_path), "-"],
@@ -94,6 +96,8 @@ def _assert_pdf_marker(pdf_path: Path, pdftotext_command: str) -> None:
         raise AnchorError(f"unable to inspect publication PDF text: {detail}")
     if "DEMO / EVALUATION ONLY" not in completed.stdout:
         raise AnchorError("publication PDF is missing DEMO / EVALUATION ONLY text marker")
+    if companion_sha256 not in completed.stdout:
+        raise AnchorError("publication PDF is not bound to the companion SHA-256")
 
 
 def build_manifest(
@@ -104,6 +108,7 @@ def build_manifest(
     whitepaper_commit: str,
     publication_status: str,
     pdf_path: Path,
+    companion_path: Path,
     arxiv_path: Path,
     compatibility_intake_path: Path,
     pdftotext_command: str = "pdftotext",
@@ -135,7 +140,10 @@ def build_manifest(
             raise AnchorError(
                 f"current intake producer {field} does not match the stable-v5 anchor"
             )
-    _assert_pdf_marker(pdf_path, pdftotext_command)
+    companion = _artifact(
+        companion_path, "fl-bsa-v5.0.1-companion-evidence.zip"
+    )
+    _assert_pdf_marker(pdf_path, pdftotext_command, companion["sha256"])
     compatibility_intake = _artifact(
         compatibility_intake_path, "stable-v5-intake-compatibility.zip"
     )
@@ -179,6 +187,7 @@ def build_manifest(
         },
         "artifacts": {
             "pdf": _artifact(pdf_path, "whitepaper.pdf"),
+            "companion": companion,
             "arxiv_source": _artifact(
                 arxiv_path, "whitepaper_arxiv_source.zip"
             ),
@@ -201,6 +210,9 @@ def _build_parser() -> argparse.ArgumentParser:
         default="candidate_not_published",
     )
     parser.add_argument("--pdf", default="dist/whitepaper.pdf")
+    parser.add_argument(
+        "--companion", default="dist/fl-bsa-v5.0.1-companion-evidence.zip"
+    )
     parser.add_argument("--arxiv", default="dist/whitepaper_arxiv_source.zip")
     parser.add_argument(
         "--compatibility-intake",
@@ -222,6 +234,7 @@ def main(argv: Iterable[str] | None = None) -> int:
             whitepaper_commit=args.whitepaper_commit,
             publication_status=args.publication_status,
             pdf_path=Path(args.pdf),
+            companion_path=Path(args.companion),
             arxiv_path=Path(args.arxiv),
             compatibility_intake_path=Path(args.compatibility_intake),
             pdftotext_command=args.pdftotext,

@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import os
+import re
 import stat
 import subprocess
 import tempfile
@@ -25,8 +26,11 @@ _CONTROLLED_GENERATED_SHA256 = {
     "includes/publication_profile.local.tex": (
         "1381ff968824d4a04e12dc0922057e3c454b844c5432c74a31836e90721dc131"
     ),
-    "main.bbl": "3092100af2dcc070495f554dc1fd1e35aa07ebeb44ca57cebe8b03ca24d22b7f",
+    "main.bbl": "1bb3865f89f59826b1d55b941142019a304402fd685248069c5945b5d5a29ede",
 }
+_IDENTITY_PATH = "includes/publication_identity.tex"
+_COMPANION_PATH = "dist/fl-bsa-v5.0.1-companion-evidence.zip"
+_MACRO_RE = re.compile(r"^\\newcommand\{\\([A-Za-z]+)\}\{([^{}\\]*)\}$")
 
 
 class PackageError(RuntimeError):
@@ -61,8 +65,65 @@ def _tracked_paths(repo_root: Path) -> set[str]:
         raise PackageError(f"tracked publication path is not UTF-8: {exc}") from exc
 
 
-def _assert_reviewed_member(path: Path, rel: str, tracked: set[str]) -> None:
+def _git(repo_root: Path, *args: str) -> str:
+    completed = subprocess.run(
+        ["git", "-C", str(repo_root), *args],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if completed.returncode != 0:
+        raise PackageError(completed.stderr.strip() or "unable to resolve Git identity")
+    return completed.stdout.strip()
+
+
+def _assert_publication_identity(repo_root: Path, path: Path) -> None:
+    values: dict[str, str] = {}
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError) as exc:
+        raise PackageError(f"unable to read generated publication identity: {exc}") from exc
+    for line in lines:
+        if not line or line.startswith("%"):
+            continue
+        match = _MACRO_RE.fullmatch(line)
+        if match is None or match.group(1) in values:
+            raise PackageError("generated publication identity has an unreviewed shape")
+        values[match.group(1)] = match.group(2)
+
+    companion = repo_root / _COMPANION_PATH
+    if not companion.is_file() or companion.is_symlink():
+        raise PackageError("generated publication identity requires the companion ZIP")
+    companion_bytes = companion.read_bytes()
+    expected = {
+        "DocumentVersion": "WP-5.0.1-candidate.1",
+        "PublicationStatus": "CANDIDATE — NOT PUBLISHED",
+        "PublicationAsOf": "5 August 2026",
+        "ProductReleaseTag": "v5.0.1",
+        "ProductCommitRaw": "cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2",
+        "ProductTagObjectRaw": "3a0ea6e4faea9d61aabcedebab2a838624fb587d",
+        "WhitepaperCommitRaw": _git(repo_root, "rev-parse", "HEAD"),
+        "WhitepaperTreeState": "clean",
+        "EvidenceRunRaw": "30765888408",
+        "EvidenceRunAttemptRaw": "1",
+        "EvidenceArtifactIdRaw": "8838967644",
+        "EvidenceBundleShaRaw": "f6a0bd9390565f7bd852b451e11b7384b1628c24caba02865b1ec94c1e263026",
+        "RuntimeImageDigestRaw": "sha256:550efe26626cd58c88b61bbde4b778f718f34d7fb764695137488b0cef8f09ce",
+        "CompanionFilenameRaw": companion.name,
+        "CompanionShaRaw": hashlib.sha256(companion_bytes).hexdigest(),
+        "CompanionSizeRaw": str(len(companion_bytes)),
+    }
+    if values != expected:
+        raise PackageError("generated publication identity does not match the clean candidate")
+
+
+def _assert_reviewed_member(
+    repo_root: Path, path: Path, rel: str, tracked: set[str]
+) -> None:
     if rel in tracked:
+        return
+    if rel == _IDENTITY_PATH:
+        _assert_publication_identity(repo_root, path)
         return
     expected = _CONTROLLED_GENERATED_SHA256.get(rel)
     if expected is None:
@@ -83,7 +144,7 @@ def _collect(repo_root: Path) -> list[tuple[Path, str]]:
         if path.exists():
             if not path.is_file() or path.is_symlink():
                 raise PackageError(f"publication source must be a regular file: {name}")
-            _assert_reviewed_member(path, name, tracked)
+            _assert_reviewed_member(repo_root, path, name, tracked)
             members.append((path, name))
     if not (repo_root / "main.tex").is_file() or "main.tex" not in tracked:
         raise PackageError("required publication source is missing: main.tex")
@@ -104,7 +165,7 @@ def _collect(repo_root: Path) -> list[tuple[Path, str]]:
             rel = path.relative_to(repo_root).as_posix()
             if path.suffix.lower() not in suffixes:
                 raise PackageError("unexpected publication source member; name redacted")
-            _assert_reviewed_member(path, rel, tracked)
+            _assert_reviewed_member(repo_root, path, rel, tracked)
             members.append((path, rel))
     return sorted(members, key=lambda item: item[1])
 
