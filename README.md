@@ -33,10 +33,14 @@ dirty source state. After all tracked generated files are reviewed and committed
 fails unless the checkout is clean and then embeds the exact whitepaper commit.
 
 ```bash
+printf '\\drafttrue\n' > includes/publication_profile.local.tex
 make candidate
 sha256sum dist/fl-bsa-v5.0.1-characterization-candidate.pdf \
   dist/fl-bsa-v5.0.1-companion-evidence.zip
 ```
+
+The ignored publication profile enables the visible and machine-readable
+`DEMO / EVALUATION ONLY` safety marker used by candidate CI and the publication-manifest gate.
 
 ## Offline companion verification
 
