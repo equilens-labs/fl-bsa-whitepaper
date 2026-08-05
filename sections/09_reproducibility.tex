@@ -49,9 +49,15 @@ sha256sum /tmp/utility_summary.json
 \end{verbatim}
 
 The product checkout is rejected unless \texttt{git describe --exact-match} returns v5.0.1 and
-HEAD is \IdentityText{\ProductCommitRaw}. A matching result has SHA-256
-\IdentityText{d48b1641bb48b1ea096decc1575899d91cbeeaf4ca201ad26d942a46936594e9} under the recorded
-Python, NumPy, pandas, and scikit-learn versions.
+HEAD equals:
+\begin{center}
+  \IdentityText{\ProductCommitRaw}
+\end{center}
+A matching result has the following SHA-256 under the recorded Python, NumPy, pandas, and
+scikit-learn versions:
+\begin{center}
+  \IdentityText{d48b1641bb48b1ea096decc1575899d91cbeeaf4ca201ad26d942a46936594e9}
+\end{center}
 
 \subsection{Whitepaper build}
 
