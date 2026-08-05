@@ -250,7 +250,7 @@ print(json.dumps(fixture))
             manifest["whitepaper"]["publication_input_projection"]["algorithm"],
         )
         self.assertEqual(
-            "4ba53f9727cfd80c40f42770edea1d0f61332d58a9ec934d4811df29d764e8ca",
+            "9b40c0e8c8e6291c51b267f38a72c242705895c3269844b37c4b35d23d9526c9",
             manifest["whitepaper"]["publication_input_projection"]["sha256"],
         )
         self.assertEqual(
@@ -259,7 +259,7 @@ print(json.dumps(fixture))
         )
         self.assertEqual(23, manifest["artifacts"]["pdf"]["size_bytes"])
         self.assertEqual(
-            "a60911bf4f720ac046580ea22aad2a182151b10c3ed3dd6cdca5e1035af51468",
+            "09f0f404512f0e7366b1070c654c17d5511253b9765a91fcd1e4e9fe9294b626",
             manifest["artifacts"]["compatibility_intake"]["sha256"],
         )
         self.assertEqual(

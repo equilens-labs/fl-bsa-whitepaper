@@ -264,9 +264,9 @@ producer-attested bundle digest under `producer.bundle_sha256`. The reconstructi
 replay surface, not a claim that the original Actions artifact was republished.
 
 The v5.0.1 evidence anchor is whitepaper commit
-`4e3071112c6deee1d29239007bfa65c67b6b5a64`, with intake tree
+`8c44075a0c19149905efe377c148579608cfccab`, with intake tree
 `b95cd1e8950820236f6e12a737dc87aa9aac5375` and config tree
-`98223995a8c3614254d6a99988644d1615591ff8`. It binds product tag `v5.0.1`, annotated tag object
+`86d51b0ee92662bf6470ca0120d41022161423bd`. It binds product tag `v5.0.1`, annotated tag object
 `3a0ea6e4faea9d61aabcedebab2a838624fb587d`, peeled commit
 `cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2`, and release-evidence run `30765888408` attempt 1.
 A later paper-only commit is checked against `publication_inputs.paths` and the projection digest,

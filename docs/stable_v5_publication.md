@@ -17,13 +17,13 @@ older v5.0.0 evidence line. The source identities are:
   `71da7127165e227c17d854e523f45cecf82f758da95cdcc63b6eaee591a9a214`.
 
 The consumer anchor is `baselines/stable-v5-characterization.json`. It pins intake commit
-`4e3071112c6deee1d29239007bfa65c67b6b5a64`, intake tree
+`8c44075a0c19149905efe377c148579608cfccab`, intake tree
 `b95cd1e8950820236f6e12a737dc87aa9aac5375`, configuration tree
-`98223995a8c3614254d6a99988644d1615591ff8`, and selected-input projection SHA-256
-`4ba53f9727cfd80c40f42770edea1d0f61332d58a9ec934d4811df29d764e8ca`.
+`86d51b0ee92662bf6470ca0120d41022161423bd`, and selected-input projection SHA-256
+`9b40c0e8c8e6291c51b267f38a72c242705895c3269844b37c4b35d23d9526c9`.
 
 The deterministic compatibility export has SHA-256
-`a60911bf4f720ac046580ea22aad2a182151b10c3ed3dd6cdca5e1035af51468`. It is a Git reconstruction
+`09f0f404512f0e7366b1070c654c17d5511253b9765a91fcd1e4e9fe9294b626`. It is a Git reconstruction
 of the pinned intake/config projection. It is not the original attested producer ZIP; both
 identities remain explicit.
 

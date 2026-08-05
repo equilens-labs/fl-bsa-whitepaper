@@ -6,8 +6,8 @@
     "publication_status": "candidate_not_published"
   },
   "consumer": {
-    "config_tree_git_oid": "98223995a8c3614254d6a99988644d1615591ff8",
-    "intake_commit": "4e3071112c6deee1d29239007bfa65c67b6b5a64",
+    "config_tree_git_oid": "86d51b0ee92662bf6470ca0120d41022161423bd",
+    "intake_commit": "8c44075a0c19149905efe377c148579608cfccab",
     "intake_tree_git_oid": "b95cd1e8950820236f6e12a737dc87aa9aac5375",
     "manifest_sha256": "3278765fad80e0693fa5fa6c9359da9c63802b63c93e1385d894d4cb241621af",
     "pack_intent_sha256": "1495e9ad64a13e2372be290a7b6c226b13255115b61f1e987e3040ff9d11669d",
@@ -76,7 +76,7 @@
         "target": "provenance/manifest.json"
       }
     ],
-    "expected_sha256": "a60911bf4f720ac046580ea22aad2a182151b10c3ed3dd6cdca5e1035af51468",
+    "expected_sha256": "09f0f404512f0e7366b1070c654c17d5511253b9765a91fcd1e4e9fe9294b626",
     "filename": "WhitePaper_Intake_Bundle_v4.zip",
     "format": "whitepaper_intake_bundle_v4_compat",
     "script": "scripts/stable_v5_export.py",
@@ -100,7 +100,7 @@
   },
   "publication_inputs": {
     "algorithm": "git-object-projection-sha256.v1",
-    "expected_sha256": "4ba53f9727cfd80c40f42770edea1d0f61332d58a9ec934d4811df29d764e8ca",
+    "expected_sha256": "9b40c0e8c8e6291c51b267f38a72c242705895c3269844b37c4b35d23d9526c9",
     "paths": [
       "config",
       "intake/air_status.json",
