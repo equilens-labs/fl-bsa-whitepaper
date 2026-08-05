@@ -2,7 +2,9 @@
 
 The following values are rendered as unbroken tokens so they can be copied exactly.
 
-\setlist[description]{style=nextline,font=\normalfont\bfseries,leftmargin=0pt,labelindent=0pt}
+% Use only keys supported by both enumitem and the TeX Live 2026 tagged-list
+% emulation; `style` and `labelindent` are not implemented by the latter.
+\setlist[description]{font=\normalfont\bfseries,leftmargin=0pt}
 \begin{description}
   \item[Document version] \DocumentVersion
   \item[Publication status] \PublicationStatus

@@ -1,6 +1,8 @@
 \section{Metric and Status Reference}
 
-\setlist[description]{style=nextline,leftmargin=0pt}
+% TeX Live 2026's tagged-list implementation does not yet emulate enumitem's
+% description `style` key. Keep this list on the supported margin/font surface.
+\setlist[description]{font=\normalfont\bfseries,leftmargin=0pt}
 \begin{description}
   \item[AIR (disparity ratio)] Selection rate of the comparison group divided by the reference
   rate. Undefined if the reference rate is zero. In this paper it is descriptive.
