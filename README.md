@@ -40,7 +40,8 @@ sha256sum dist/fl-bsa-v5.0.1-characterization-candidate.pdf \
 
 ## Offline companion verification
 
-The companion contains the exact release intake, all 21 certificates, the 40-run Gold robustness
+The companion contains the exact producer ZIP and release intake, all 21 certificate files (18
+distinct canonical-content hash nodes plus three legacy-name aliases), the 40-run Gold robustness
 aggregate, the generated utility fixture and ten-seed TSTR result, current regulatory overlay,
 interpretation ledger, file manifest, and a standard-library verifier.
 

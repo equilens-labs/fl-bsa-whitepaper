@@ -1,6 +1,7 @@
 import csv
 import gzip
 import hashlib
+import io
 import importlib.util
 import json
 import tempfile
@@ -31,6 +32,29 @@ def _load_module(name: str, relative: str):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def _rewrite_companion_member(
+    source: Path, output: Path, member: str, replacement: bytes
+) -> None:
+    with zipfile.ZipFile(source) as archive:
+        members = {
+            info.filename: archive.read(info.filename)
+            for info in archive.infolist()
+        }
+    members[member] = replacement
+    manifest = json.loads(members["MANIFEST.json"].decode("utf-8"))
+    entry = next(row for row in manifest["files"] if row["path"] == member)
+    entry["size"] = len(replacement)
+    entry["sha256"] = hashlib.sha256(replacement).hexdigest()
+    members["MANIFEST.json"] = (
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n"
+    ).encode("utf-8")
+    with zipfile.ZipFile(
+        output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
+    ) as archive:
+        for name, data in sorted(members.items()):
+            archive.writestr(name, data)
 
 
 class V501CharacterizationContractTests(unittest.TestCase):
@@ -245,8 +269,33 @@ class V501CharacterizationContractTests(unittest.TestCase):
             verified = verifier.verify(first)
             self.assertEqual("verified", verified["status"])
             self.assertEqual(21, verified["certificate_files"])
+            self.assertEqual(18, verified["certificate_unique_nodes"])
+            self.assertEqual(3, verified["certificate_alias_files"])
+            self.assertEqual(17, verified["certificate_graph_edges"])
+            self.assertEqual(8, verified["fairness_surfaces_recomputed"])
             self.assertEqual(40, verified["robustness_runs"])
+            self.assertGreaterEqual(
+                verified["robustness_aggregate_bands_recomputed"], 4
+            )
             self.assertEqual(10, verified["utility_seeds"])
+            self.assertEqual(5000, verified["utility_fixture_rows"])
+
+            with zipfile.ZipFile(first) as archive:
+                producer_zip = archive.read(
+                    "producer/WhitePaper_Intake_Bundle_v4.zip"
+                )
+            self.assertEqual(
+                PRIMARY_BUNDLE_SHA256, hashlib.sha256(producer_zip).hexdigest()
+            )
+            with zipfile.ZipFile(io.BytesIO(producer_zip)) as producer:
+                self.assertEqual(36, len(producer.infolist()))
+                self.assertNotIn(
+                    "whitepaper_consumer",
+                    json.loads(producer.read("intake/manifest.json")),
+                )
+                self.assertIn(
+                    b"# Four-fifths rule", producer.read("config/sap.yaml")
+                )
 
             extracted = Path(tmp) / "extracted"
             with zipfile.ZipFile(first) as archive:
@@ -257,6 +306,89 @@ class V501CharacterizationContractTests(unittest.TestCase):
                 verifier.VerificationError, "(size|SHA-256) mismatch"
             ):
                 verifier.verify(extracted)
+
+            utility_tamper = Path(tmp) / "utility-tamper.zip"
+            with zipfile.ZipFile(first) as archive:
+                utility = json.loads(
+                    archive.read(
+                        "evidence/v5.0.1/utility/utility_summary.json"
+                    )
+                )
+            utility["synthetic_train_bands"]["roc_auc"]["mean"] += 0.01
+            replacement = (
+                json.dumps(utility, indent=2, sort_keys=True) + "\n"
+            ).encode("utf-8")
+            _rewrite_companion_member(
+                first,
+                utility_tamper,
+                "evidence/v5.0.1/utility/utility_summary.json",
+                replacement,
+            )
+            with self.assertRaisesRegex(
+                verifier.VerificationError, "utility roc_auc mean mismatch"
+            ):
+                verifier.verify(utility_tamper)
+
+            producer_projection_tamper = Path(tmp) / "producer-projection-tamper.zip"
+            with zipfile.ZipFile(first) as archive:
+                fairness = json.loads(archive.read("intake/fairness_slices.json"))
+            fairness["slices"]["amplification"]["air"]["point"] += 0.01
+            replacement = (
+                json.dumps(fairness, indent=2) + "\n"
+            ).encode("utf-8")
+            _rewrite_companion_member(
+                first,
+                producer_projection_tamper,
+                "intake/fairness_slices.json",
+                replacement,
+            )
+            with self.assertRaisesRegex(
+                verifier.VerificationError,
+                "consumer intake differs from producer bytes",
+            ):
+                verifier.verify(producer_projection_tamper)
+
+    def test_certificate_graph_rejects_cycles_and_unresolved_links(self) -> None:
+        verifier = _load_module(
+            "companion_graph_verifier_under_test",
+            "scripts/verify_companion_bundle.py",
+        )
+        with self.assertRaisesRegex(
+            verifier.VerificationError, "contains a cycle"
+        ):
+            verifier._assert_single_rooted_graph(
+                {"root": "", "a": "b", "b": "a"}
+            )
+        with self.assertRaisesRegex(
+            verifier.VerificationError, "unresolved predecessor"
+        ):
+            verifier._assert_single_rooted_graph(
+                {"root": "", "a": "missing"}
+            )
+
+    def test_standalone_instructions_and_pr_artifact_pair_are_coherent(self) -> None:
+        companion_readme = (ROOT / "companion" / "README.md").read_text(
+            encoding="utf-8"
+        )
+        reproduction = (ROOT / "sections" / "09_reproducibility.tex").read_text(
+            encoding="utf-8"
+        )
+        for text in (companion_readme, reproduction):
+            self.assertIn(
+                "fl-bsa-v5.0.1-companion-evidence/verify_companion_bundle.py",
+                text,
+            )
+            self.assertIn(
+                "fl-bsa-v5.0.1-companion-evidence.zip", text
+            )
+        workflow = (ROOT / ".github" / "workflows" / "latex.yml").read_text(
+            encoding="utf-8"
+        )
+        upload_start = workflow.index("- name: Upload PDF artifact")
+        upload_end = workflow.index("- name: Package arXiv source", upload_start)
+        upload = workflow[upload_start:upload_end]
+        self.assertIn("main.pdf", upload)
+        self.assertIn("fl-bsa-v5.0.1-companion-evidence.zip", upload)
 
 
 if __name__ == "__main__":

@@ -34,9 +34,11 @@ The evidence uses several mechanisms that should not be conflated:
 
 \begin{enumerate}
   \item \textbf{File hashes} detect a byte change relative to a known digest.
-  \item \textbf{Certificate content hashes and predecessor links} connect the 21 bundled
-        certificates internally. The companion recomputes every stored hash and resolves 20 links
-        to one root.
+  \item \textbf{Certificate content hashes and predecessor links} connect 21 bundled certificate
+        files internally. Three legacy-name files repeat canonical content under the same content
+        hash (their excluded signing timestamps differ), leaving 18 distinct hash nodes and 17
+        distinct predecessor edges to one root. All 20 non-root file entries resolve, and the
+        companion traverses every distinct node.
   \item \textbf{Workflow and artifact identities} bind the source repository, head commit, run,
         attempt, artifact ID, artifact API digest, inner bundle digest, and intake contract.
   \item \textbf{Candidate companion digest} binds all co-distributed evidence files to the value

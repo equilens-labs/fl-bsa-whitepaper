@@ -60,10 +60,12 @@ prove that the historical gap originated in decision labels. Throughout this pap
   \label{fig:evidence-chain}
 \end{figure}
 
-The 21 intake certificates each contain a canonical content hash; 20 predecessor fields resolve to
-another bundled certificate hash and one certificate is the chain root. The bundle also carries
-signature-shaped metadata. Its public verification key is not in the whitepaper companion, and the
-intake intent does not expect this intake pack to be cryptographically authoritative. Accordingly,
-this paper claims \emph{integrity linkage}, not independent tamper proof. The companion ZIP digest
-on the cover becomes an external check only when a reviewer receives that digest through a trusted
+The intake contains 21 certificate files. Three legacy-name files repeat canonical content under
+the same content hash as branch-qualified files (their excluded signing timestamps differ), so the
+content-hash graph has 18 distinct nodes, 17 distinct predecessor edges, and one root; all 20
+non-root file entries resolve. The bundle also carries signature-shaped
+metadata. Its public verification key is not in the whitepaper companion, and the intake intent
+does not expect this intake pack to be cryptographically authoritative. Accordingly, this paper
+claims \emph{integrity linkage}, not independent tamper proof. The companion ZIP digest on the
+cover becomes an external check only when a reviewer receives that digest through a trusted
 channel.

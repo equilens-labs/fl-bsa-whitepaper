@@ -1,5 +1,5 @@
 thresholds:
-  air_min: 0.80           # Internal characterization screen; not a lending-law verdict
+  air_min: 0.80           # Four-fifths rule
   tpr_gap_max: 0.05       # (When evaluated) gap threshold for label-based parity metrics
   fpr_gap_max: 0.05       # (When evaluated) gap threshold for label-based parity metrics
   ece_max: 0.02           # (When evaluated) calibration error threshold

@@ -8,26 +8,21 @@ public URL; the ZIP must be delivered with the PDF. From a directory containing 
 
 \begin{verbatim}
 sha256sum fl-bsa-v5.0.1-companion-evidence.zip
-python3 verify_companion_bundle.py \
+mkdir fl-bsa-v5.0.1-companion-evidence
+python3 -m zipfile -e fl-bsa-v5.0.1-companion-evidence.zip \
+  fl-bsa-v5.0.1-companion-evidence
+python3 fl-bsa-v5.0.1-companion-evidence/verify_companion_bundle.py \
   fl-bsa-v5.0.1-companion-evidence.zip
 \end{verbatim}
 
-The first command must match the digest printed on the cover. The second command is included at
-the ZIP root and uses only Python's standard library. It rejects unsafe or duplicate archive paths,
-checks every file size and SHA-256 in \path{MANIFEST.json}, verifies the exact product and workflow
-identities, checks the customer/publication boundary in
-\path{intake/archive/v5.0.1-release-30765888408.json}, validates the corrected SRG method and race
-policy, recomputes all certificate hashes and links, and checks completeness of the 40 Gold runs
-and ten utility seeds.
-
-To run the verifier directly from the ZIP, extract only after the digest check:
-
-\begin{verbatim}
-mkdir fl-bsa-v5.0.1-companion-evidence
-cd fl-bsa-v5.0.1-companion-evidence
-python3 -m zipfile -e ../fl-bsa-v5.0.1-companion-evidence.zip .
-python3 verify_companion_bundle.py .
-\end{verbatim}
+The first command must match the digest printed on the cover. Only then should the bundled
+standard-library verifier be extracted and run against the delivered ZIP. It rejects unsafe,
+duplicate, oversized, or unexpected archive members; checks every file size and SHA-256 in
+\path{MANIFEST.json}; reconstructs and hashes the original producer ZIP; verifies the exact product,
+workflow, and customer/publication identities; recomputes the displayed Wilson, AIR, SRG,
+two-proportion, and Holm arithmetic; traverses the complete certificate graph; and checks exact seed
+sets, per-seed statuses, and aggregates for the 40 Gold runs and ten utility results. Re-running the
+generator-backed utility study still requires the exact product checkout and recorded dependencies.
 
 No instruction depends on an unbundled repository-relative evidence file. The current regulatory
 overlay is at

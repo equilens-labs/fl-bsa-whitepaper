@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import json
 import os
 import subprocess
@@ -19,6 +20,24 @@ PRODUCT_COMMIT = "cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2"
 PRODUCT_TAG = "v5.0.1"
 PRODUCT_TAG_OBJECT = "3a0ea6e4faea9d61aabcedebab2a838624fb587d"
 MAX_FILE_BYTES = 20 * 1024 * 1024
+PRIMARY_BUNDLE_SHA256 = (
+    "f6a0bd9390565f7bd852b451e11b7384b1628c24caba02865b1ec94c1e263026"
+)
+PRODUCER_BUNDLE_MEMBER = "producer/WhitePaper_Intake_Bundle_v4.zip"
+PRODUCER_INTAKE_FILES = (
+    "air_status.json",
+    "ece_status.json",
+    "eo_status.json",
+    "fairness_slices.json",
+    "group_confusion.csv",
+    "manifest.json",
+    "metrics_long.csv",
+    "metrics_uncertainty.json",
+    "pack_intent.json",
+    "regulatory_matrix.csv",
+    "run_summary.json",
+    "selection_rates.csv",
+)
 
 
 class CompanionError(ValueError):
@@ -50,12 +69,59 @@ def _source_date_epoch(root: Path) -> int:
     return max(epoch, 315532800)
 
 
-def _zip_info(name: str, epoch: int) -> zipfile.ZipInfo:
+def _zip_info(name: str, epoch: int, *, mode: int = 0o100644) -> zipfile.ZipInfo:
     info = zipfile.ZipInfo(name, time.gmtime(epoch)[:6])
     info.compress_type = zipfile.ZIP_DEFLATED
     info.create_system = 3
-    info.external_attr = (0o100644 & 0xFFFF) << 16
+    info.external_attr = (mode & 0xFFFF) << 16
     return info
+
+
+def _producer_bundle_members(root: Path) -> dict[str, bytes]:
+    """Reconstruct the exact producer archive members from reviewed sources."""
+
+    members: dict[str, bytes] = {}
+    certificate_dir = root / "intake" / "certificates"
+    for path in sorted(certificate_dir.glob("*.json")):
+        members[f"certificates/{path.name}"] = path.read_bytes()
+    for name in ("fairness_config.yaml", "sap.yaml"):
+        members[f"config/{name}"] = (root / "config" / name).read_bytes()
+    for name in PRODUCER_INTAKE_FILES:
+        path = root / "intake" / name
+        if name == "manifest.json":
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            payload.pop("whitepaper_consumer", None)
+            data = (json.dumps(payload, indent=2) + "\n").encode("utf-8")
+        else:
+            data = path.read_bytes()
+        members[f"intake/{name}"] = data
+    members["provenance/manifest.json"] = members["intake/manifest.json"]
+    expected_count = 36
+    if len(members) != expected_count:
+        raise CompanionError(
+            f"producer archive must have {expected_count} members, found {len(members)}"
+        )
+    return dict(sorted(members.items()))
+
+
+def _build_original_producer_zip(root: Path) -> bytes:
+    """Reproduce the release-run producer ZIP byte for byte and pin its digest."""
+
+    output = io.BytesIO()
+    with zipfile.ZipFile(
+        output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6
+    ) as archive:
+        for name, data in _producer_bundle_members(root).items():
+            info = _zip_info(name, 315532800, mode=0o100600)
+            archive.writestr(info, data, compresslevel=6)
+    data = output.getvalue()
+    digest = _sha256(data)
+    if digest != PRIMARY_BUNDLE_SHA256:
+        raise CompanionError(
+            "reconstructed producer ZIP digest mismatch: "
+            f"expected {PRIMARY_BUNDLE_SHA256}, got {digest}"
+        )
+    return data
 
 
 def _collect(root: Path) -> dict[str, bytes]:
@@ -101,6 +167,7 @@ def _collect(root: Path) -> dict[str, bytes]:
     members["verify_companion_bundle.py"] = (
         root / "scripts" / "verify_companion_bundle.py"
     ).read_bytes()
+    members[PRODUCER_BUNDLE_MEMBER] = _build_original_producer_zip(root)
     for name, data in members.items():
         if len(data) > MAX_FILE_BYTES:
             raise CompanionError(f"companion member exceeds size limit: {name}")
@@ -140,7 +207,8 @@ def build(root: Path, output: Path) -> dict[str, Any]:
             "producer_workflow": "release-evidence.yml",
             "producer_run_id": 30765888408,
             "producer_run_attempt": 1,
-            "primary_bundle_sha256": "f6a0bd9390565f7bd852b451e11b7384b1628c24caba02865b1ec94c1e263026",
+            "primary_bundle_member": PRODUCER_BUNDLE_MEMBER,
+            "primary_bundle_sha256": PRIMARY_BUNDLE_SHA256,
             "robustness_runs": 40,
             "utility_generation_seeds": 10,
         },

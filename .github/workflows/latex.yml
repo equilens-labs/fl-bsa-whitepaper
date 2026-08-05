@@ -142,7 +142,9 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: whitepaper-pdf-${{ github.run_attempt }}
-          path: main.pdf
+          path: |
+            main.pdf
+            dist/fl-bsa-v5.0.1-companion-evidence.zip
       - name: Package arXiv source
         run: |
           bash scripts/arxiv_pack.sh
