@@ -263,13 +263,14 @@ recorded under `export.expected_sha256`; it is intentionally distinct from the o
 producer-attested bundle digest under `producer.bundle_sha256`. The reconstruction is a durable
 replay surface, not a claim that the original Actions artifact was republished.
 
-The historical evidence anchor remains whitepaper commit
-`a451eae4284c4c592783f108e206e5ba1c0e5747` and its whole `intake` / `config` tree OIDs. A
-publication candidate is checked against `publication_inputs.paths` and the projection digest,
-not against whole-tree equality. Consequently PR #26's archival move at
-`e93a0fef4c88d7cb4c2c38df6f7dd26a11b75837` changes the recorded current intake-tree OID while
-retaining the exact stable-v5 publication-input digest. A selected current input change still
-fails closed.
+The v5.0.1 evidence anchor is whitepaper commit
+`4e3071112c6deee1d29239007bfa65c67b6b5a64`, with intake tree
+`b95cd1e8950820236f6e12a737dc87aa9aac5375` and config tree
+`98223995a8c3614254d6a99988644d1615591ff8`. It binds product tag `v5.0.1`, annotated tag object
+`3a0ea6e4faea9d61aabcedebab2a838624fb587d`, peeled commit
+`cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2`, and release-evidence run `30765888408` attempt 1.
+A later paper-only commit is checked against `publication_inputs.paths` and the projection digest,
+not against whole-tree equality; any change to a selected publication input still fails closed.
 
 Producer-side consumers must fetch the descriptor, `scripts/intake_anchor.py`, and the frozen
 exporter named by `export.script` from the same reviewed whitepaper commit. They verify the
