@@ -14,36 +14,41 @@ $8.0\times10^{-5}$, which is consistent with signal preservation for this fixed 
   \small
   \input{includes/table_characterization_slices.tex}
   \caption{Gender AIR by slice. ``Relation'' is descriptive: it is not a legal or product
-  pass/fail state. Intervals are conditional on the displayed generated tables.}
+  pass/fail state. Historical and amplification ranges are conditional 95\% AIR intervals. The
+  intrinsic range is reproduced only for format symmetry and is not inferential.}
   \label{tab:characterization-slices}
 \end{table}
 
-The intrinsic parity-policy control has AIR \IntrinsicAIR{} with interval
-[\IntrinsicAIRLower{}, \IntrinsicAIRUpper{}]. That shows the equal-rate post-label step executed
-and the branches did not collapse into one output. Because parity is imposed by policy, the number
-does not show that FL-BSA discovered or repaired the cause of the historical gap.
+The intrinsic parity-policy control has AIR \IntrinsicAIR{}. Its approvals are policy-determined
+by the equal-rate post-label allocation. The producer-formatted range
+[\IntrinsicAIRLower{}, \IntrinsicAIRUpper{}] and $p=0.998$ are shown only for table and figure
+symmetry; they do not quantify uncertainty in that deterministic policy output. The point confirms
+that the post-label step executed and that the branches did not collapse into one output. It does
+not show that FL-BSA discovered or repaired the cause of the historical gap.
 
-The two-sided p-values are approximately $2.54\times10^{-14}$ for the 3,000-row historical slice,
-$5.93\times10^{-44}$ for the 10,000-row amplification slice, and 0.998 for the intrinsic control.
-The amplification result's extreme significance is partly a consequence of generating 10,000
-rows. Effect size, interval, sample construction, and scenario purpose are therefore reported
-alongside the test.
+The inferential two-sided p-values are approximately $2.54\times10^{-14}$ for the 3,000-row
+historical slice and $5.93\times10^{-44}$ for the 10,000-row amplification slice. The latter's
+extreme significance is partly a consequence of generating 10,000 rows. Effect size, interval,
+sample construction, and scenario purpose are therefore reported alongside the test. The
+intrinsic value above is not included among these inferential results.
 
 \begin{figure}[htbp]
   \centering
   \includegraphics[
-    alt={Point and interval plot for gender AIR. Historical is 0.759 with interval 0.707 to 0.815 and crosses the 0.80 internal screen. Amplification is 0.759 with interval 0.730 to 0.789 and lies below the screen. Intrinsic parity-policy control is 1.000 with interval 0.975 to 1.026 and lies above the screen.},
+    alt={Point and range plot for gender AIR. Historical is 0.759 with a conditional interval 0.707 to 0.815 and crosses the 0.80 internal screen. Amplification is 0.759 with a conditional interval 0.730 to 0.789 and lies below the screen. Intrinsic parity-policy control is 1.000; its producer-formatted range 0.975 to 1.026 is displayed only for symmetry and is not inferential.},
     width=0.88\linewidth
   ]{figures/characterization_air_slices.pdf}
-  \caption{Branch AIR points and 95\% conditional intervals. The orange dashed line is an internal
-  characterization screen.}
+  \caption{Branch AIR points. Historical and amplification bars are 95\% conditional intervals;
+  the intrinsic bar is a producer-formatted, non-inferential range shown only for symmetry. The
+  orange dashed line is an internal characterization screen.}
   \label{fig:air-slices}
 \end{figure}
 
-The amplification SRG is $-0.1391$ with conservative interval
-$[-0.1665,-0.1116]$; the intrinsic SRG is approximately $0.00002$ with interval
-$[-0.02538,0.02544]$. Every displayed SRG interval and every race SRG interval declares the
-correct conservative Wilson-endpoint-difference method.
+The amplification SRG is $-0.1391$ with conservative endpoint range
+$[-0.1665,-0.1116]$; the intrinsic SRG is approximately $0.00002$ with endpoint range
+$[-0.02538,0.02544]$. These ranges subtract separate 95\% Wilson endpoints but are not themselves
+labelled 95\% confidence intervals. Every displayed gender and race SRG range declares the correct
+conservative Wilson-endpoint-difference method.
 
 \begin{figure}[htbp]
   \centering
@@ -62,7 +67,9 @@ White is the configured provenance reference. The active highest-rate policy sel
 the effective reference at selection rate 0.5411. The worst pair is other versus black, AIR
 0.8818 with conditional interval [0.7814, 0.9950]. Its unadjusted two-sided p-value is 0.0405 and
 its Holm-adjusted AIR p-value is 0.1618. Hispanic has the smallest count, 273. These values are
-disclosed for method clarity but are not promoted to a headline fairness verdict.
+disclosed for method clarity but are not promoted to a headline fairness verdict. The pairwise AIR
+interval is not multiplicity-adjusted, whereas the reported p-value is Holm-adjusted; this is why
+the interval can exclude one while the adjusted test does not reject.
 The complete machine-readable intake is in \path{intake/selection_rates.csv} and
 \path{intake/metrics_uncertainty.json}, both included in the companion.
 
@@ -130,9 +137,12 @@ expected test signal, not a failed gate.
 
 The real-train fixture baseline ROC AUC is \UtilityBaselineAUC{}. Across ten equal-size
 synthetic-training tables, mean ROC AUC is \UtilitySyntheticAUCMean{}, ranging from
-\UtilitySyntheticAUCMin{} to \UtilitySyntheticAUCMax{}. Mean AUC retention is
-\UtilityRetentionMean{}, with range \UtilityRetentionMin{}--\UtilityRetentionMax{}. Average
-precision and log loss show the same general limitation.
+\UtilitySyntheticAUCMin{} to \UtilitySyntheticAUCMax{}. Mean skill-normalised AUC retention is
+\UtilitySkillRetentionMean{} (\UtilitySkillRetentionMeanPct{}\%), with range
+\UtilitySkillRetentionMin{}--\UtilitySkillRetentionMax{}. Negative values are worse than chance;
+one would match the real-train baseline. The mean synthetic-train AUC is approximately chance, so
+this study does not establish train-on-synthetic predictive utility. Average precision and log
+loss show the same general limitation.
 
 \begin{table}[htbp]
   \centering

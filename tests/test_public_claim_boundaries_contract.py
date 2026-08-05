@@ -27,6 +27,11 @@ class PublicClaimBoundariesContractTests(unittest.TestCase):
         )
         joined = " ".join(joined.split())
         for non_claim in (
+            "Marketplace go-live",
+            "live decisioning",
+            "commercial authorization",
+            "vendor-authored evidence",
+            "regulator approval",
             "compliance determination",
             "Near-duplicate",
             "formal guarantee",

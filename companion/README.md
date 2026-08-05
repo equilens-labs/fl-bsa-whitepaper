@@ -26,8 +26,9 @@ python3 fl-bsa-v5.0.1-companion-evidence/verify_companion_bundle.py \
 
 The verifier checks every bundled file, reconstructs and hashes the original producer ZIP,
 recomputes the fairness arithmetic, validates the exact robustness and utility seed structures and
-aggregates, traverses the complete certificate graph, and enforces the bounded claim flags. Full
-utility regeneration still requires the exact product checkout and recorded third-party runtime.
+aggregates, cross-checks the paper-owned characterization summary against those source layers,
+traverses the complete certificate graph, and enforces the bounded claim flags. Full utility
+regeneration still requires the exact product checkout and recorded third-party runtime.
 
 The `customer_evidence_eligible=false` publication boundary is in
 `intake/archive/v5.0.1-release-30765888408.json` and independently in

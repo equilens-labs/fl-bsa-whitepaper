@@ -39,15 +39,16 @@ The signed selection-rate gap is
   \operatorname{SRG}(g,r) = \widehat p_g - \widehat p_r.
   \label{eq:srg}
 \end{equation}
-Its 95\% interval is the conservative difference of the separate Wilson endpoints:
+Its conservative endpoint-difference range is
 \begin{equation}
   [L_g-U_r,\; U_g-L_r],
   \label{eq:srg-interval}
 \end{equation}
-where $[L_g,U_g]$ and $[L_r,U_r]$ are Wilson score intervals. The exact machine value is
-\path{conservative_wilson_endpoint_difference}. This construction is conservative and is not
-the classical Newcombe interval; the numeric endpoints themselves were not changed by correcting
-the method label.
+where $[L_g,U_g]$ and $[L_r,U_r]$ are separate 95\% Wilson score intervals. The exact machine
+value is \path{conservative_wilson_endpoint_difference}. Although its inputs are 95\% intervals,
+the resulting endpoint-difference range is not itself a calibrated 95\% confidence interval. It is
+also not the classical Newcombe interval; the numeric endpoints themselves were not changed by
+correcting the method label.
 
 \subsection{Internal screen and interval relation}
 

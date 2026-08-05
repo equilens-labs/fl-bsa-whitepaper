@@ -23,7 +23,9 @@
         effective, but product-wide policy convergence is unresolved.
   \item \textbf{Utility weakness.} Synthetic-training ROC AUC ranges from
         \UtilitySyntheticAUCMin{} to \UtilitySyntheticAUCMax{} and is below the fixture baseline
-        for every tested seed. This evidence does not support a production-utility claim.
+        for every tested seed. Mean skill-normalised AUC retention is
+        \UtilitySkillRetentionMean{} (\UtilitySkillRetentionMeanPct{}\%). This evidence does not
+        establish train-on-synthetic predictive utility or support a production-utility claim.
   \item \textbf{Privacy scope.} Exact-row checks are narrow. Near-duplicate risk, membership
         inference, attribute inference, linkage, and formal privacy are not evaluated.
   \item \textbf{Decision-only metrics.} ECE is unevaluated and EO is non-informative. No score

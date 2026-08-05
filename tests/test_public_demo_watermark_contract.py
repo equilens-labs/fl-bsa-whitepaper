@@ -18,6 +18,10 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
             main_tex,
         )
         self.assertNotIn(r"\ifdraft\fancyfoot[C]", main_tex)
+        self.assertIn(
+            r"\fancyfoot[L]{\scriptsize \DocumentVersion{} \textbar{} \PublicationStatus}",
+            main_tex,
+        )
 
     def test_public_ci_artifacts_enable_demo_watermark(self) -> None:
         for workflow_name, artifact_name in (

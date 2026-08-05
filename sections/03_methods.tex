@@ -12,12 +12,16 @@ variance is
   + \frac{1-\widehat p_r}{n_r\widehat p_r}.
   \label{eq:air-delta}
 \end{equation}
-The log-scale interval is exponentiated. SRG uses the endpoint construction in
-\autoref{eq:srg-interval}. Two-sided p-values use a two-proportion $z$ test. The four race comparisons
-apply Holm--Bonferroni adjustment to the AIR p-values; unadjusted values remain in the evidence.
+The log-scale interval is exponentiated. SRG uses the conservative endpoint range in
+\autoref{eq:srg-interval}; it is not labelled a 95\% confidence interval. Two-sided p-values use a
+two-proportion $z$ test. The four race comparisons apply Holm--Bonferroni adjustment to the AIR
+p-values; unadjusted values remain in the evidence. The displayed race AIR intervals are pairwise
+95\% intervals and are not multiplicity-adjusted, so an interval may exclude one even when the
+corresponding Holm-adjusted p-value does not reject.
 
-All displayed AIR and SRG intervals come from \path{intake/metrics_uncertainty.json} and
-\path{intake/fairness_slices.json}. The bootstrap fields retained in the manifest and
+All displayed AIR intervals and SRG endpoint ranges come from
+\path{intake/metrics_uncertainty.json} and \path{intake/fairness_slices.json}. The bootstrap fields
+retained in the manifest and
 \path{intake/metrics_long.csv} are a compatibility annex; they are not the headline interval
 source. This separation matters because the two surfaces use different interval constructions.
 
@@ -35,6 +39,13 @@ The single-run intervals exclude uncertainty from fixture construction, generato
 scenario selection, hyperparameter choice, protected-attribute encoding, unobserved groups,
 deployment drift, and variation across generation seeds. The paper reports them because they
 reproduce the release evidence exactly, but does not relabel them as total uncertainty.
+
+The intrinsic row is a different object. Its approvals are allocated by the configured equal-rate
+post-label policy, subject only to integer allocation across protected groups. Applying the same
+AIR interval and two-proportion formulas to those policy-determined counts produces the displayed
+range and $p$-value, but neither measures uncertainty in the policy output. They are retained only
+for format symmetry with the historical and amplification rows and have no inferential
+interpretation.
 
 \subsection{Branch-quality characterization}
 
@@ -75,6 +86,12 @@ log loss are recorded. This design measures generation-seed variation conditiona
 split, generator fit, and classifier family. It excludes fixture-generation uncertainty,
 generator-refit uncertainty, customer distribution shift, and the intrinsic branch because that
 branch changes the outcome through its post-label policy.
+
+For a portable AUC comparison, skill-normalised retention is
+$(\operatorname{AUC}_{synthetic}-0.5)/(\operatorname{AUC}_{baseline}-0.5)$. Zero means no retained
+skill above chance, one matches the real-train fixture baseline, and a negative value is worse than
+chance. The raw ratio $\operatorname{AUC}_{synthetic}/\operatorname{AUC}_{baseline}$ is not reported
+because it assigns positive ``retention'' to chance and worse-than-chance classifiers.
 
 \subsection{Determinism and derivation}
 

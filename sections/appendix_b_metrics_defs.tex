@@ -7,11 +7,13 @@
   \item[AIR (disparity ratio)] Selection rate of the comparison group divided by the reference
   rate. Undefined if the reference rate is zero. In this paper it is descriptive.
   \item[SRG (selection-rate gap)] Comparison-group selection rate minus reference-group rate.
-  Negative values indicate a lower comparison-group rate under the declared ordering.
+  Negative values indicate a lower comparison-group rate under the declared ordering. Its reported
+  endpoint-difference range is not a calibrated 95\% confidence interval.
   \item[Point relation] Whether the AIR point estimate is below or at/above the internally selected
   0.80 line.
-  \item[Interval relation] Whether the entire 95\% interval is below, crosses, or is entirely above
-  the line. This is reported independently of point relation.
+  \item[AIR interval relation] Whether the entire 95\% AIR interval is below, crosses, or is
+  entirely above the line. This is reported independently of point relation and is not applied to
+  the policy-determined intrinsic row.
   \item[Overall quality] Branch-certificate composite. It does not include every possible quality,
   privacy, fairness, or utility dimension.
   \item[TSTR] Train on synthetic, test on a held-out partition of the original generated fixture.

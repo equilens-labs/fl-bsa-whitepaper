@@ -904,10 +904,15 @@ def _verify_robustness(bundle: Bundle) -> dict[str, int]:
 
 def _verify_utility(bundle: Bundle) -> dict[str, int]:
     utility = bundle.json("evidence/v5.0.1/utility/utility_summary.json")
+    _require(
+        utility.get("schema_version") == "flbsa.whitepaper_fixture_utility.v2",
+        "unsupported utility schema",
+    )
     product = utility.get("product") or {}
     _require(product.get("commit") == PRODUCT_COMMIT, "utility product mismatch")
     _require(product.get("tag") == PRODUCT_TAG, "utility tag mismatch")
     _require(utility.get("claim_scope") == "synthetic_fixture_tstr_characterization_only", "utility claim scope mismatch")
+    _require(utility.get("utility_established") is False, "utility claim boundary mismatch")
     source = utility.get("source") or {}
     compressed = bundle.read(str(source.get("fixture") or ""))
     _require(_sha256(compressed) == source.get("fixture_sha256_gzip"), "utility fixture gzip hash mismatch")
@@ -955,6 +960,13 @@ def _verify_utility(bundle: Bundle) -> dict[str, int]:
     )
     baseline = utility.get("real_train_baseline") or {}
     baseline_auc = _number(baseline.get("roc_auc"), "utility baseline ROC AUC")
+    baseline_auc_skill = baseline_auc - 0.5
+    _require(baseline_auc_skill > 0, "utility baseline ROC AUC has no skill above chance")
+    _require(
+        study.get("roc_auc_skill_retention_definition")
+        == "(synthetic_roc_auc - 0.5) / (real_train_baseline_roc_auc - 0.5)",
+        "utility skill-retention definition mismatch",
+    )
     results = utility.get("synthetic_train_results") or []
     _require(isinstance(results, list) and len(results) == 10, "utility seed results incomplete")
     by_seed: dict[int, dict[str, Any]] = {}
@@ -968,15 +980,25 @@ def _verify_utility(bundle: Bundle) -> dict[str, int]:
         _require(HEX_64.fullmatch(generated_hash) is not None, f"bad utility generated hash for seed {seed}")
         _require(generated_hash not in generated_hashes, f"duplicate utility generated hash for seed {seed}")
         generated_hashes.add(generated_hash)
-        retention = _number(result.get("roc_auc_retention"), f"utility retention seed {seed}")
+        retention = _number(
+            result.get("roc_auc_skill_retention"),
+            f"utility skill retention seed {seed}",
+        )
         auc = _number((result.get("metrics") or {}).get("roc_auc"), f"utility ROC AUC seed {seed}")
-        _close(retention, auc / baseline_auc, f"utility retention seed {seed}")
+        _close(
+            retention,
+            (auc - 0.5) / baseline_auc_skill,
+            f"utility skill retention seed {seed}",
+        )
         by_seed[int(seed)] = result
     _require(set(by_seed) == set(EXPECTED_SEEDS), "utility completed seed set mismatch")
 
     bands = utility.get("synthetic_train_bands") or {}
     metric_names = set((results[0].get("metrics") or {}))
-    _require(set(bands) == metric_names | {"roc_auc_retention"}, "utility band inventory mismatch")
+    _require(
+        set(bands) == metric_names | {"roc_auc_skill_retention"},
+        "utility band inventory mismatch",
+    )
     for metric in sorted(metric_names):
         values = [
             _number((by_seed[seed].get("metrics") or {}).get(metric), f"utility {metric} seed {seed}")
@@ -989,13 +1011,16 @@ def _verify_utility(bundle: Bundle) -> dict[str, int]:
             sample_stdev=True,
         )
     retention_values = [
-        _number(by_seed[seed].get("roc_auc_retention"), f"utility retention seed {seed}")
+        _number(
+            by_seed[seed].get("roc_auc_skill_retention"),
+            f"utility skill retention seed {seed}",
+        )
         for seed in EXPECTED_SEEDS
     ]
     _verify_band(
-        bands.get("roc_auc_retention") or {},
+        bands.get("roc_auc_skill_retention") or {},
         retention_values,
-        "utility ROC AUC retention",
+        "utility ROC AUC skill retention",
         sample_stdev=True,
     )
     return {
@@ -1009,10 +1034,305 @@ def _verify_robustness_and_utility(bundle: Bundle) -> dict[str, Any]:
     return {**_verify_robustness(bundle), **_verify_utility(bundle)}
 
 
-def _verify_publication_overlays(bundle: Bundle) -> None:
+def _characterization_screen_relation(
+    point: float, lower: float, upper: float
+) -> tuple[str, str]:
+    point_relation = "at/above" if point >= 0.8 else "below"
+    if upper < 0.8:
+        interval_relation = "entirely below"
+    elif lower >= 0.8:
+        interval_relation = "entirely above"
+    else:
+        interval_relation = "crosses"
+    return point_relation, interval_relation
+
+
+def _characterization_quality(
+    certificate: dict[str, Any], branch: str
+) -> dict[str, Any]:
+    statistical = certificate.get("statistical_comparison") or {}
+    correlation = certificate.get("correlation_analysis") or {}
+    demographic = certificate.get("demographic_alignment") or {}
+    privacy = certificate.get("privacy_metrics") or {}
+    return {
+        "branch": branch,
+        "overall_quality_score": _number(
+            certificate.get("overall_quality_score"), f"{branch} quality"
+        ),
+        "quality_threshold": _number(
+            certificate.get("quality_threshold_used"), f"{branch} threshold"
+        ),
+        "quality_threshold_met": certificate.get("quality_threshold_met") is True,
+        "distribution_score": _number(
+            statistical.get("overall_distribution_score"),
+            f"{branch} distribution",
+        ),
+        "correlation_preservation_score": _number(
+            correlation.get("correlation_preservation_score"),
+            f"{branch} correlation",
+        ),
+        "max_correlation_difference": _number(
+            correlation.get("max_correlation_difference"),
+            f"{branch} max correlation difference",
+        ),
+        "demographic_max_drift_pp": _number(
+            demographic.get("max_abs_pp_drift"), f"{branch} demographic drift"
+        ),
+        "privacy_heuristic_score": _number(
+            privacy.get("privacy_preservation_score"),
+            f"{branch} privacy heuristic",
+        ),
+        "privacy_heuristic_scope": privacy.get("privacy_preservation_score_scope"),
+        "exact_output_wall_pre_duplicates": int(
+            privacy.get("exact_output_wall_pre_duplicate_count")
+        ),
+        "exact_output_wall_post_duplicates": int(
+            privacy.get("exact_output_wall_post_duplicate_count")
+        ),
+        "near_duplicate_status": privacy.get("near_duplicate_count_status"),
+        "differential_privacy_claimed": False,
+        "certified_utility_status": certificate.get("synthetic_utility_check"),
+    }
+
+
+def _expected_characterization_summary(bundle: Bundle) -> dict[str, Any]:
+    intake_manifest = bundle.json("intake/manifest.json")
+    slices_payload = bundle.json("intake/fairness_slices.json")
+    uncertainty = bundle.json("intake/metrics_uncertainty.json")
+    robustness = bundle.json(
+        "evidence/v5.0.1/robustness/robustness_summary_merged.json"
+    )
+    utility = bundle.json("evidence/v5.0.1/utility/utility_summary.json")
+    amplification_certificate = bundle.json(
+        "intake/certificates/branch_amplification__synthetic_quality_certificate.json"
+    )
+    intrinsic_certificate = bundle.json(
+        "intake/certificates/branch_intrinsic__synthetic_quality_certificate.json"
+    )
+
+    labels = {
+        "historical": "Historical fixture",
+        "amplification": "Amplification branch",
+        "intrinsic": "Intrinsic parity-policy control",
+    }
+    slice_rows: list[dict[str, Any]] = []
+    source_slices = slices_payload.get("slices") or {}
+    for key in ("historical", "amplification", "intrinsic"):
+        source = source_slices.get(key) or {}
+        air = source.get("air") or {}
+        srg = source.get("srg") or {}
+        air_interval = air.get("ci95") or [None, None]
+        srg_range = srg.get("ci95") or [None, None]
+        point = _number(air.get("point"), f"summary {key} AIR")
+        lower = _number(air_interval[0], f"summary {key} AIR lower")
+        upper = _number(air_interval[1], f"summary {key} AIR upper")
+        point_relation, interval_relation = _characterization_screen_relation(
+            point, lower, upper
+        )
+        inference_status = "conditional_on_generated_fixture"
+        interval_status = "conditional_95_percent_interval"
+        p_value_status = "conditional_two_proportion_test"
+        if key == "intrinsic":
+            interval_relation = "not_applicable_policy_determined"
+            inference_status = "policy_determined"
+            interval_status = "format_symmetry_only_not_inferential"
+            p_value_status = "format_symmetry_only_not_inferential"
+        counts = source.get("counts") or {}
+        slice_rows.append(
+            {
+                "id": key,
+                "label": labels[key],
+                "reference_group": source.get("reference_group"),
+                "protected_group": source.get("protected_group"),
+                "reference_n": int(counts.get("ref_n")),
+                "protected_n": int(counts.get("prot_n")),
+                "air": point,
+                "air_ci95": [lower, upper],
+                "air_interval_display_status": interval_status,
+                "p_value": _number(
+                    air.get("p_value"), f"summary {key} p-value"
+                ),
+                "p_value_display_status": p_value_status,
+                "srg": _number(srg.get("point"), f"summary {key} SRG"),
+                "srg_endpoint_range": [
+                    _number(srg_range[0], f"summary {key} SRG lower"),
+                    _number(srg_range[1], f"summary {key} SRG upper"),
+                ],
+                "srg_method": SRG_METHOD,
+                "srg_range_status": (
+                    "difference_of_95_percent_wilson_endpoints_"
+                    "not_a_calibrated_95_percent_interval"
+                ),
+                "inference_status": inference_status,
+                "point_screen_relation": point_relation,
+                "interval_screen_relation": interval_relation,
+            }
+        )
+
+    fairness = uncertainty.get("fairness_uncertainty") or {}
+    race = fairness.get("race") or {}
+    race_pairs = race.get("pairs") or {}
+    minimum_count_group = min(
+        race_pairs,
+        key=lambda group: int(
+            (race_pairs[group].get("counts") or {}).get("prot_n")
+        ),
+    )
+    robustness_rows: list[dict[str, Any]] = []
+    for scenario_id in ("balanced", "gender_bias", "outliers", "security"):
+        aggregates = (
+            ((robustness.get("scenarios") or {}).get(scenario_id) or {}).get(
+                "aggregates"
+            )
+            or {}
+        )
+        band = (aggregates.get("numeric_bands") or {}).get("di") or {}
+        robustness_rows.append(
+            {
+                "id": scenario_id,
+                "label": scenario_id.replace("_", " ").title(),
+                "passes": int(aggregates.get("pass_count")),
+                "runs": int(aggregates.get("planned_seed_count")),
+                "air_min": _number(
+                    band.get("min"), f"summary {scenario_id} AIR min"
+                ),
+                "air_mean": _number(
+                    band.get("mean"), f"summary {scenario_id} AIR mean"
+                ),
+                "air_max": _number(
+                    band.get("max"), f"summary {scenario_id} AIR max"
+                ),
+                "air_stdev": _number(
+                    band.get("stdev"), f"summary {scenario_id} AIR stdev"
+                ),
+            }
+        )
+
+    return {
+        "schema_version": "flbsa.whitepaper_characterization.v2",
+        "document_version": "WP-5.0.1-candidate.1",
+        "as_of": "2026-08-05",
+        "publication_status": "candidate_not_published",
+        "product": {
+            "tag": PRODUCT_TAG,
+            "commit": PRODUCT_COMMIT,
+            "tag_object": PRODUCT_TAG_OBJECT,
+        },
+        "evidence": {
+            "run_id": int(PRODUCT_RUN_ID),
+            "run_attempt": 1,
+            "run_uuid": intake_manifest.get("run_id"),
+            "dataset_hash": intake_manifest.get("dataset_hash"),
+            "primary_bundle_sha256": PRIMARY_BUNDLE_SHA256,
+        },
+        "fairness": {
+            "internal_air_screen": 0.8,
+            "screen_is_legal_verdict": False,
+            "single_run_inference_scope": (
+                "conditional_on_generated_fixture_and_configured_row_count"
+            ),
+            "srg_range_scope": (
+                "difference_of_separate_95_percent_wilson_endpoints; "
+                "not_a_calibrated_95_percent_interval"
+            ),
+            "slices": slice_rows,
+            "race": {
+                "configured_reference_group": race.get(
+                    "configured_reference_group"
+                ),
+                "effective_reference_group": race.get("reference_group"),
+                "reference_policy": race.get("reference_group_selection_policy"),
+                "display_in_main_pdf": False,
+                "suppression_reason": (
+                    "minimum observed group share below configured display floor"
+                ),
+                "minimum_count_group": minimum_count_group,
+                "lowest_selection_rate_group": (
+                    race.get("selection_rate_range") or {}
+                ).get("min_group"),
+                "minimum_group_n": int(
+                    (race.get("observed") or {}).get("min_group_n")
+                ),
+                "minimum_group_pct": _number(
+                    (race.get("observed") or {}).get("min_group_pct"),
+                    "summary race minimum group share",
+                ),
+                "worst_case_pair": race.get("worst_case_pair"),
+                "air_intervals_multiplicity_adjusted": False,
+                "air_p_value_adjustment": "holm_bonferroni",
+            },
+        },
+        "quality": {
+            "amplification": _characterization_quality(
+                amplification_certificate, "amplification"
+            ),
+            "intrinsic": _characterization_quality(
+                intrinsic_certificate, "intrinsic"
+            ),
+        },
+        "robustness": {
+            "complete": robustness.get("complete") is True,
+            "planned_seeds": robustness.get("planned_seeds"),
+            "scenarios": robustness_rows,
+            "total_runs": sum(row["runs"] for row in robustness_rows),
+            "total_passes": sum(row["passes"] for row in robustness_rows),
+        },
+        "utility": utility,
+        "interpretation": {
+            "intrinsic": (
+                "mechanical parity-policy branch-separation control; "
+                "not a causal counterfactual"
+            ),
+            "certificate_integrity": (
+                "hash and internal predecessor linkage; public key absent from companion"
+            ),
+            "regulatory": "governance mapping only; no compliance determination",
+        },
+    }
+
+
+def _verify_characterization_summary(bundle: Bundle) -> dict[str, int]:
+    summary = bundle.json(
+        "evidence/v5.0.1/publication/characterization_summary.json"
+    )
+    expected = _expected_characterization_summary(bundle)
+    _require(
+        set(summary) == set(expected),
+        "characterization summary top-level inventory mismatch",
+    )
+    for key, expected_value in expected.items():
+        _require(
+            summary.get(key) == expected_value,
+            f"characterization summary {key} projection mismatch",
+        )
+    return {"characterization_summary_sections_cross_checked": len(expected)}
+
+
+def _verify_publication_overlays(bundle: Bundle) -> dict[str, int]:
     corrections = bundle.json("evidence/v5.0.1/publication/interpretation_corrections.json")
+    _require(
+        corrections.get("schema_version")
+        == "flbsa.whitepaper_interpretation_corrections.v1",
+        "unsupported correction-ledger schema",
+    )
     _require(corrections.get("as_of") == "2026-08-05", "wrong correction date")
     _require(corrections.get("producer_evidence_mutated") is False, "producer mutation flag mismatch")
+    correction_rows = corrections.get("corrections") or []
+    _require(
+        {row.get("id") for row in correction_rows if isinstance(row, dict)}
+        == {
+            "srg-method",
+            "race-reference",
+            "intrinsic-estimand",
+            "internal-screen",
+            "single-run-inference",
+            "race-multiplicity",
+            "utility-skill-normalisation",
+            "integrity-language",
+            "regulatory-current-state",
+        },
+        "correction-ledger inventory mismatch",
+    )
     rows = list(
         csv.DictReader(
             io.StringIO(
@@ -1022,6 +1342,7 @@ def _verify_publication_overlays(bundle: Bundle) -> None:
     )
     _require(len(rows) == 5, "regulatory mapping must contain five reviewed rows")
     _require(all(row.get("as_of") == "2026-08-05" for row in rows), "regulatory mapping date mismatch")
+    return _verify_characterization_summary(bundle)
 
 
 def verify(path: Path) -> dict[str, Any]:
@@ -1033,7 +1354,7 @@ def verify(path: Path) -> dict[str, Any]:
     fairness = _verify_fairness(bundle)
     certificates = _verify_certificates(bundle)
     studies = _verify_robustness_and_utility(bundle)
-    _verify_publication_overlays(bundle)
+    overlays = _verify_publication_overlays(bundle)
     return {
         "status": "verified",
         "bundle": str(path),
@@ -1044,6 +1365,7 @@ def verify(path: Path) -> dict[str, Any]:
         **fairness,
         **certificates,
         **studies,
+        **overlays,
         "signature_scope": "metadata_encoding_only_public_key_not_bundled",
         "integrity_scope": "hash_and_internal_linkage",
     }

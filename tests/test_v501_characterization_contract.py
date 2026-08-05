@@ -117,6 +117,17 @@ class V501CharacterizationContractTests(unittest.TestCase):
                 payload["inference"]["headline_interval_methods"]["srg"],
             )
 
+        publication = _read_json(
+            "evidence/v5.0.1/publication/characterization_summary.json"
+        )["fairness"]
+        self.assertIn("not_a_calibrated_95_percent_interval", publication["srg_range_scope"])
+        for row in publication["slices"]:
+            self.assertNotIn("srg_ci95", row)
+            self.assertIn(
+                "not_a_calibrated_95_percent_interval",
+                row["srg_range_status"],
+            )
+
     def test_race_configured_and_effective_references_are_not_conflated(self) -> None:
         race = _read_json("intake/metrics_uncertainty.json")[
             "fairness_uncertainty"
@@ -136,6 +147,8 @@ class V501CharacterizationContractTests(unittest.TestCase):
         )["fairness"]["race"]
         self.assertEqual("hispanic", summary["minimum_count_group"])
         self.assertEqual("other", summary["lowest_selection_rate_group"])
+        self.assertIs(summary["air_intervals_multiplicity_adjusted"], False)
+        self.assertEqual("holm_bonferroni", summary["air_p_value_adjustment"])
 
     def test_point_and_interval_screen_relations_are_separate(self) -> None:
         slices = _read_json(
@@ -149,10 +162,25 @@ class V501CharacterizationContractTests(unittest.TestCase):
             by_id["amplification"]["interval_screen_relation"],
         )
         self.assertEqual(
-            "entirely above", by_id["intrinsic"]["interval_screen_relation"]
+            "not_applicable_policy_determined",
+            by_id["intrinsic"]["interval_screen_relation"],
+        )
+        self.assertEqual("policy_determined", by_id["intrinsic"]["inference_status"])
+        self.assertEqual(
+            "format_symmetry_only_not_inferential",
+            by_id["intrinsic"]["air_interval_display_status"],
+        )
+        self.assertEqual(
+            "format_symmetry_only_not_inferential",
+            by_id["intrinsic"]["p_value_display_status"],
         )
         self.assertAlmostEqual(0.759080055358229, by_id["amplification"]["air"])
         self.assertAlmostEqual(1.0000283291063825, by_id["intrinsic"]["air"])
+        results = (ROOT / "sections" / "06_results.tex").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("shown only for table and figure", results)
+        self.assertIn("interval is not multiplicity-adjusted", results)
 
     def test_quality_reports_both_branches_and_preserves_unevaluated_states(self) -> None:
         summary = _read_json(
@@ -188,6 +216,21 @@ class V501CharacterizationContractTests(unittest.TestCase):
         auc = utility["synthetic_train_bands"]["roc_auc"]
         self.assertAlmostEqual(0.5068372196683766, auc["mean"])
         self.assertLess(auc["max"], utility["real_train_baseline"]["roc_auc"])
+        self.assertIs(utility["utility_established"], False)
+        self.assertNotIn("roc_auc_retention", utility["synthetic_train_bands"])
+        skill = utility["synthetic_train_bands"]["roc_auc_skill_retention"]
+        expected_skill = (auc["mean"] - 0.5) / (
+            utility["real_train_baseline"]["roc_auc"] - 0.5
+        )
+        self.assertAlmostEqual(expected_skill, skill["mean"])
+        self.assertAlmostEqual(0.03441799798421121, skill["mean"])
+        self.assertLess(skill["min"], 0)
+        for result in utility["synthetic_train_results"]:
+            self.assertNotIn("roc_auc_retention", result)
+            expected = (result["metrics"]["roc_auc"] - 0.5) / (
+                utility["real_train_baseline"]["roc_auc"] - 0.5
+            )
+            self.assertAlmostEqual(expected, result["roc_auc_skill_retention"])
 
     def test_utility_fixture_hashes_are_exact(self) -> None:
         utility = _read_json("evidence/v5.0.1/utility/utility_summary.json")
@@ -279,6 +322,9 @@ class V501CharacterizationContractTests(unittest.TestCase):
             )
             self.assertEqual(10, verified["utility_seeds"])
             self.assertEqual(5000, verified["utility_fixture_rows"])
+            self.assertEqual(
+                11, verified["characterization_summary_sections_cross_checked"]
+            )
 
             with zipfile.ZipFile(first) as archive:
                 producer_zip = archive.read(
@@ -328,6 +374,30 @@ class V501CharacterizationContractTests(unittest.TestCase):
                 verifier.VerificationError, "utility roc_auc mean mismatch"
             ):
                 verifier.verify(utility_tamper)
+
+            summary_tamper = Path(tmp) / "characterization-summary-tamper.zip"
+            with zipfile.ZipFile(first) as archive:
+                characterization = json.loads(
+                    archive.read(
+                        "evidence/v5.0.1/publication/characterization_summary.json"
+                    )
+                )
+            for row in characterization["fairness"]["slices"]:
+                row["air"] = 0.94
+            replacement = (
+                json.dumps(characterization, indent=2, sort_keys=True) + "\n"
+            ).encode("utf-8")
+            _rewrite_companion_member(
+                first,
+                summary_tamper,
+                "evidence/v5.0.1/publication/characterization_summary.json",
+                replacement,
+            )
+            with self.assertRaisesRegex(
+                verifier.VerificationError,
+                "characterization summary fairness projection mismatch",
+            ):
+                verifier.verify(summary_tamper)
 
             producer_projection_tamper = Path(tmp) / "producer-projection-tamper.zip"
             with zipfile.ZipFile(first) as archive:

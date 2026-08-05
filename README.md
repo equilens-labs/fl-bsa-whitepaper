@@ -59,7 +59,8 @@ python3 /tmp/flbsa-wp-companion/verify_companion_bundle.py \
 
 The verifier checks every member hash and size, source identities, bounded claim flags, corrected
 SRG method, race reference policy, certificate hashes and predecessor links, robustness
-completeness, and utility seed completeness. Certificate signature fields are checked for complete
+completeness, utility seed completeness, and the paper-owned headline characterization as an exact
+projection of those verified sources. Certificate signature fields are checked for complete
 encoding only because the public verification key is not bundled; the companion therefore claims
 integrity linkage, not independent authentication.
 

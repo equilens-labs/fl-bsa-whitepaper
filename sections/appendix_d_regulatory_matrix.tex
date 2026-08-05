@@ -1,15 +1,20 @@
 \section{Publication Interpretation Corrections}
 
 The machine-readable correction ledger is
-\path{evidence/v5.0.1/publication/interpretation_corrections.json}. It records seven changes of
+\path{evidence/v5.0.1/publication/interpretation_corrections.json}. It records nine changes of
 interpretation without changing producer values:
 
 \begin{enumerate}
-  \item identify the SRG interval as a conservative difference of Wilson endpoints;
+  \item identify the SRG endpoint range as a conservative difference of Wilson endpoints, not a
+        calibrated 95\% confidence interval;
   \item distinguish configured and effective race reference groups;
   \item describe intrinsic parity as policy-imposed rather than causal;
   \item scope 0.80 as an internal screen rather than a lending-law verdict;
-  \item condition intervals and p-values on the generated dataset and row count;
+  \item condition historical and amplification intervals and p-values on the generated dataset and
+        row count, while treating the intrinsic fields as non-inferential format symmetry;
+  \item distinguish pairwise race AIR intervals from Holm-adjusted race p-values;
+  \item replace raw AUC-ratio ``retention'' with skill-normalised AUC retention and state that
+        train-on-synthetic utility is not established;
   \item describe certificate chains as integrity linkage rather than standalone tamper proof; and
   \item supersede the producer's run-time regulatory narrative with the dated publication overlay.
 \end{enumerate}

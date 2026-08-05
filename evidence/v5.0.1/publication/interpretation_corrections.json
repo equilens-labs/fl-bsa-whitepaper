@@ -3,7 +3,7 @@
   "corrections": [
     {
       "id": "srg-method",
-      "publication_interpretation": "The SRG interval is a conservative difference of separate Wilson endpoints.",
+      "publication_interpretation": "The SRG endpoint range is a conservative difference of separate 95% Wilson intervals; it is not itself a calibrated 95% confidence interval.",
       "producer_field": "conservative_wilson_endpoint_difference",
       "values_changed": false
     },
@@ -15,7 +15,7 @@
     },
     {
       "id": "intrinsic-estimand",
-      "publication_interpretation": "Near-parity after the intrinsic branch demonstrates operation of the equal-rate post-label policy; it is not a causal counterfactual or proof that historical disparity originates in labels.",
+      "publication_interpretation": "Near-parity after the intrinsic branch demonstrates operation of the equal-rate post-label policy; it is not a causal counterfactual or proof that historical disparity originates in labels. Its interval and p-value fields are shown for format symmetry only and are not inferential.",
       "producer_field": "post_generation_equal_rate_policy",
       "values_changed": false
     },
@@ -27,8 +27,20 @@
     },
     {
       "id": "single-run-inference",
-      "publication_interpretation": "Confidence intervals and p-values are conditional on this generated fixture and its configured row count; they do not include fixture-generator or across-run uncertainty.",
+      "publication_interpretation": "Historical and amplification confidence intervals and p-values are conditional on this generated fixture and its configured row count; they do not include fixture-generator or across-run uncertainty. The policy-determined intrinsic row is excluded from that inferential interpretation.",
       "producer_field": "confidence_level=0.95",
+      "values_changed": false
+    },
+    {
+      "id": "race-multiplicity",
+      "publication_interpretation": "Race AIR confidence intervals are pairwise and not multiplicity-adjusted, while race AIR p-values use Holm-Bonferroni adjustment; their apparent rejection decisions can therefore differ.",
+      "producer_field": "air.ci95/air.p_value_adjustment=holm_bonferroni",
+      "values_changed": false
+    },
+    {
+      "id": "utility-skill-normalisation",
+      "publication_interpretation": "AUC retention is reported as (synthetic AUC - 0.5)/(real-train baseline AUC - 0.5). The raw AUC ratio was removed because it assigns positive retention to chance and worse-than-chance classifiers; the underlying AUC values are unchanged.",
+      "producer_field": "paper_owned_utility_summary.synthetic_train_results.metrics.roc_auc",
       "values_changed": false
     },
     {

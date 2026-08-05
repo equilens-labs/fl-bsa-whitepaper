@@ -7,8 +7,9 @@ Primary comparison & Female versus male gender selection rate. Race retained as 
 multi-group secondary surface. \\
 Selection-rate interval & Two-sided 95\% Wilson score interval without continuity correction. \\
 AIR interval & Delta method on the log selection-rate ratio, then exponentiated. \\
-SRG interval & $[L_g-U_r,U_g-L_r]$, declared as
-\path{conservative_wilson_endpoint_difference}. \\
+SRG endpoint range & $[L_g-U_r,U_g-L_r]$, declared as
+\path{conservative_wilson_endpoint_difference}; based on separate 95\% Wilson intervals but not
+itself a calibrated 95\% confidence interval. \\
 Tests & Two-sided two-proportion $z$ tests; small-count policy can select an exact alternative. \\
 Multiplicity & Holm--Bonferroni for race AIR p-values; displayed confidence intervals are not
 multiplicity-adjusted. \\
@@ -18,6 +19,8 @@ selects black for this run. \\
 Display floor & At least 300 rows and 5\% share for main-PDF race display. The count condition is
 met; the share condition is not. \\
 Unavailable states & ECE \texttt{NOT\_EVALUATED}; EO \texttt{NOT\_INFORMATIVE}. \\
+Intrinsic inference & Policy-determined approvals; interval and $p$-value fields are retained for
+format symmetry only and have no inferential interpretation. \\
 \end{tabular}
 
 The headline uncertainty objects are deterministic for fixed inputs. Bootstrap BCa fields with

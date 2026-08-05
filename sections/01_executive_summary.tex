@@ -34,7 +34,7 @@ both below the internally selected 0.80 point screen. The amplification 95\% int
 [\AmplificationAIRLower{}, \AmplificationAIRUpper{}]. \\
 Branch control & Intrinsic AIR \IntrinsicAIR{} [\IntrinsicAIRLower{}, \IntrinsicAIRUpper{}]
 follows an equal-rate post-label policy. This is an expected mechanical result, not a causal
-``debiasing'' conclusion. \\
+``debiasing'' conclusion; the displayed range is for format symmetry, not inference. \\
 Quality & Overall quality is \AmplificationQuality{} for amplification and \IntrinsicQuality{}
 for intrinsic. The producer's certificate utility field is unevaluated for both branches. \\
 Robustness & \RobustnessTotalPasses{}/\RobustnessTotalRuns{} configured Gold scenario runs passed
@@ -43,15 +43,17 @@ parameter. \\
 Utility study & Ten equal-size train-on-synthetic runs yield mean ROC AUC
 \UtilitySyntheticAUCMean{} (range \UtilitySyntheticAUCMin{}--\UtilitySyntheticAUCMax{}) on a
 held-out generated fixture, versus \UtilityBaselineAUC{} for the real-train fixture baseline.
-The variation is material and limits any utility claim. \\
+Skill-normalised AUC retention averages \UtilitySkillRetentionMeanPct{}\%; train-on-synthetic
+predictive utility is not established. \\
 \end{tabular}
 \end{KeyBox}
 
 The point screen and confidence-interval relation are reported separately. A row is never labelled
 ``PASS'' or ``FAIL'' merely because its point estimate lies on one side of 0.80. The historical
-interval crosses 0.80; the amplification interval is entirely below it; and the intrinsic interval
-is entirely above it. P-values and intervals remain conditional on one generated fixture and the
-configured sample size.
+interval crosses 0.80; the amplification interval is entirely below it; and the intrinsic range is
+not treated as inferential because its approvals are policy-determined. Historical and
+amplification p-values and intervals remain conditional on one generated fixture and the configured
+sample size.
 
 \subsection{Race reference policy}
 
@@ -75,3 +77,7 @@ The authoritative locations are
 \path{intake/archive/v5.0.1-release-30765888408.json} and the Gold release disposition in the
 companion; those fields are not in \path{intake/pack_intent.json}. The candidate PDF and companion
 must remain paired. No public companion URL exists at this review stage.
+
+This paper does not claim or authorize vendor-authored evidence, broad commercial authorization,
+public Marketplace go-live, production live decisioning, or regulator approval. Those explicit
+non-claims are document-wide publication boundaries, not optional wording.

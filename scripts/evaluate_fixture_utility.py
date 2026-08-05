@@ -201,6 +201,11 @@ def build_summary(product_root: Path, fixture_path: Path) -> dict[str, Any]:
     )
 
     seed_results: list[dict[str, Any]] = []
+    baseline_auc_skill = baseline["roc_auc"] - 0.5
+    if baseline_auc_skill <= 0:
+        raise UtilityError(
+            "real-train ROC AUC must exceed chance for skill-normalised retention"
+        )
     for seed in GENERATION_SEEDS:
         generated = generator.generate_amplification(len(train), seed=seed)
         missing = {*FEATURES, TARGET}.difference(generated.columns)
@@ -215,7 +220,9 @@ def build_summary(product_root: Path, fixture_path: Path) -> dict[str, Any]:
                     generated.to_csv(index=False).encode("utf-8")
                 ),
                 "metrics": metrics,
-                "roc_auc_retention": metrics["roc_auc"] / baseline["roc_auc"],
+                "roc_auc_skill_retention": (
+                    (metrics["roc_auc"] - 0.5) / baseline_auc_skill
+                ),
             }
         )
 
@@ -231,13 +238,14 @@ def build_summary(product_root: Path, fixture_path: Path) -> dict[str, Any]:
         metric: _bands([row["metrics"][metric] for row in seed_results])
         for metric in metric_names
     }
-    bands["roc_auc_retention"] = _bands(
-        [row["roc_auc_retention"] for row in seed_results]
+    bands["roc_auc_skill_retention"] = _bands(
+        [row["roc_auc_skill_retention"] for row in seed_results]
     )
 
     return {
-        "schema_version": "flbsa.whitepaper_fixture_utility.v1",
+        "schema_version": "flbsa.whitepaper_fixture_utility.v2",
         "claim_scope": "synthetic_fixture_tstr_characterization_only",
+        "utility_established": False,
         "product": {
             "repo": "equilens-labs/fl-bsa",
             "tag": tag,
@@ -265,6 +273,10 @@ def build_summary(product_root: Path, fixture_path: Path) -> dict[str, Any]:
             "excluded_protected_attributes": list(PROTECTED),
             "classifier": "median-impute + standardize + logistic-regression",
             "decision_threshold": 0.5,
+            "roc_auc_skill_retention_definition": (
+                "(synthetic_roc_auc - 0.5) / "
+                "(real_train_baseline_roc_auc - 0.5)"
+            ),
         },
         "real_train_baseline": baseline,
         "synthetic_train_results": seed_results,
@@ -274,6 +286,7 @@ def build_summary(product_root: Path, fixture_path: Path) -> dict[str, Any]:
             "All generated samples share one fitted generator and one held-out split.",
             "Generation-seed variation does not include fixture-generator, model-fit, or deployment variation.",
             "The intrinsic branch is excluded because its post-label policy changes the utility estimand.",
+            "Mean synthetic-train ROC AUC is approximately chance; train-on-synthetic predictive utility is not established.",
             "The results do not establish production predictive utility, privacy, fairness, or legal compliance.",
         ],
         "runtime": {

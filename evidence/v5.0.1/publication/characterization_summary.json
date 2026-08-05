@@ -11,6 +11,8 @@
   "fairness": {
     "internal_air_screen": 0.8,
     "race": {
+      "air_intervals_multiplicity_adjusted": false,
+      "air_p_value_adjustment": "holm_bonferroni",
       "configured_reference_group": "white",
       "display_in_main_pdf": false,
       "effective_reference_group": "black",
@@ -31,21 +33,25 @@
           0.7066165617183962,
           0.8152666713214054
         ],
+        "air_interval_display_status": "conditional_95_percent_interval",
         "id": "historical",
+        "inference_status": "conditional_on_generated_fixture",
         "interval_screen_relation": "crosses",
         "label": "Historical fixture",
         "p_value": 2.538331896300619e-14,
+        "p_value_display_status": "conditional_two_proportion_test",
         "point_screen_relation": "below",
         "protected_group": "female",
         "protected_n": 1549,
         "reference_group": "male",
         "reference_n": 1451,
         "srg": -0.13918541519194483,
-        "srg_ci95": [
+        "srg_endpoint_range": [
           -0.18889133630048077,
           -0.08876498690693657
         ],
-        "srg_method": "conservative_wilson_endpoint_difference"
+        "srg_method": "conservative_wilson_endpoint_difference",
+        "srg_range_status": "difference_of_95_percent_wilson_endpoints_not_a_calibrated_95_percent_interval"
       },
       {
         "air": 0.759080055358229,
@@ -53,21 +59,25 @@
           0.7299180687027133,
           0.7894071336893185
         ],
+        "air_interval_display_status": "conditional_95_percent_interval",
         "id": "amplification",
+        "inference_status": "conditional_on_generated_fixture",
         "interval_screen_relation": "entirely below",
         "label": "Amplification branch",
         "p_value": 5.925343298757943e-44,
+        "p_value_display_status": "conditional_two_proportion_test",
         "point_screen_relation": "below",
         "protected_group": "female",
         "protected_n": 5163,
         "reference_group": "male",
         "reference_n": 4837,
         "srg": -0.13911296369329473,
-        "srg_ci95": [
+        "srg_endpoint_range": [
           -0.16645078909775374,
           -0.11156052109215375
         ],
-        "srg_method": "conservative_wilson_endpoint_difference"
+        "srg_method": "conservative_wilson_endpoint_difference",
+        "srg_range_status": "difference_of_95_percent_wilson_endpoints_not_a_calibrated_95_percent_interval"
       },
       {
         "air": 1.0000283291063825,
@@ -75,23 +85,28 @@
           0.9746605823501516,
           1.0260563288646758
         ],
+        "air_interval_display_status": "format_symmetry_only_not_inferential",
         "id": "intrinsic",
-        "interval_screen_relation": "entirely above",
+        "inference_status": "policy_determined",
+        "interval_screen_relation": "not_applicable_policy_determined",
         "label": "Intrinsic parity-policy control",
         "p_value": 0.9982758386031044,
+        "p_value_display_status": "format_symmetry_only_not_inferential",
         "point_screen_relation": "at/above",
         "protected_group": "female",
         "protected_n": 5165,
         "reference_group": "male",
         "reference_n": 4835,
         "srg": 1.9821585706791822e-05,
-        "srg_ci95": [
+        "srg_endpoint_range": [
           -0.02538430259080915,
           0.025444159409168554
         ],
-        "srg_method": "conservative_wilson_endpoint_difference"
+        "srg_method": "conservative_wilson_endpoint_difference",
+        "srg_range_status": "difference_of_95_percent_wilson_endpoints_not_a_calibrated_95_percent_interval"
       }
-    ]
+    ],
+    "srg_range_scope": "difference_of_separate_95_percent_wilson_endpoints; not_a_calibrated_95_percent_interval"
   },
   "interpretation": {
     "certificate_integrity": "hash and internal predecessor linkage; public key absent from companion",
@@ -199,7 +214,7 @@
     "total_passes": 40,
     "total_runs": 40
   },
-  "schema_version": "flbsa.whitepaper_characterization.v1",
+  "schema_version": "flbsa.whitepaper_characterization.v2",
   "utility": {
     "claim_scope": "synthetic_fixture_tstr_characterization_only",
     "limitations": [
@@ -207,6 +222,7 @@
       "All generated samples share one fitted generator and one held-out split.",
       "Generation-seed variation does not include fixture-generator, model-fit, or deployment variation.",
       "The intrinsic branch is excluded because its post-label policy changes the utility estimand.",
+      "Mean synthetic-train ROC AUC is approximately chance; train-on-synthetic predictive utility is not established.",
       "The results do not establish production predictive utility, privacy, fairness, or legal compliance."
     ],
     "product": {
@@ -230,7 +246,7 @@
       "python": "3.11.10",
       "scikit_learn": "1.7.2"
     },
-    "schema_version": "flbsa.whitepaper_fixture_utility.v1",
+    "schema_version": "flbsa.whitepaper_fixture_utility.v2",
     "source": {
       "fixture": "evidence/v5.0.1/utility/balanced_fixture.csv.gz",
       "fixture_sha256_gzip": "67785d0488d53d0c4a26f76f66ecb63bb582037ef207790752bd34e971831db9",
@@ -267,6 +283,7 @@
         314159
       ],
       "generator_fit_seed": 42,
+      "roc_auc_skill_retention_definition": "(synthetic_roc_auc - 0.5) / (real_train_baseline_roc_auc - 0.5)",
       "target": "loan_approved",
       "test_rows": 1500,
       "train_rows": 3500,
@@ -315,12 +332,12 @@
         "min": 0.3763206865123729,
         "stdev": 0.08701031955752561
       },
-      "roc_auc_retention": {
+      "roc_auc_skill_retention": {
         "count": 10,
-        "max": 0.9540328855231079,
-        "mean": 0.725449712121998,
-        "min": 0.5386378961564396,
-        "stdev": 0.12454020507008241
+        "max": 0.8383355604303386,
+        "mean": 0.03441799798421121,
+        "min": -0.6225914287929442,
+        "stdev": 0.4380027479572797
       }
     },
     "synthetic_train_results": [
@@ -335,7 +352,7 @@
           "positive_rate_train": 0.5682857142857143,
           "roc_auc": 0.49694414295576483
         },
-        "roc_auc_retention": 0.7112894859691894,
+        "roc_auc_skill_retention": -0.015382931467740453,
         "seed": 7
       },
       {
@@ -349,7 +366,7 @@
           "positive_rate_train": 0.5682857142857143,
           "roc_auc": 0.6665374140908258
         },
-        "roc_auc_retention": 0.9540328855231079,
+        "roc_auc_skill_retention": 0.8383355604303386,
         "seed": 11
       },
       {
@@ -363,7 +380,7 @@
           "positive_rate_train": 0.5682857142857143,
           "roc_auc": 0.4937967823356424
         },
-        "roc_auc_retention": 0.7067845842626693,
+        "roc_auc_skill_retention": -0.031226484363954643,
         "seed": 23
       },
       {
@@ -377,7 +394,7 @@
           "positive_rate_train": 0.5682857142857143,
           "roc_auc": 0.5255439932885299
         },
-        "roc_auc_retention": 0.752225219150371,
+        "roc_auc_skill_retention": 0.12858634827540633,
         "seed": 42
       },
       {
@@ -391,7 +408,7 @@
           "positive_rate_train": 0.5682857142857143,
           "roc_auc": 0.3763206865123729
         },
-        "roc_auc_retention": 0.5386378961564396,
+        "roc_auc_skill_retention": -0.6225914287929442,
         "seed": 101
       },
       {
@@ -405,7 +422,7 @@
           "positive_rate_train": 0.5682857142857143,
           "roc_auc": 0.3970421695588441
         },
-        "roc_auc_retention": 0.5682971108459983,
+        "roc_auc_skill_retention": -0.5182811979805626,
         "seed": 1337
       },
       {
@@ -419,7 +436,7 @@
           "positive_rate_train": 0.5682857142857143,
           "roc_auc": 0.5997416156451183
         },
-        "roc_auc_retention": 0.8584262669225583,
+        "roc_auc_skill_retention": 0.5020910388609425,
         "seed": 2025
       },
       {
@@ -433,7 +450,7 @@
           "positive_rate_train": 0.5682857142857143,
           "roc_auc": 0.5536890436698552
         },
-        "roc_auc_retention": 0.7925099849577262,
+        "roc_auc_skill_retention": 0.2702662027007926,
         "seed": 4096
       },
       {
@@ -447,7 +464,7 @@
           "positive_rate_train": 0.5682857142857143,
           "roc_auc": 0.49657269279622246
         },
-        "roc_auc_retention": 0.7107578193889725,
+        "roc_auc_skill_retention": -0.017252780830851525,
         "seed": 8191
       },
       {
@@ -461,9 +478,10 @@
           "positive_rate_train": 0.5682857142857143,
           "roc_auc": 0.46218365583058973
         },
-        "roc_auc_retention": 0.6615358680429483,
+        "roc_auc_skill_retention": -0.19036434698931456,
         "seed": 314159
       }
-    ]
+    ],
+    "utility_established": false
   }
 }
