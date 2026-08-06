@@ -63,8 +63,10 @@ active multi-group comparison policy instead uses the group with the highest obs
 rate, which is \RaceEffectiveReference{} in this run, consistent with the comparison convention in
 the employment-selection guidance that inspired the internal heuristic \citep{eeoc_uniform_guidelines}.
 Race values are preserved in the companion but are not plotted as headline results because the
-smallest group has \RaceMinimumGroupN{} rows (\RaceMinimumGroupPct{}\%), below the configured 5\%
-display floor. This display decision does not change the machine-readable calculation.
+smallest group has \RaceMinimumGroupN{} rows (\RaceMinimumGroupPct{}\%). It
+\RaceCountFloorRelation{} the configured \RaceDisplayMinGroupN{}-row count condition and
+\RaceShareFloorRelation{} the configured \RaceDisplayMinGroupPct{}\% share condition. This display
+decision does not change the machine-readable calculation.
 
 \subsection{Publication boundary}
 

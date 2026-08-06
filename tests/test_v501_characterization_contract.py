@@ -12,6 +12,8 @@ import unittest
 import zipfile
 from pathlib import Path
 
+import yaml
+
 
 ROOT = Path(__file__).resolve().parents[1]
 PRODUCT_TAG = "v5.0.1"
@@ -26,6 +28,10 @@ PRIMARY_ARTIFACT_API_DIGEST = (
 )
 UTILITY_ARTIFACT_API_DIGEST = (
     "sha256:1ea221c8bb77313ac0fddfe7703496d191d666c0555fdb5d9b5d1d9f3e94e2f4"
+)
+UTILITY_ARTIFACT_NAME = "gold-full-artifacts"
+UTILITY_FIXTURE_SHA256 = (
+    "b04f721d789226723066b3d6ae70e4ab2a3fa17c825ef1d0e04d7d779571982b"
 )
 GOLD_ARTIFACT_API_DIGEST = (
     "sha256:4fc12773c6410df3e6b4a1b1ded43c14a4ef2c84d013f09ec42d3ba7df1c7988"
@@ -122,9 +128,11 @@ class V501CharacterizationContractTests(unittest.TestCase):
         )
         self.assertEqual(PRIMARY_BUNDLE_SHA256, intake["bundle_sha256"])
         self.assertEqual(8839094646, utility["artifact_id"])
+        self.assertEqual(UTILITY_ARTIFACT_NAME, utility["artifact_name"])
         self.assertEqual(
             UTILITY_ARTIFACT_API_DIGEST, utility["artifact_api_digest"]
         )
+        self.assertEqual(UTILITY_FIXTURE_SHA256, utility["fixture_sha256"])
         self.assertEqual(8839160190, gold["artifact_id"])
         self.assertEqual(
             f"gold-robustness-{PRODUCT_COMMIT}-{PRODUCT_RUN_ID}",
@@ -154,6 +162,49 @@ class V501CharacterizationContractTests(unittest.TestCase):
         manifest = _read_json("intake/manifest.json")
         self.assertEqual(PRODUCT_COMMIT, manifest["source_commit"])
         self.assertEqual(PRODUCT_COMMIT, manifest["commit_sha"])
+
+        utility_source = _read_json(
+            "evidence/v5.0.1/utility/source_manifest.json"
+        )
+        self.assertEqual(
+            "flbsa.whitepaper_utility_source.v1",
+            utility_source["schema_version"],
+        )
+        self.assertEqual(
+            {
+                "api_digest": UTILITY_ARTIFACT_API_DIGEST,
+                "artifact_id": "8839094646",
+                "name": UTILITY_ARTIFACT_NAME,
+                "repository": "equilens-labs/fl-bsa",
+                "run_attempt": 1,
+                "run_id": PRODUCT_RUN_ID,
+                "workflow": "release-evidence.yml",
+            },
+            utility_source["artifact"],
+        )
+        self.assertEqual(
+            {
+                "gzip_sha256": (
+                    "67785d0488d53d0c4a26f76f66ecb63bb582037ef207790752bd34e971831db9"
+                ),
+                "path_in_artifact": (
+                    "artifacts/gold/20260802T203945Z/01_balanced/"
+                    "original_data.csv"
+                ),
+                "rows": 5000,
+                "sha256": UTILITY_FIXTURE_SHA256,
+                "synthetic_fixture_only": True,
+            },
+            utility_source["fixture"],
+        )
+        self.assertEqual(
+            {
+                "commit": PRODUCT_COMMIT,
+                "tag": PRODUCT_TAG,
+                "tag_object": PRODUCT_TAG_OBJECT,
+            },
+            utility_source["product"],
+        )
 
     def test_release_disposition_comes_from_the_snapshot_not_pack_intent(self) -> None:
         snapshot = _read_json("intake/archive/v5.0.1-release-30765888408.json")
@@ -213,15 +264,65 @@ class V501CharacterizationContractTests(unittest.TestCase):
         )
         self.assertEqual("other", race["worst_case_pair"])
         self.assertEqual(273, race["observed"]["min_group_n"])
+        self.assertEqual(0.0273, race["observed"]["min_group_pct"])
         self.assertIs(race["display_in_main_pdf"], False)
+
+        configured = yaml.safe_load(
+            (ROOT / "config/fairness_config.yaml").read_text(encoding="utf-8")
+        )["policy"]["display_race_in_main_pdf"]
+        self.assertEqual(configured, race["policy"]["display_race_in_main_pdf"])
+        self.assertLess(
+            race["observed"]["min_group_n"], configured["min_group_n"]
+        )
+        self.assertLess(
+            race["observed"]["min_group_pct"], configured["min_group_pct"]
+        )
 
         summary = _read_json(
             "evidence/v5.0.1/publication/characterization_summary.json"
         )["fairness"]["race"]
         self.assertEqual("hispanic", summary["minimum_count_group"])
         self.assertEqual("other", summary["lowest_selection_rate_group"])
+        self.assertEqual(300, summary["display_min_group_n"])
+        self.assertEqual(0.05, summary["display_min_group_pct"])
+        self.assertIs(summary["minimum_group_n_floor_met"], False)
+        self.assertIs(summary["minimum_group_pct_floor_met"], False)
+        self.assertEqual(
+            [
+                "minimum_observed_group_count_below_configured_display_floor",
+                "minimum_observed_group_share_below_configured_display_floor",
+            ],
+            summary["suppression_reasons"],
+        )
         self.assertIs(summary["air_intervals_multiplicity_adjusted"], False)
         self.assertEqual("holm_bonferroni", summary["air_p_value_adjustment"])
+
+        appendix = (ROOT / "sections/appendix_a_sap.tex").read_text(
+            encoding="utf-8"
+        )
+        self.assertNotIn("The count condition is met", appendix)
+        for macro in (
+            r"\RaceDisplayMinGroupN{}",
+            r"\RaceDisplayMinGroupPct{}",
+            r"\RaceCountFloorRelation{}",
+            r"\RaceShareFloorRelation{}",
+        ):
+            self.assertIn(macro, appendix)
+        generated_macros = (
+            ROOT / "includes/characterization_macros.tex"
+        ).read_text(encoding="utf-8")
+        for definition in (
+            r"\newcommand{\RaceDisplayMinGroupN}{300}",
+            r"\newcommand{\RaceDisplayMinGroupPct}{5.00}",
+            r"\newcommand{\RaceCountFloorRelation}{fails}",
+            r"\newcommand{\RaceShareFloorRelation}{fails}",
+        ):
+            self.assertIn(definition, generated_macros)
+        all_sections = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in sorted((ROOT / "sections").glob("*.tex"))
+        )
+        self.assertNotIn("count condition is met", all_sections.lower())
 
     def test_point_and_interval_screen_relations_are_separate(self) -> None:
         slices = _read_json(
@@ -555,6 +656,32 @@ class V501CharacterizationContractTests(unittest.TestCase):
             ):
                 verifier.verify(
                     utility_tamper,
+                    expected_utility_sha256=UTILITY_SUMMARY_SHA256,
+                )
+
+            source_identity_tamper = Path(tmp) / "source-identity-tamper.zip"
+            with zipfile.ZipFile(first) as archive:
+                source_manifest = json.loads(
+                    archive.read(
+                        "evidence/v5.0.1/utility/source_manifest.json"
+                    )
+                )
+            source_manifest["artifact"]["name"] = "forged-utility-artifact"
+            replacement = (
+                json.dumps(source_manifest, indent=2, sort_keys=True) + "\n"
+            ).encode("utf-8")
+            _rewrite_companion_member(
+                first,
+                source_identity_tamper,
+                "evidence/v5.0.1/utility/source_manifest.json",
+                replacement,
+            )
+            with self.assertRaisesRegex(
+                verifier.VerificationError,
+                "utility source artifact name mismatch",
+            ):
+                verifier.verify(
+                    source_identity_tamper,
                     expected_utility_sha256=UTILITY_SUMMARY_SHA256,
                 )
 

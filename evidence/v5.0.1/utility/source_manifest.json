@@ -2,7 +2,7 @@
   "artifact": {
     "api_digest": "sha256:1ea221c8bb77313ac0fddfe7703496d191d666c0555fdb5d9b5d1d9f3e94e2f4",
     "artifact_id": "8839094646",
-    "name": "gold-full-artifacts-cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2-30765888408",
+    "name": "gold-full-artifacts",
     "repository": "equilens-labs/fl-bsa",
     "run_attempt": 1,
     "run_id": 30765888408,

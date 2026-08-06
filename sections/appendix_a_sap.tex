@@ -16,8 +16,10 @@ multiplicity-adjusted. \\
 Internal AIR line & 0.80, reported as point relation and interval relation; never a legal verdict. \\
 Race reference & Configured white retained in provenance; active highest-observed-rate policy
 selects black for this run. \\
-Display floor & At least 300 rows and 5\% share for main-PDF race display. The count condition is
-met; the share condition is not. \\
+Display floor & At least \RaceDisplayMinGroupN{} rows and \RaceDisplayMinGroupPct{}\% share for
+main-PDF race display. The minimum group has \RaceMinimumGroupN{} rows
+(\RaceMinimumGroupPct{}\%): it \RaceCountFloorRelation{} the count condition and
+\RaceShareFloorRelation{} the share condition. \\
 Unavailable states & ECE \texttt{NOT\_EVALUATED}; EO \texttt{NOT\_INFORMATIVE}. \\
 Intrinsic inference & Policy-determined approvals; interval and $p$-value fields are retained for
 format symmetry only and have no inferential interpretation. \\

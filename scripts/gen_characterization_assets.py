@@ -236,13 +236,54 @@ def build_summary(root: Path) -> dict[str, Any]:
         race.get("reference_group_selection_policy") == "highest_selection_rate_four_fifths",
         "wrong race policy",
     )
-    _require(race.get("display_in_main_pdf") is False, "race display policy changed")
     race_pairs = race.get("pairs") or {}
     _require(bool(race_pairs), "race pair evidence is missing")
     minimum_count_group = min(
         race_pairs,
         key=lambda group: int((race_pairs[group].get("counts") or {}).get("prot_n")),
     )
+    observed_race = race.get("observed") or {}
+    display_policy = (
+        (race.get("policy") or {}).get("display_race_in_main_pdf") or {}
+    )
+    minimum_group_n = int(observed_race.get("min_group_n"))
+    minimum_group_pct = _finite(
+        observed_race.get("min_group_pct"), "race minimum group share"
+    )
+    display_min_group_n = int(display_policy.get("min_group_n"))
+    display_min_group_pct = _finite(
+        display_policy.get("min_group_pct"), "race display share floor"
+    )
+    count_floor_met = minimum_group_n >= display_min_group_n
+    share_floor_met = minimum_group_pct >= display_min_group_pct
+    display_expected = count_floor_met and share_floor_met
+    _require(
+        race.get("display_in_main_pdf") is display_expected,
+        "race display policy result mismatch",
+    )
+    _require(not display_expected, "race display policy changed")
+    suppression_reasons = []
+    if not count_floor_met:
+        suppression_reasons.append(
+            "minimum_observed_group_count_below_configured_display_floor"
+        )
+    if not share_floor_met:
+        suppression_reasons.append(
+            "minimum_observed_group_share_below_configured_display_floor"
+        )
+    if not count_floor_met and not share_floor_met:
+        suppression_reason = (
+            "minimum observed group count and share below respective "
+            "configured display floors"
+        )
+    elif not count_floor_met:
+        suppression_reason = (
+            "minimum observed group count below configured display floor"
+        )
+    else:
+        suppression_reason = (
+            "minimum observed group share below configured display floor"
+        )
 
     robustness_rows: list[dict[str, Any]] = []
     for scenario_id in ("balanced", "gender_bias", "outliers", "security"):
@@ -292,12 +333,17 @@ def build_summary(root: Path) -> dict[str, Any]:
                 "configured_reference_group": race.get("configured_reference_group"),
                 "effective_reference_group": race.get("reference_group"),
                 "reference_policy": race.get("reference_group_selection_policy"),
-                "display_in_main_pdf": False,
-                "suppression_reason": "minimum observed group share below configured display floor",
+                "display_in_main_pdf": display_expected,
+                "suppression_reason": suppression_reason,
+                "suppression_reasons": suppression_reasons,
                 "minimum_count_group": minimum_count_group,
                 "lowest_selection_rate_group": (race.get("selection_rate_range") or {}).get("min_group"),
-                "minimum_group_n": int((race.get("observed") or {}).get("min_group_n")),
-                "minimum_group_pct": _finite((race.get("observed") or {}).get("min_group_pct"), "race minimum group share"),
+                "minimum_group_n": minimum_group_n,
+                "minimum_group_pct": minimum_group_pct,
+                "display_min_group_n": display_min_group_n,
+                "display_min_group_pct": display_min_group_pct,
+                "minimum_group_n_floor_met": count_floor_met,
+                "minimum_group_pct_floor_met": share_floor_met,
                 "worst_case_pair": race.get("worst_case_pair"),
                 "air_intervals_multiplicity_adjusted": False,
                 "air_p_value_adjustment": "holm_bonferroni",
@@ -354,6 +400,16 @@ def _write_macros(summary: dict[str, Any], output: Path) -> None:
         "RaceEffectiveReference": str(race["effective_reference_group"]),
         "RaceMinimumGroupN": str(race["minimum_group_n"]),
         "RaceMinimumGroupPct": _fmt(race["minimum_group_pct"] * 100, 2),
+        "RaceDisplayMinGroupN": str(race["display_min_group_n"]),
+        "RaceDisplayMinGroupPct": _fmt(
+            race["display_min_group_pct"] * 100, 2
+        ),
+        "RaceCountFloorRelation": (
+            "meets" if race["minimum_group_n_floor_met"] else "fails"
+        ),
+        "RaceShareFloorRelation": (
+            "meets" if race["minimum_group_pct_floor_met"] else "fails"
+        ),
         "RobustnessTotalRuns": str(summary["robustness"]["total_runs"]),
         "RobustnessTotalPasses": str(summary["robustness"]["total_passes"]),
         "UtilityBaselineAUC": _fmt(baseline["roc_auc"]),
@@ -512,8 +568,8 @@ def _write_plots(summary: dict[str, Any], outdir: Path) -> None:
     box(ax, 0.02, 0.35, 0.18, 0.30, "Run inputs", "Synthetic fixture\nSAP + branch policy", COLORS["navy"])
     box(ax, 0.29, 0.61, 0.23, 0.27, "Amplification", "Outcome retained\nSignal-preservation test", COLORS["blue"])
     box(ax, 0.29, 0.12, 0.23, 0.27, "Intrinsic control", "Outcome excluded\nEqual-rate post-label policy", COLORS["green"])
-    box(ax, 0.61, 0.35, 0.18, 0.30, "Evidence surfaces", "Fairness + quality\nHashes + provenance", COLORS["orange"])
-    box(ax, 0.84, 0.35, 0.14, 0.30, "Human review", "Interpret limits\nDecide use", COLORS["red"])
+    box(ax, 0.61, 0.35, 0.18, 0.30, "Evidence\nsurfaces", "Fairness + quality\nHashes + provenance", COLORS["orange"])
+    box(ax, 0.84, 0.35, 0.14, 0.30, "Human\nreview", "Interpret limits\nDecide use", COLORS["red"])
     arrow(ax, (0.20, 0.50), (0.29, 0.745))
     arrow(ax, (0.20, 0.50), (0.29, 0.255))
     arrow(ax, (0.52, 0.745), (0.61, 0.53))

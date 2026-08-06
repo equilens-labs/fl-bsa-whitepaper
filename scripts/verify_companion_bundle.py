@@ -36,8 +36,12 @@ PRIMARY_ARTIFACT_API_DIGEST = (
     "sha256:7241da6013653e96337c540d3670bed69c04454002f3e7d315a95e9c8e197615"
 )
 UTILITY_ARTIFACT_ID = 8839094646
+UTILITY_ARTIFACT_NAME = "gold-full-artifacts"
 UTILITY_ARTIFACT_API_DIGEST = (
     "sha256:1ea221c8bb77313ac0fddfe7703496d191d666c0555fdb5d9b5d1d9f3e94e2f4"
+)
+UTILITY_FIXTURE_SHA256 = (
+    "b04f721d789226723066b3d6ae70e4ab2a3fa17c825ef1d0e04d7d779571982b"
 )
 GOLD_ARTIFACT_ID = 8839160190
 GOLD_ARTIFACT_API_DIGEST = (
@@ -416,7 +420,9 @@ def _verify_identity(bundle: Bundle, manifest: dict[str, Any]) -> None:
     utility_identity = identity.get("utility_source") or {}
     for field, expected in (
         ("artifact_id", UTILITY_ARTIFACT_ID),
+        ("artifact_name", UTILITY_ARTIFACT_NAME),
         ("artifact_api_digest", UTILITY_ARTIFACT_API_DIGEST),
+        ("fixture_sha256", UTILITY_FIXTURE_SHA256),
     ):
         _require(
             utility_identity.get(field) == expected,
@@ -1070,14 +1076,43 @@ def _verify_utility(
     _require(source.get("synthetic_fixture_only") is True, "utility fixture scope mismatch")
 
     source_manifest = bundle.json("evidence/v5.0.1/utility/source_manifest.json")
+    _require(
+        source_manifest.get("schema_version")
+        == "flbsa.whitepaper_utility_source.v1",
+        "unsupported utility source schema",
+    )
     manifest_product = source_manifest.get("product") or {}
     _require(manifest_product.get("commit") == PRODUCT_COMMIT, "utility source product mismatch")
     _require(manifest_product.get("tag") == PRODUCT_TAG, "utility source tag mismatch")
     _require(manifest_product.get("tag_object") == PRODUCT_TAG_OBJECT, "utility source tag object mismatch")
     artifact = source_manifest.get("artifact") or {}
-    _require(str(artifact.get("run_id")) == PRODUCT_RUN_ID, "utility source run mismatch")
-    _require(artifact.get("artifact_id") == "8839094646", "utility source artifact mismatch")
+    for field, expected in (
+        ("repository", "equilens-labs/fl-bsa"),
+        ("workflow", "release-evidence.yml"),
+        ("run_id", int(PRODUCT_RUN_ID)),
+        ("run_attempt", 1),
+        ("artifact_id", str(UTILITY_ARTIFACT_ID)),
+        ("name", UTILITY_ARTIFACT_NAME),
+        ("api_digest", UTILITY_ARTIFACT_API_DIGEST),
+    ):
+        _require(
+            artifact.get(field) == expected,
+            f"utility source artifact {field} mismatch",
+        )
     fixture_manifest = source_manifest.get("fixture") or {}
+    _require(
+        fixture_manifest.get("path_in_artifact")
+        == "artifacts/gold/20260802T203945Z/01_balanced/original_data.csv",
+        "utility source fixture path mismatch",
+    )
+    _require(
+        fixture_manifest.get("rows") == source.get("rows") == 5000,
+        "utility source fixture row count mismatch",
+    )
+    _require(
+        fixture_manifest.get("synthetic_fixture_only") is True,
+        "utility source fixture scope mismatch",
+    )
     _require(fixture_manifest.get("gzip_sha256") == source.get("fixture_sha256_gzip"), "utility source gzip hash mismatch")
     _require(fixture_manifest.get("sha256") == source.get("fixture_sha256_uncompressed"), "utility source raw hash mismatch")
 
@@ -1331,6 +1366,45 @@ def _expected_characterization_summary(
             (race_pairs[group].get("counts") or {}).get("prot_n")
         ),
     )
+    observed_race = race.get("observed") or {}
+    display_policy = (
+        (race.get("policy") or {}).get("display_race_in_main_pdf") or {}
+    )
+    minimum_group_n = int(observed_race.get("min_group_n"))
+    minimum_group_pct = _number(
+        observed_race.get("min_group_pct"),
+        "summary race minimum group share",
+    )
+    display_min_group_n = int(display_policy.get("min_group_n"))
+    display_min_group_pct = _number(
+        display_policy.get("min_group_pct"),
+        "summary race display share floor",
+    )
+    count_floor_met = minimum_group_n >= display_min_group_n
+    share_floor_met = minimum_group_pct >= display_min_group_pct
+    display_expected = count_floor_met and share_floor_met
+    suppression_reasons = []
+    if not count_floor_met:
+        suppression_reasons.append(
+            "minimum_observed_group_count_below_configured_display_floor"
+        )
+    if not share_floor_met:
+        suppression_reasons.append(
+            "minimum_observed_group_share_below_configured_display_floor"
+        )
+    if not count_floor_met and not share_floor_met:
+        suppression_reason = (
+            "minimum observed group count and share below respective "
+            "configured display floors"
+        )
+    elif not count_floor_met:
+        suppression_reason = (
+            "minimum observed group count below configured display floor"
+        )
+    else:
+        suppression_reason = (
+            "minimum observed group share below configured display floor"
+        )
     robustness_rows: list[dict[str, Any]] = []
     for scenario_id in ("balanced", "gender_bias", "outliers", "security"):
         aggregates = (
@@ -1395,21 +1469,19 @@ def _expected_characterization_summary(
                 ),
                 "effective_reference_group": race.get("reference_group"),
                 "reference_policy": race.get("reference_group_selection_policy"),
-                "display_in_main_pdf": False,
-                "suppression_reason": (
-                    "minimum observed group share below configured display floor"
-                ),
+                "display_in_main_pdf": display_expected,
+                "suppression_reason": suppression_reason,
+                "suppression_reasons": suppression_reasons,
                 "minimum_count_group": minimum_count_group,
                 "lowest_selection_rate_group": (
                     race.get("selection_rate_range") or {}
                 ).get("min_group"),
-                "minimum_group_n": int(
-                    (race.get("observed") or {}).get("min_group_n")
-                ),
-                "minimum_group_pct": _number(
-                    (race.get("observed") or {}).get("min_group_pct"),
-                    "summary race minimum group share",
-                ),
+                "minimum_group_n": minimum_group_n,
+                "minimum_group_pct": minimum_group_pct,
+                "display_min_group_n": display_min_group_n,
+                "display_min_group_pct": display_min_group_pct,
+                "minimum_group_n_floor_met": count_floor_met,
+                "minimum_group_pct_floor_met": share_floor_met,
                 "worst_case_pair": race.get("worst_case_pair"),
                 "air_intervals_multiplicity_adjusted": False,
                 "air_p_value_adjustment": "holm_bonferroni",

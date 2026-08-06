@@ -39,6 +39,7 @@
   "utility_source": {
     "artifact_api_digest": "sha256:1ea221c8bb77313ac0fddfe7703496d191d666c0555fdb5d9b5d1d9f3e94e2f4",
     "artifact_id": 8839094646,
+    "artifact_name": "gold-full-artifacts",
     "fixture_sha256": "b04f721d789226723066b3d6ae70e4ab2a3fa17c825ef1d0e04d7d779571982b"
   }
 }

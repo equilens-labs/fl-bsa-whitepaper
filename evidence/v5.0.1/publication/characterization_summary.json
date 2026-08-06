@@ -15,13 +15,21 @@
       "air_p_value_adjustment": "holm_bonferroni",
       "configured_reference_group": "white",
       "display_in_main_pdf": false,
+      "display_min_group_n": 300,
+      "display_min_group_pct": 0.05,
       "effective_reference_group": "black",
       "lowest_selection_rate_group": "other",
       "minimum_count_group": "hispanic",
       "minimum_group_n": 273,
+      "minimum_group_n_floor_met": false,
       "minimum_group_pct": 0.0273,
+      "minimum_group_pct_floor_met": false,
       "reference_policy": "highest_selection_rate_four_fifths",
-      "suppression_reason": "minimum observed group share below configured display floor",
+      "suppression_reason": "minimum observed group count and share below respective configured display floors",
+      "suppression_reasons": [
+        "minimum_observed_group_count_below_configured_display_floor",
+        "minimum_observed_group_share_below_configured_display_floor"
+      ],
       "worst_case_pair": "other"
     },
     "screen_is_legal_verdict": false,
