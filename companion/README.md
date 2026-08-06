@@ -25,10 +25,13 @@ python3 fl-bsa-v5.0.1-companion-evidence/verify_companion_bundle.py \
 ```
 
 The verifier checks every bundled file, reconstructs and hashes the original producer ZIP,
-recomputes the fairness arithmetic, validates the exact robustness and utility seed structures and
-aggregates, cross-checks the paper-owned characterization summary against those source layers,
-traverses the complete certificate graph, and enforces the bounded claim flags. Full utility
-regeneration still requires the exact product checkout and recorded third-party runtime.
+recomputes the fairness arithmetic, validates the exact robustness seed structure and aggregates,
+traverses the complete certificate graph, and enforces the bounded claim flags. For utility, it
+requires the exact `utility_summary.json` bytes to match the separate SHA-256 printed in the PDF,
+then validates the ten-row structure and recomputes aggregates and skill retention from those
+digest-bound rows. It cross-checks the paper-owned characterization summary against those layers.
+It does not regenerate generator outputs or model predictions; full utility regeneration requires
+the exact product checkout and recorded third-party runtime.
 
 The `customer_evidence_eligible=false` publication boundary is in
 `intake/archive/v5.0.1-release-30765888408.json` and independently in
@@ -45,6 +48,12 @@ python3 scripts/evaluate_fixture_utility.py \
   --fixture evidence/v5.0.1/utility/balanced_fixture.csv.gz \
   --output /tmp/utility_summary.json
 ```
+
+This companion remains an archival candidate, not a current release: exact v5.0.1 pins
+`cryptography` 49.0.0 in the affected range for
+[CVE-2026-69247](https://github.com/advisories/GHSA-g6cj-pr64-35w5). It must remain unpublished
+unless the owner expressly approves archival characterization; a current-release paper requires a
+fresh v5.0.2 tag and evidence package, neither of which exists as of 6 August 2026.
 
 The paper and this ZIP must be distributed together after an authorized publication decision.
 This candidate has no public companion URL. Verify the ZIP SHA-256 printed in the PDF against the

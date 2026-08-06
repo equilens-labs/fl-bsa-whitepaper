@@ -18,13 +18,16 @@ python3 fl-bsa-v5.0.1-companion-evidence/verify_companion_bundle.py \
 The first command must match the digest printed on the cover. Only then should the bundled
 standard-library verifier be extracted and run against the delivered ZIP. It rejects unsafe,
 duplicate, oversized, or unexpected archive members; checks every file size and SHA-256 in
-\path{MANIFEST.json}; reconstructs and hashes the original producer ZIP; verifies the exact product,
-workflow, and customer/publication identities; recomputes the displayed Wilson, AIR, SRG,
-two-proportion, and Holm arithmetic; traverses the complete certificate graph; and checks exact seed
-sets, per-seed statuses, and aggregates for the 40 Gold runs and ten utility results. It also
-cross-checks the paper-owned headline characterization against those verified source layers, so
-repairing only the ZIP manifest after changing headline values fails verification. Re-running the
-generator-backed utility study still requires the exact product checkout and recorded dependencies.
+\path{MANIFEST.json}; reconstructs and hashes the original producer ZIP; verifies the exact
+product, workflow, and customer/publication identities; recomputes the displayed Wilson, AIR, SRG,
+two-proportion, and Holm arithmetic; and traverses the complete certificate graph. For robustness
+it checks the exact seed set, per-seed statuses, and aggregates for all 40 Gold runs. For utility it
+first requires \path{evidence/v5.0.1/utility/utility_summary.json} to match the separate SHA-256
+printed below, then validates the ten-row structure and recomputes aggregates and skill retention
+from those digest-bound rows. It cross-checks the paper-owned headline characterization against
+those layers. Repairing the ZIP manifest and derived summary cannot substitute for the PDF-disclosed
+utility digest. The verifier does not regenerate generator outputs or model predictions; full
+utility reproduction still requires the exact product checkout and recorded dependencies.
 
 No instruction depends on an unbundled repository-relative evidence file. The current regulatory
 overlay is at
@@ -33,9 +36,10 @@ characterization is at \path{evidence/v5.0.1/publication/characterization_summar
 
 \subsection{Utility reproduction}
 
-The companion verifier confirms the supplied utility input and output bytes. Full recomputation
-also requires an exact checkout of product tag v5.0.1 and its Python dependencies. From the
-whitepaper source checkout, with the companion fixture available:
+The companion verifier hashes the supplied fixture and requires the paper-owned utility summary
+bytes to match the PDF-disclosed digest. It validates relations and aggregates inside that bound
+summary; it does not regenerate generator outputs or model predictions. Full reproduction requires
+an exact checkout of product tag v5.0.1 and its Python dependencies:
 
 \begin{verbatim}
 python3 scripts/evaluate_fixture_utility.py \
@@ -50,11 +54,14 @@ HEAD equals:
 \begin{center}
   \IdentityText{\ProductCommitRaw}
 \end{center}
-A matching result has the following SHA-256 under the recorded Python, NumPy, pandas, and
-scikit-learn versions:
+The paper-owned summary drives headline macros and figures but is not producer-signed. Its exact
+bytes are therefore anchored separately from the companion manifest. Under the recorded Python,
+NumPy, pandas, and scikit-learn versions, a matching result has SHA-256:
 \begin{center}
-  \IdentityText{2b05a4a2b7ce2d798b9156ed5f837efe890ee87e4f5e914497724802636e4595}
+  \IdentityText{\UtilitySummaryShaRaw}
 \end{center}
+A coherent rewrite of utility rows, aggregates, and the derived characterization fails the
+unmodified verifier even if the companion manifest is repaired.
 
 \subsection{Whitepaper build}
 

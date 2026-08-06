@@ -15,11 +15,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 
+from characterization_contract import (
+    INTERNAL_AIR_SCREEN,
+    UTILITY_SUMMARY_PATH,
+    UTILITY_SUMMARY_SHA256,
+)
+
 
 PRODUCT_COMMIT = "cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2"
 PRODUCT_TAG = "v5.0.1"
 SRG_METHOD = "conservative_wilson_endpoint_difference"
-SCREEN = 0.80
 PDF_METADATA = {
     "Creator": "Equilens FL-BSA whitepaper",
     "Producer": "Equilens FL-BSA whitepaper",
@@ -44,6 +49,27 @@ def _read_json(path: Path) -> dict[str, Any]:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
+        raise AssetError(f"unable to read {path}: {exc}") from exc
+    if not isinstance(value, dict):
+        raise AssetError(f"{path} must contain a JSON object")
+    return value
+
+
+def _read_digest_anchored_json(
+    path: Path, expected_sha256: str
+) -> dict[str, Any]:
+    try:
+        data = path.read_bytes()
+    except OSError as exc:
+        raise AssetError(f"unable to read {path}: {exc}") from exc
+    actual_sha256 = hashlib.sha256(data).hexdigest()
+    _require(
+        actual_sha256 == expected_sha256,
+        f"{path} does not match PDF-disclosed SHA-256",
+    )
+    try:
+        value = json.loads(data.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise AssetError(f"unable to read {path}: {exc}") from exc
     if not isinstance(value, dict):
         raise AssetError(f"{path} must contain a JSON object")
@@ -87,11 +113,13 @@ def _tex(value: str) -> str:
     return "".join(replacements.get(char, char) for char in value)
 
 
-def _screen_relation(point: float, lower: float, upper: float) -> tuple[str, str]:
-    point_relation = "at/above" if point >= SCREEN else "below"
-    if upper < SCREEN:
+def _screen_relation(
+    point: float, lower: float, upper: float, screen: float
+) -> tuple[str, str]:
+    point_relation = "at/above" if point >= screen else "below"
+    if upper < screen:
         interval_relation = "entirely below"
-    elif lower >= SCREEN:
+    elif lower >= screen:
         interval_relation = "entirely above"
     else:
         interval_relation = "crosses"
@@ -132,7 +160,9 @@ def build_summary(root: Path) -> dict[str, Any]:
     robustness = _read_json(
         root / "evidence/v5.0.1/robustness/robustness_summary_merged.json"
     )
-    utility = _read_json(root / "evidence/v5.0.1/utility/utility_summary.json")
+    utility = _read_digest_anchored_json(
+        root / UTILITY_SUMMARY_PATH, UTILITY_SUMMARY_SHA256
+    )
     amp_cert = _read_json(
         root
         / "intake/certificates/branch_amplification__synthetic_quality_certificate.json"
@@ -142,7 +172,8 @@ def build_summary(root: Path) -> dict[str, Any]:
     )
 
     _require(manifest.get("source_commit") == PRODUCT_COMMIT, "manifest is not exact v5.0.1")
-    _require(slices_payload.get("air_threshold") == SCREEN, "unexpected AIR screen")
+    screen = _finite(slices_payload.get("air_threshold"), "AIR screen")
+    _require(screen == INTERNAL_AIR_SCREEN, "unexpected AIR screen")
     slice_rows: list[dict[str, Any]] = []
     labels = {
         "historical": "Historical fixture",
@@ -157,7 +188,9 @@ def build_summary(root: Path) -> dict[str, Any]:
         lower = _finite((air.get("ci95") or [None, None])[0], f"{key} AIR lower")
         upper = _finite((air.get("ci95") or [None, None])[1], f"{key} AIR upper")
         _require(srg.get("method") == SRG_METHOD, f"wrong SRG method for {key}")
-        point_relation, interval_relation = _screen_relation(point, lower, upper)
+        point_relation, interval_relation = _screen_relation(
+            point, lower, upper, screen
+        )
         inference_status = "conditional_on_generated_fixture"
         interval_status = "conditional_95_percent_interval"
         p_value_status = "conditional_two_proportion_test"
@@ -247,7 +280,7 @@ def build_summary(root: Path) -> dict[str, Any]:
             "primary_bundle_sha256": "f6a0bd9390565f7bd852b451e11b7384b1628c24caba02865b1ec94c1e263026",
         },
         "fairness": {
-            "internal_air_screen": SCREEN,
+            "internal_air_screen": screen,
             "screen_is_legal_verdict": False,
             "single_run_inference_scope": "conditional_on_generated_fixture_and_configured_row_count",
             "srg_range_scope": (
@@ -296,6 +329,11 @@ def _write_macros(summary: dict[str, Any], output: Path) -> None:
     utility = summary["utility"]
     bands = utility["synthetic_train_bands"]
     baseline = utility["real_train_baseline"]
+    below_chance_seed_count = sum(
+        _finite((row.get("metrics") or {}).get("roc_auc"), "utility seed ROC AUC")
+        < 0.5
+        for row in utility["synthetic_train_results"]
+    )
     race = summary["fairness"]["race"]
     macros = {
         "CharacterizationDocumentVersion": summary["document_version"],
@@ -328,6 +366,8 @@ def _write_macros(summary: dict[str, Any], output: Path) -> None:
         "UtilitySkillRetentionMeanPct": _fmt(
             bands["roc_auc_skill_retention"]["mean"] * 100, 1
         ),
+        "UtilityBelowChanceSeedCount": str(below_chance_seed_count),
+        "UtilitySummaryShaRaw": UTILITY_SUMMARY_SHA256,
     }
     lines = ["% Auto-generated by scripts/gen_characterization_assets.py"]
     lines.extend(f"\\newcommand{{\\{key}}}{{{_tex(value)}}}" for key, value in macros.items())
@@ -527,7 +567,12 @@ def _write_plots(summary: dict[str, Any], outdir: Path) -> None:
         markersize=6,
         linewidth=1.3,
     )
-    ax.axhline(SCREEN, color=COLORS["orange"], linestyle="--", label="Internal screen 0.80")
+    ax.axhline(
+        INTERNAL_AIR_SCREEN,
+        color=COLORS["orange"],
+        linestyle="--",
+        label="Internal screen 0.80",
+    )
     ax.set_xticks(xpos, labels)
     ax.set_ylabel("Gender disparity ratio (AIR)")
     ax.set_ylim(0.67, 1.07)
@@ -580,7 +625,12 @@ def _write_plots(summary: dict[str, Any], outdir: Path) -> None:
         ecolor=COLORS["navy"],
         capsize=4,
     )
-    ax.axvline(SCREEN, color=COLORS["orange"], linestyle="--", label="Internal screen 0.80")
+    ax.axvline(
+        INTERNAL_AIR_SCREEN,
+        color=COLORS["orange"],
+        linestyle="--",
+        label="Internal screen 0.80",
+    )
     ax.set_yticks(ypos, [row["label"] for row in scenarios])
     ax.set_xlim(0.60, 1.07)
     ax.set_xlabel("Scenario disparity ratio: min–mean–max across 10 seeds")

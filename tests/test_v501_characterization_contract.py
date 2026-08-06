@@ -4,6 +4,9 @@ import hashlib
 import io
 import importlib.util
 import json
+import statistics
+import subprocess
+import sys
 import tempfile
 import unittest
 import zipfile
@@ -19,6 +22,11 @@ PRIMARY_BUNDLE_SHA256 = (
     "f6a0bd9390565f7bd852b451e11b7384b1628c24caba02865b1ec94c1e263026"
 )
 SRG_METHOD = "conservative_wilson_endpoint_difference"
+INTERNAL_AIR_SCREEN = 0.80
+UTILITY_SUMMARY_PATH = "evidence/v5.0.1/utility/utility_summary.json"
+UTILITY_SUMMARY_SHA256 = (
+    "2b05a4a2b7ce2d798b9156ed5f837efe890ee87e4f5e914497724802636e4595"
+)
 
 
 def _read_json(relative: str) -> dict:
@@ -30,23 +38,29 @@ def _load_module(name: str, relative: str):
     spec = importlib.util.spec_from_file_location(name, path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    original_sys_path = sys.path.copy()
+    try:
+        sys.path.insert(0, str(path.parent))
+        spec.loader.exec_module(module)
+    finally:
+        sys.path[:] = original_sys_path
     return module
 
 
-def _rewrite_companion_member(
-    source: Path, output: Path, member: str, replacement: bytes
+def _rewrite_companion_members(
+    source: Path, output: Path, replacements: dict[str, bytes]
 ) -> None:
     with zipfile.ZipFile(source) as archive:
         members = {
             info.filename: archive.read(info.filename)
             for info in archive.infolist()
         }
-    members[member] = replacement
     manifest = json.loads(members["MANIFEST.json"].decode("utf-8"))
-    entry = next(row for row in manifest["files"] if row["path"] == member)
-    entry["size"] = len(replacement)
-    entry["sha256"] = hashlib.sha256(replacement).hexdigest()
+    for member, replacement in replacements.items():
+        members[member] = replacement
+        entry = next(row for row in manifest["files"] if row["path"] == member)
+        entry["size"] = len(replacement)
+        entry["sha256"] = hashlib.sha256(replacement).hexdigest()
     members["MANIFEST.json"] = (
         json.dumps(manifest, indent=2, sort_keys=True) + "\n"
     ).encode("utf-8")
@@ -55,6 +69,22 @@ def _rewrite_companion_member(
     ) as archive:
         for name, data in sorted(members.items()):
             archive.writestr(name, data)
+
+
+def _rewrite_companion_member(
+    source: Path, output: Path, member: str, replacement: bytes
+) -> None:
+    _rewrite_companion_members(source, output, {member: replacement})
+
+
+def _sample_band(values: list[float]) -> dict[str, float | int]:
+    return {
+        "count": len(values),
+        "min": min(values),
+        "mean": statistics.mean(values),
+        "max": max(values),
+        "stdev": statistics.stdev(values),
+    }
 
 
 class V501CharacterizationContractTests(unittest.TestCase):
@@ -225,6 +255,13 @@ class V501CharacterizationContractTests(unittest.TestCase):
         self.assertAlmostEqual(expected_skill, skill["mean"])
         self.assertAlmostEqual(0.03441799798421121, skill["mean"])
         self.assertLess(skill["min"], 0)
+        self.assertEqual(
+            6,
+            sum(
+                row["metrics"]["roc_auc"] < 0.5
+                for row in utility["synthetic_train_results"]
+            ),
+        )
         for result in utility["synthetic_train_results"]:
             self.assertNotIn("roc_auc_retention", result)
             expected = (result["metrics"]["roc_auc"] - 0.5) / (
@@ -246,6 +283,53 @@ class V501CharacterizationContractTests(unittest.TestCase):
             hashlib.sha256(uncompressed).hexdigest(),
         )
 
+    def test_utility_summary_is_pdf_anchored_and_screen_constant_is_shared(
+        self,
+    ) -> None:
+        utility_bytes = (ROOT / UTILITY_SUMMARY_PATH).read_bytes()
+        self.assertEqual(
+            UTILITY_SUMMARY_SHA256, hashlib.sha256(utility_bytes).hexdigest()
+        )
+
+        contract = _load_module(
+            "characterization_contract_under_test",
+            "scripts/characterization_contract.py",
+        )
+        generator = _load_module(
+            "characterization_generator_under_test",
+            "scripts/gen_characterization_assets.py",
+        )
+        verifier = _load_module(
+            "characterization_verifier_under_test",
+            "scripts/verify_companion_bundle.py",
+        )
+        self.assertEqual(INTERNAL_AIR_SCREEN, contract.INTERNAL_AIR_SCREEN)
+        self.assertEqual(UTILITY_SUMMARY_PATH, contract.UTILITY_SUMMARY_PATH)
+        self.assertEqual(UTILITY_SUMMARY_SHA256, contract.UTILITY_SUMMARY_SHA256)
+        expected_relation = ("at/above", "entirely above")
+        self.assertEqual(
+            expected_relation, generator._screen_relation(0.79, 0.78, 0.80, 0.75)
+        )
+        self.assertEqual(
+            expected_relation,
+            verifier._characterization_screen_relation(0.79, 0.78, 0.80, 0.75),
+        )
+        macros = (ROOT / "includes" / "characterization_macros.tex").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(UTILITY_SUMMARY_SHA256, macros)
+        reproduction = (ROOT / "sections" / "09_reproducibility.tex").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(r"\IdentityText{\UtilitySummaryShaRaw}", reproduction)
+        utility_narrative = "\n".join(
+            (ROOT / "sections" / name).read_text(encoding="utf-8")
+            for name in ("01_executive_summary.tex", "06_results.tex")
+        )
+        self.assertGreaterEqual(
+            utility_narrative.count(r"\UtilityBelowChanceSeedCount{}"), 2
+        )
+
     def test_regulatory_overlay_is_dated_and_uses_primary_sources(self) -> None:
         path = (
             ROOT
@@ -262,6 +346,26 @@ class V501CharacterizationContractTests(unittest.TestCase):
         self.assertIn("SR 26-2", joined)
         self.assertIn("July 21 2026", joined)
         self.assertIn("rule of thumb", joined)
+
+    def test_security_supersession_is_an_explicit_publication_blocker(self) -> None:
+        publication_text = "\n".join(
+            (ROOT / relative).read_text(encoding="utf-8")
+            for relative in (
+                "sections/01_executive_summary.tex",
+                "sections/10_limitations_monitoring.tex",
+                "bib/references.bib",
+                "companion/README.md",
+            )
+        )
+        normalized = " ".join(publication_text.split())
+        for required in (
+            "CVE-2026-69247",
+            r"\texttt{cryptography} 49.0.0",
+            "security-superseded",
+            "must remain unpublished",
+            "v5.0.2",
+        ):
+            self.assertIn(required, normalized)
 
     def test_forward_facing_sources_drop_obsolete_generator_names(self) -> None:
         joined = "\n".join(
@@ -322,11 +426,13 @@ class V501CharacterizationContractTests(unittest.TestCase):
             )
             self.assertEqual(10, verified["utility_seeds"])
             self.assertEqual(5000, verified["utility_fixture_rows"])
+            self.assertEqual(6, verified["utility_below_chance_seeds"])
             self.assertEqual(
                 11, verified["characterization_summary_sections_cross_checked"]
             )
 
             with zipfile.ZipFile(first) as archive:
+                self.assertIn("characterization_contract.py", archive.namelist())
                 producer_zip = archive.read(
                     "producer/WhitePaper_Intake_Bundle_v4.zip"
                 )
@@ -346,6 +452,17 @@ class V501CharacterizationContractTests(unittest.TestCase):
             extracted = Path(tmp) / "extracted"
             with zipfile.ZipFile(first) as archive:
                 archive.extractall(extracted)
+            standalone = subprocess.run(
+                [
+                    sys.executable,
+                    str(extracted / "verify_companion_bundle.py"),
+                    str(first),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual("verified", json.loads(standalone.stdout)["status"])
             target = extracted / "intake" / "fairness_slices.json"
             target.write_bytes(target.read_bytes() + b"\n")
             with self.assertRaisesRegex(
@@ -371,9 +488,66 @@ class V501CharacterizationContractTests(unittest.TestCase):
                 replacement,
             )
             with self.assertRaisesRegex(
-                verifier.VerificationError, "utility roc_auc mean mismatch"
+                verifier.VerificationError, "does not match PDF-disclosed SHA-256"
             ):
                 verifier.verify(utility_tamper)
+
+            coherent_utility_tamper = Path(tmp) / "coherent-utility-tamper.zip"
+            with zipfile.ZipFile(first) as archive:
+                forged_utility = json.loads(archive.read(UTILITY_SUMMARY_PATH))
+                forged_characterization = json.loads(
+                    archive.read(
+                        "evidence/v5.0.1/publication/characterization_summary.json"
+                    )
+                )
+            baseline_auc = forged_utility["real_train_baseline"]["roc_auc"]
+            baseline_skill = baseline_auc - 0.5
+            target_mean_auc = 0.5 + 0.929 * baseline_skill
+            auc_values = []
+            retention_values = []
+            for index, row in enumerate(
+                forged_utility["synthetic_train_results"]
+            ):
+                auc = target_mean_auc + (index - 4.5) * 0.002
+                retention = (auc - 0.5) / baseline_skill
+                row["metrics"]["roc_auc"] = auc
+                row["roc_auc_skill_retention"] = retention
+                auc_values.append(auc)
+                retention_values.append(retention)
+            forged_utility["synthetic_train_bands"]["roc_auc"] = _sample_band(
+                auc_values
+            )
+            forged_utility["synthetic_train_bands"][
+                "roc_auc_skill_retention"
+            ] = _sample_band(retention_values)
+            self.assertAlmostEqual(
+                0.929,
+                forged_utility["synthetic_train_bands"][
+                    "roc_auc_skill_retention"
+                ]["mean"],
+            )
+            forged_characterization["utility"] = forged_utility
+            utility_replacement = (
+                json.dumps(forged_utility, indent=2, sort_keys=True) + "\n"
+            ).encode("utf-8")
+            characterization_replacement = (
+                json.dumps(forged_characterization, indent=2, sort_keys=True) + "\n"
+            ).encode("utf-8")
+            _rewrite_companion_members(
+                first,
+                coherent_utility_tamper,
+                {
+                    UTILITY_SUMMARY_PATH: utility_replacement,
+                    (
+                        "evidence/v5.0.1/publication/"
+                        "characterization_summary.json"
+                    ): characterization_replacement,
+                },
+            )
+            with self.assertRaisesRegex(
+                verifier.VerificationError, "does not match PDF-disclosed SHA-256"
+            ):
+                verifier.verify(coherent_utility_tamper)
 
             summary_tamper = Path(tmp) / "characterization-summary-tamper.zip"
             with zipfile.ZipFile(first) as archive:
@@ -451,6 +625,14 @@ class V501CharacterizationContractTests(unittest.TestCase):
             self.assertIn(
                 "fl-bsa-v5.0.1-companion-evidence.zip", text
             )
+        self.assertIn(
+            "requires the exact `utility_summary.json` bytes", companion_readme
+        )
+        self.assertIn(
+            "does not regenerate generator outputs or model predictions",
+            companion_readme,
+        )
+        self.assertIn("digest-bound rows", reproduction)
         workflow = (ROOT / ".github" / "workflows" / "latex.yml").read_text(
             encoding="utf-8"
         )

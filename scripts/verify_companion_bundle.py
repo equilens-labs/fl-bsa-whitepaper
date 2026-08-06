@@ -18,6 +18,12 @@ import zipfile
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from characterization_contract import (
+    INTERNAL_AIR_SCREEN,
+    UTILITY_SUMMARY_PATH,
+    UTILITY_SUMMARY_SHA256,
+)
+
 
 PRODUCT_COMMIT = "cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2"
 PRODUCT_TAG = "v5.0.1"
@@ -203,6 +209,22 @@ class Bundle:
 def _require(value: bool, message: str) -> None:
     if not value:
         raise VerificationError(message)
+
+
+def _digest_anchored_json(
+    bundle: Bundle, name: str, expected_sha256: str
+) -> dict[str, Any]:
+    data = bundle.read(name)
+    _require(
+        _sha256(data) == expected_sha256,
+        f"{name} does not match PDF-disclosed SHA-256",
+    )
+    try:
+        value = json.loads(data.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise VerificationError(f"invalid JSON in {name}: {exc}") from exc
+    _require(isinstance(value, dict), f"{name} must contain a JSON object")
+    return value
 
 
 def _certificate_content(payload: dict[str, Any]) -> dict[str, Any]:
@@ -538,7 +560,11 @@ def _selection_rate_rows(bundle: Bundle) -> dict[tuple[str, str], tuple[int, int
 def _verify_fairness(bundle: Bundle) -> dict[str, int]:
     slices = bundle.json("intake/fairness_slices.json")
     _require(slices.get("attribute") == "gender", "gender slices missing")
-    _close(slices.get("air_threshold"), 0.8, "AIR screening threshold")
+    _close(
+        slices.get("air_threshold"),
+        INTERNAL_AIR_SCREEN,
+        "AIR screening threshold",
+    )
     slice_rows = slices.get("slices") or {}
     _require(
         set(slice_rows) == {"historical", "amplification", "intrinsic"},
@@ -903,7 +929,9 @@ def _verify_robustness(bundle: Bundle) -> dict[str, int]:
 
 
 def _verify_utility(bundle: Bundle) -> dict[str, int]:
-    utility = bundle.json("evidence/v5.0.1/utility/utility_summary.json")
+    utility = _digest_anchored_json(
+        bundle, UTILITY_SUMMARY_PATH, UTILITY_SUMMARY_SHA256
+    )
     _require(
         utility.get("schema_version") == "flbsa.whitepaper_fixture_utility.v2",
         "unsupported utility schema",
@@ -1027,6 +1055,14 @@ def _verify_utility(bundle: Bundle) -> dict[str, int]:
         "utility_seeds": len(results),
         "utility_bands_recomputed": len(bands),
         "utility_fixture_rows": fixture_rows,
+        "utility_below_chance_seeds": sum(
+            _number(
+                (by_seed[seed].get("metrics") or {}).get("roc_auc"),
+                f"utility ROC AUC seed {seed}",
+            )
+            < 0.5
+            for seed in EXPECTED_SEEDS
+        ),
     }
 
 
@@ -1035,12 +1071,12 @@ def _verify_robustness_and_utility(bundle: Bundle) -> dict[str, Any]:
 
 
 def _characterization_screen_relation(
-    point: float, lower: float, upper: float
+    point: float, lower: float, upper: float, screen: float
 ) -> tuple[str, str]:
-    point_relation = "at/above" if point >= 0.8 else "below"
-    if upper < 0.8:
+    point_relation = "at/above" if point >= screen else "below"
+    if upper < screen:
         interval_relation = "entirely below"
-    elif lower >= 0.8:
+    elif lower >= screen:
         interval_relation = "entirely above"
     else:
         interval_relation = "crosses"
@@ -1102,7 +1138,9 @@ def _expected_characterization_summary(bundle: Bundle) -> dict[str, Any]:
     robustness = bundle.json(
         "evidence/v5.0.1/robustness/robustness_summary_merged.json"
     )
-    utility = bundle.json("evidence/v5.0.1/utility/utility_summary.json")
+    utility = _digest_anchored_json(
+        bundle, UTILITY_SUMMARY_PATH, UTILITY_SUMMARY_SHA256
+    )
     amplification_certificate = bundle.json(
         "intake/certificates/branch_amplification__synthetic_quality_certificate.json"
     )
@@ -1110,6 +1148,8 @@ def _expected_characterization_summary(bundle: Bundle) -> dict[str, Any]:
         "intake/certificates/branch_intrinsic__synthetic_quality_certificate.json"
     )
 
+    screen = _number(slices_payload.get("air_threshold"), "summary AIR screen")
+    _close(screen, INTERNAL_AIR_SCREEN, "summary AIR screen")
     labels = {
         "historical": "Historical fixture",
         "amplification": "Amplification branch",
@@ -1127,7 +1167,7 @@ def _expected_characterization_summary(bundle: Bundle) -> dict[str, Any]:
         lower = _number(air_interval[0], f"summary {key} AIR lower")
         upper = _number(air_interval[1], f"summary {key} AIR upper")
         point_relation, interval_relation = _characterization_screen_relation(
-            point, lower, upper
+            point, lower, upper, screen
         )
         inference_status = "conditional_on_generated_fixture"
         interval_status = "conditional_95_percent_interval"
@@ -1226,7 +1266,7 @@ def _expected_characterization_summary(bundle: Bundle) -> dict[str, Any]:
             "primary_bundle_sha256": PRIMARY_BUNDLE_SHA256,
         },
         "fairness": {
-            "internal_air_screen": 0.8,
+            "internal_air_screen": screen,
             "screen_is_legal_verdict": False,
             "single_run_inference_scope": (
                 "conditional_on_generated_fixture_and_configured_row_count"

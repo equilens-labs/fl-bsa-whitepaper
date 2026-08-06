@@ -26,7 +26,7 @@ _CONTROLLED_GENERATED_SHA256 = {
     "includes/publication_profile.local.tex": (
         "1381ff968824d4a04e12dc0922057e3c454b844c5432c74a31836e90721dc131"
     ),
-    "main.bbl": "1bb3865f89f59826b1d55b941142019a304402fd685248069c5945b5d5a29ede",
+    "main.bbl": "e4b882693358f3d31d36603762fbcad312bc2c01fe3d7ef2bed7ede23415e753",
 }
 _IDENTITY_PATH = "includes/publication_identity.tex"
 _COMPANION_PATH = "dist/fl-bsa-v5.0.1-companion-evidence.zip"
@@ -98,7 +98,7 @@ def _assert_publication_identity(repo_root: Path, path: Path) -> None:
     expected = {
         "DocumentVersion": "WP-5.0.1-candidate.1",
         "PublicationStatus": "CANDIDATE — NOT PUBLISHED",
-        "PublicationAsOf": "5 August 2026",
+        "PublicationAsOf": "6 August 2026",
         "ProductReleaseTag": "v5.0.1",
         "ProductCommitRaw": "cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2",
         "ProductTagObjectRaw": "3a0ea6e4faea9d61aabcedebab2a838624fb587d",

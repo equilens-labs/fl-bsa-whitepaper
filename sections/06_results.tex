@@ -139,7 +139,8 @@ The real-train fixture baseline ROC AUC is \UtilityBaselineAUC{}. Across ten equ
 synthetic-training tables, mean ROC AUC is \UtilitySyntheticAUCMean{}, ranging from
 \UtilitySyntheticAUCMin{} to \UtilitySyntheticAUCMax{}. Mean skill-normalised AUC retention is
 \UtilitySkillRetentionMean{} (\UtilitySkillRetentionMeanPct{}\%), with range
-\UtilitySkillRetentionMin{}--\UtilitySkillRetentionMax{}. Negative values are worse than chance;
+\UtilitySkillRetentionMin{}--\UtilitySkillRetentionMax{}. \UtilityBelowChanceSeedCount{} of ten
+seed runs are below chance (ROC AUC $<0.5$); negative values are worse than chance;
 one would match the real-train baseline. The mean synthetic-train AUC is approximately chance, so
 this study does not establish train-on-synthetic predictive utility. Average precision and log
 loss show the same general limitation.

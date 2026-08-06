@@ -58,11 +58,13 @@ python3 /tmp/flbsa-wp-companion/verify_companion_bundle.py \
 ```
 
 The verifier checks every member hash and size, source identities, bounded claim flags, corrected
-SRG method, race reference policy, certificate hashes and predecessor links, robustness
-completeness, utility seed completeness, and the paper-owned headline characterization as an exact
-projection of those verified sources. Certificate signature fields are checked for complete
-encoding only because the public verification key is not bundled; the companion therefore claims
-integrity linkage, not independent authentication.
+SRG method, race reference policy, certificate hashes and predecessor links, and exact robustness
+completeness and aggregates. For utility, it requires the paper-owned summary bytes to match the
+separate SHA-256 disclosed in the PDF, then validates its ten-row structure and recomputes its
+aggregates and skill-retention relation. The headline characterization must be an exact projection
+of those layers. The verifier does not regenerate utility model outputs. Certificate signature
+fields are checked for complete encoding only because the public verification key is not bundled;
+the companion therefore claims integrity linkage, not independent authentication.
 
 ## Evidence layers
 
@@ -78,6 +80,13 @@ B compliance test. ECE is unevaluated, EO is non-informative, and the intrinsic 
 mechanical post-label control rather than a causal conclusion.
 
 ## Publication boundary
+
+The exact v5.0.1 lock pins `cryptography` 49.0.0, which is in the affected range for
+[CVE-2026-69247](https://github.com/advisories/GHSA-g6cj-pr64-35w5); the fix starts at 50.0.0.
+v5.0.1 is therefore security-superseded and must remain unpublished as a current release.
+Publication requires an owner decision to preserve this only as an archival characterization or
+to rebuild against a fresh v5.0.2 tag and evidence package. No such v5.0.2 tag or evidence exists
+as of 6 August 2026.
 
 The PDF and companion must be reviewed and distributed together. This candidate has no public
 companion URL and is not signed. Public publication requires explicit owner approval, current legal

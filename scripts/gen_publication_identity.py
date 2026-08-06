@@ -71,7 +71,7 @@ def build(root: Path, companion: Path, output: Path, require_clean: bool) -> dic
     values = {
         "DocumentVersion": DOCUMENT_VERSION,
         "PublicationStatus": "CANDIDATE — NOT PUBLISHED",
-        "PublicationAsOf": "5 August 2026",
+        "PublicationAsOf": "6 August 2026",
         "ProductReleaseTag": "v5.0.1",
         "ProductCommitRaw": PRODUCT_COMMIT,
         "ProductTagObjectRaw": PRODUCT_TAG_OBJECT,

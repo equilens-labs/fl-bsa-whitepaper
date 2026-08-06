@@ -43,8 +43,9 @@ parameter. \\
 Utility study & Ten equal-size train-on-synthetic runs yield mean ROC AUC
 \UtilitySyntheticAUCMean{} (range \UtilitySyntheticAUCMin{}--\UtilitySyntheticAUCMax{}) on a
 held-out generated fixture, versus \UtilityBaselineAUC{} for the real-train fixture baseline.
-Skill-normalised AUC retention averages \UtilitySkillRetentionMeanPct{}\%; train-on-synthetic
-predictive utility is not established. \\
+Skill-normalised AUC retention averages \UtilitySkillRetentionMeanPct{}\%;
+\UtilityBelowChanceSeedCount{} of ten runs are below chance, and train-on-synthetic predictive
+utility is not established. \\
 \end{tabular}
 \end{KeyBox}
 
@@ -77,6 +78,14 @@ The authoritative locations are
 \path{intake/archive/v5.0.1-release-30765888408.json} and the Gold release disposition in the
 companion; those fields are not in \path{intake/pack_intent.json}. The candidate PDF and companion
 must remain paired. No public companion URL exists at this review stage.
+
+A security-supersession hold also applies. The exact v5.0.1 dependency manifest pins
+\texttt{cryptography} 49.0.0; CVE-2026-69247 covers versions from 44.0.0 up to but excluding
+50.0.0, with the fix beginning at 50.0.0 \citep{github_cve_2026_69247}. Consequently v5.0.1 is
+security-superseded and must remain unpublished as a current-release whitepaper. Before any
+publication, the owner must choose either an explicitly archival characterization or a fresh
+rebuild against an approved successor v5.0.2 tag and new evidence. As of 6 August 2026, no exact
+v5.0.2 tag or evidence package exists; this paper must not be relabelled in advance.
 
 This paper does not claim or authorize vendor-authored evidence, broad commercial authorization,
 public Marketplace go-live, production live decisioning, or regulator approval. Those explicit

@@ -167,6 +167,9 @@ def _collect(root: Path) -> dict[str, bytes]:
     members["verify_companion_bundle.py"] = (
         root / "scripts" / "verify_companion_bundle.py"
     ).read_bytes()
+    members["characterization_contract.py"] = (
+        root / "scripts" / "characterization_contract.py"
+    ).read_bytes()
     members[PRODUCER_BUNDLE_MEMBER] = _build_original_producer_zip(root)
     for name, data in members.items():
         if len(data) > MAX_FILE_BYTES:
