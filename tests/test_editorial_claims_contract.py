@@ -74,6 +74,15 @@ class EditorialClaimsContractTests(unittest.TestCase):
         self.assertNotIn(r"\clearpage" + "\n" + r"\section{Limitations", section_text)
         self.assertGreaterEqual(section_text.count("alt={"), 7)
 
+    def test_key_value_labels_keep_a_positive_box_inset(self) -> None:
+        main_tex = (ROOT / "main.tex").read_text(encoding="utf-8")
+        key_value_list = main_tex.split(
+            r"\newenvironment{KeyValueList}", 1
+        )[1].split(r"\end{description}", 1)[0]
+
+        self.assertIn("leftmargin=3em", key_value_list)
+        self.assertNotIn("leftmargin=0pt", key_value_list)
+
     def test_every_data_table_declares_column_header_semantics(self) -> None:
         main_tex = (ROOT / "main.tex").read_text(encoding="utf-8")
         self.assertIn(
