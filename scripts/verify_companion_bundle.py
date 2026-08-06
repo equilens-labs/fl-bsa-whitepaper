@@ -21,7 +21,6 @@ from typing import Any
 from characterization_contract import (
     INTERNAL_AIR_SCREEN,
     UTILITY_SUMMARY_PATH,
-    UTILITY_SUMMARY_SHA256,
 )
 
 
@@ -31,6 +30,18 @@ PRODUCT_TAG_OBJECT = "3a0ea6e4faea9d61aabcedebab2a838624fb587d"
 PRODUCT_RUN_ID = "30765888408"
 PRIMARY_BUNDLE_SHA256 = (
     "f6a0bd9390565f7bd852b451e11b7384b1628c24caba02865b1ec94c1e263026"
+)
+PRIMARY_ARTIFACT_ID = 8838967644
+PRIMARY_ARTIFACT_API_DIGEST = (
+    "sha256:7241da6013653e96337c540d3670bed69c04454002f3e7d315a95e9c8e197615"
+)
+UTILITY_ARTIFACT_ID = 8839094646
+UTILITY_ARTIFACT_API_DIGEST = (
+    "sha256:1ea221c8bb77313ac0fddfe7703496d191d666c0555fdb5d9b5d1d9f3e94e2f4"
+)
+GOLD_ARTIFACT_ID = 8839160190
+GOLD_ARTIFACT_API_DIGEST = (
+    "sha256:4fc12773c6410df3e6b4a1b1ded43c14a4ef2c84d013f09ec42d3ba7df1c7988"
 )
 SRG_METHOD = "conservative_wilson_endpoint_difference"
 PRODUCER_BUNDLE_MEMBER = "producer/WhitePaper_Intake_Bundle_v4.zip"
@@ -358,6 +369,99 @@ def _verify_identity(bundle: Bundle, manifest: dict[str, Any]) -> None:
     _require(
         evidence.get("primary_bundle_sha256") == PRIMARY_BUNDLE_SHA256,
         "producer bundle manifest digest mismatch",
+    )
+
+    identity = bundle.json(
+        "evidence/v5.0.1/publication/evidence_identity.json"
+    )
+    _require(
+        identity.get("schema_version")
+        == "flbsa.whitepaper_evidence_identity.v1",
+        "unsupported evidence identity schema",
+    )
+    identity_product = identity.get("product") or {}
+    for field, expected in (
+        ("tag", PRODUCT_TAG),
+        ("tag_object", PRODUCT_TAG_OBJECT),
+        ("commit", PRODUCT_COMMIT),
+        ("repository", "equilens-labs/fl-bsa"),
+    ):
+        _require(
+            identity_product.get(field) == expected,
+            f"evidence identity product {field} mismatch",
+        )
+    workflow = identity.get("producer_workflow") or {}
+    for field, expected in (
+        ("repository", "equilens-labs/fl-bsa"),
+        ("name", "release-evidence.yml"),
+        ("run_id", int(PRODUCT_RUN_ID)),
+        ("attempt", 1),
+        ("head_commit", PRODUCT_COMMIT),
+    ):
+        _require(
+            workflow.get(field) == expected,
+            f"evidence identity workflow {field} mismatch",
+        )
+    primary_identity = identity.get("primary_intake") or {}
+    for field, expected in (
+        ("artifact_id", PRIMARY_ARTIFACT_ID),
+        ("artifact_name", "wp-intake-bundle-v4-1"),
+        ("artifact_api_digest", PRIMARY_ARTIFACT_API_DIGEST),
+        ("bundle_sha256", PRIMARY_BUNDLE_SHA256),
+    ):
+        _require(
+            primary_identity.get(field) == expected,
+            f"primary intake identity {field} mismatch",
+        )
+    utility_identity = identity.get("utility_source") or {}
+    for field, expected in (
+        ("artifact_id", UTILITY_ARTIFACT_ID),
+        ("artifact_api_digest", UTILITY_ARTIFACT_API_DIGEST),
+    ):
+        _require(
+            utility_identity.get(field) == expected,
+            f"utility artifact identity {field} mismatch",
+        )
+    gold_identity = identity.get("gold_robustness") or {}
+    for field, expected in (
+        ("artifact_id", GOLD_ARTIFACT_ID),
+        (
+            "artifact_name",
+            f"gold-robustness-{PRODUCT_COMMIT}-{PRODUCT_RUN_ID}",
+        ),
+        ("artifact_api_digest", GOLD_ARTIFACT_API_DIGEST),
+    ):
+        _require(
+            gold_identity.get(field) == expected,
+            f"Gold artifact identity {field} mismatch",
+        )
+    for field, path in (
+        (
+            "evidence_manifest_sha256",
+            "evidence/v5.0.1/robustness/evidence_manifest.json",
+        ),
+        (
+            "index_sha256",
+            "evidence/v5.0.1/robustness/robustness_index.csv",
+        ),
+        (
+            "summary_sha256",
+            "evidence/v5.0.1/robustness/robustness_summary_merged.json",
+        ),
+    ):
+        _require(
+            gold_identity.get(field) == _sha256(bundle.read(path)),
+            f"Gold artifact identity {field} mismatch",
+        )
+    identity_claims = identity.get("claim_boundary") or {}
+    _require(
+        identity_claims
+        == {
+            "customer_evidence_disposition": "characterization_only",
+            "customer_evidence_eligible": False,
+            "publication_status": "candidate_not_published",
+        },
+        "evidence identity claim boundary mismatch",
     )
 
     intake = bundle.json("intake/manifest.json")
@@ -928,9 +1032,11 @@ def _verify_robustness(bundle: Bundle) -> dict[str, int]:
     }
 
 
-def _verify_utility(bundle: Bundle) -> dict[str, int]:
+def _verify_utility(
+    bundle: Bundle, expected_utility_sha256: str
+) -> dict[str, int]:
     utility = _digest_anchored_json(
-        bundle, UTILITY_SUMMARY_PATH, UTILITY_SUMMARY_SHA256
+        bundle, UTILITY_SUMMARY_PATH, expected_utility_sha256
     )
     _require(
         utility.get("schema_version") == "flbsa.whitepaper_fixture_utility.v2",
@@ -1066,8 +1172,13 @@ def _verify_utility(bundle: Bundle) -> dict[str, int]:
     }
 
 
-def _verify_robustness_and_utility(bundle: Bundle) -> dict[str, Any]:
-    return {**_verify_robustness(bundle), **_verify_utility(bundle)}
+def _verify_robustness_and_utility(
+    bundle: Bundle, expected_utility_sha256: str
+) -> dict[str, Any]:
+    return {
+        **_verify_robustness(bundle),
+        **_verify_utility(bundle, expected_utility_sha256),
+    }
 
 
 def _characterization_screen_relation(
@@ -1131,7 +1242,9 @@ def _characterization_quality(
     }
 
 
-def _expected_characterization_summary(bundle: Bundle) -> dict[str, Any]:
+def _expected_characterization_summary(
+    bundle: Bundle, expected_utility_sha256: str
+) -> dict[str, Any]:
     intake_manifest = bundle.json("intake/manifest.json")
     slices_payload = bundle.json("intake/fairness_slices.json")
     uncertainty = bundle.json("intake/metrics_uncertainty.json")
@@ -1139,7 +1252,7 @@ def _expected_characterization_summary(bundle: Bundle) -> dict[str, Any]:
         "evidence/v5.0.1/robustness/robustness_summary_merged.json"
     )
     utility = _digest_anchored_json(
-        bundle, UTILITY_SUMMARY_PATH, UTILITY_SUMMARY_SHA256
+        bundle, UTILITY_SUMMARY_PATH, expected_utility_sha256
     )
     amplification_certificate = bundle.json(
         "intake/certificates/branch_amplification__synthetic_quality_certificate.json"
@@ -1331,11 +1444,15 @@ def _expected_characterization_summary(bundle: Bundle) -> dict[str, Any]:
     }
 
 
-def _verify_characterization_summary(bundle: Bundle) -> dict[str, int]:
+def _verify_characterization_summary(
+    bundle: Bundle, expected_utility_sha256: str
+) -> dict[str, int]:
     summary = bundle.json(
         "evidence/v5.0.1/publication/characterization_summary.json"
     )
-    expected = _expected_characterization_summary(bundle)
+    expected = _expected_characterization_summary(
+        bundle, expected_utility_sha256
+    )
     _require(
         set(summary) == set(expected),
         "characterization summary top-level inventory mismatch",
@@ -1348,7 +1465,9 @@ def _verify_characterization_summary(bundle: Bundle) -> dict[str, int]:
     return {"characterization_summary_sections_cross_checked": len(expected)}
 
 
-def _verify_publication_overlays(bundle: Bundle) -> dict[str, int]:
+def _verify_publication_overlays(
+    bundle: Bundle, expected_utility_sha256: str
+) -> dict[str, int]:
     corrections = bundle.json("evidence/v5.0.1/publication/interpretation_corrections.json")
     _require(
         corrections.get("schema_version")
@@ -1382,10 +1501,16 @@ def _verify_publication_overlays(bundle: Bundle) -> dict[str, int]:
     )
     _require(len(rows) == 5, "regulatory mapping must contain five reviewed rows")
     _require(all(row.get("as_of") == "2026-08-05" for row in rows), "regulatory mapping date mismatch")
-    return _verify_characterization_summary(bundle)
+    return _verify_characterization_summary(bundle, expected_utility_sha256)
 
 
-def verify(path: Path) -> dict[str, Any]:
+def verify(
+    path: Path, *, expected_utility_sha256: str
+) -> dict[str, Any]:
+    _require(
+        HEX_64.fullmatch(expected_utility_sha256) is not None,
+        "expected utility SHA-256 must be 64 lowercase hexadecimal characters",
+    )
     bundle = Bundle(path)
     manifest = bundle.json("MANIFEST.json")
     _verify_file_manifest(bundle, manifest)
@@ -1393,14 +1518,19 @@ def verify(path: Path) -> dict[str, Any]:
     _verify_identity(bundle, manifest)
     fairness = _verify_fairness(bundle)
     certificates = _verify_certificates(bundle)
-    studies = _verify_robustness_and_utility(bundle)
-    overlays = _verify_publication_overlays(bundle)
+    studies = _verify_robustness_and_utility(
+        bundle, expected_utility_sha256
+    )
+    overlays = _verify_publication_overlays(
+        bundle, expected_utility_sha256
+    )
     return {
         "status": "verified",
         "bundle": str(path),
         "bundle_sha256": _sha256(path.read_bytes()) if path.is_file() else None,
         "product_tag": PRODUCT_TAG,
         "product_commit": PRODUCT_COMMIT,
+        "utility_summary_sha256_expected": expected_utility_sha256,
         **producer,
         **fairness,
         **certificates,
@@ -1413,10 +1543,18 @@ def verify(path: Path) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--expected-utility-sha256",
+        required=True,
+        help="utility_summary.json digest copied from the trusted PDF",
+    )
     parser.add_argument("bundle", type=Path)
     args = parser.parse_args()
     try:
-        result = verify(args.bundle)
+        result = verify(
+            args.bundle,
+            expected_utility_sha256=args.expected_utility_sha256,
+        )
     except VerificationError as exc:
         print(f"verification failed: {exc}", file=sys.stderr)
         return 1

@@ -6,6 +6,7 @@ CANDIDATE_PROFILE=profiles/publication_profile.candidate.tex
 LOCAL_PROFILE=includes/publication_profile.local.tex
 COMPATIBILITY_INTAKE=dist/stable-v5-intake-compatibility.zip
 PUBLICATION_MANIFEST=dist/publication-manifest.json
+UTILITY_SUMMARY_SHA256=2b05a4a2b7ce2d798b9156ed5f837efe890ee87e4f5e914497724802636e4595
 SOURCE_DATE_EPOCH ?= $(shell git log -1 --format=%ct HEAD)
 export SOURCE_DATE_EPOCH
 export FORCE_SOURCE_DATE = 1
@@ -33,7 +34,7 @@ assets: macros plots characterization
 
 companion: assets
 	python3 scripts/build_companion_bundle.py --repo-root . --output $(COMPANION)
-	python3 scripts/verify_companion_bundle.py $(COMPANION)
+	python3 scripts/verify_companion_bundle.py --expected-utility-sha256 $(UTILITY_SUMMARY_SHA256) $(COMPANION)
 
 identity: companion
 	python3 scripts/gen_publication_identity.py --repo-root . --companion $(COMPANION) --output $(IDENTITY)
@@ -50,7 +51,7 @@ candidate: test assets
 	test -z "$$(git status --porcelain --untracked-files=all)"
 	cp $(CANDIDATE_PROFILE) $(LOCAL_PROFILE)
 	python3 scripts/build_companion_bundle.py --repo-root . --output $(COMPANION)
-	python3 scripts/verify_companion_bundle.py $(COMPANION)
+	python3 scripts/verify_companion_bundle.py --expected-utility-sha256 $(UTILITY_SUMMARY_SHA256) $(COMPANION)
 	python3 scripts/gen_publication_identity.py --require-clean --repo-root . --companion $(COMPANION) --output $(IDENTITY)
 	latexmk -C main.tex
 	latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex

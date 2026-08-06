@@ -21,17 +21,21 @@ mkdir fl-bsa-v5.0.1-companion-evidence
 python3 -m zipfile -e fl-bsa-v5.0.1-companion-evidence.zip \
   fl-bsa-v5.0.1-companion-evidence
 python3 fl-bsa-v5.0.1-companion-evidence/verify_companion_bundle.py \
+  --expected-utility-sha256 \
+  2b05a4a2b7ce2d798b9156ed5f837efe890ee87e4f5e914497724802636e4595 \
   fl-bsa-v5.0.1-companion-evidence.zip
 ```
 
 The verifier checks every bundled file, reconstructs and hashes the original producer ZIP,
 recomputes the fairness arithmetic, validates the exact robustness seed structure and aggregates,
 traverses the complete certificate graph, and enforces the bounded claim flags. For utility, it
-requires the exact `utility_summary.json` bytes to match the separate SHA-256 printed in the PDF,
-then validates the ten-row structure and recomputes aggregates and skill retention from those
-digest-bound rows. It cross-checks the paper-owned characterization summary against those layers.
-It does not regenerate generator outputs or model predictions; full utility regeneration requires
-the exact product checkout and recorded third-party runtime.
+requires the exact `utility_summary.json` bytes to match the SHA-256 supplied on the command line,
+then validates the ten-row structure and recomputes aggregates and skill retention from those rows.
+Copy that value from the trusted PDF; the verifier does not read the PDF. It cross-checks the
+paper-owned characterization summary against those layers. It does not regenerate generator
+outputs or model predictions, and it cannot independently authenticate a coherently rewritten ZIP;
+the preceding whole-ZIP digest comparison is the external trust step. Full utility regeneration
+requires the exact product checkout and recorded third-party runtime.
 
 The `customer_evidence_eligible=false` publication boundary is in
 `intake/archive/v5.0.1-release-30765888408.json` and independently in

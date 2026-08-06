@@ -21,6 +21,15 @@ PRODUCT_RUN_ID = 30765888408
 PRIMARY_BUNDLE_SHA256 = (
     "f6a0bd9390565f7bd852b451e11b7384b1628c24caba02865b1ec94c1e263026"
 )
+PRIMARY_ARTIFACT_API_DIGEST = (
+    "sha256:7241da6013653e96337c540d3670bed69c04454002f3e7d315a95e9c8e197615"
+)
+UTILITY_ARTIFACT_API_DIGEST = (
+    "sha256:1ea221c8bb77313ac0fddfe7703496d191d666c0555fdb5d9b5d1d9f3e94e2f4"
+)
+GOLD_ARTIFACT_API_DIGEST = (
+    "sha256:4fc12773c6410df3e6b4a1b1ded43c14a4ef2c84d013f09ec42d3ba7df1c7988"
+)
 SRG_METHOD = "conservative_wilson_endpoint_difference"
 INTERNAL_AIR_SCREEN = 0.80
 UTILITY_SUMMARY_PATH = "evidence/v5.0.1/utility/utility_summary.json"
@@ -97,6 +106,8 @@ class V501CharacterizationContractTests(unittest.TestCase):
         product = identity["product"]
         workflow = identity["producer_workflow"]
         intake = identity["primary_intake"]
+        utility = identity["utility_source"]
+        gold = identity["gold_robustness"]
 
         self.assertEqual(PRODUCT_TAG, product["tag"])
         self.assertEqual(PRODUCT_TAG_OBJECT, product["tag_object"])
@@ -106,7 +117,39 @@ class V501CharacterizationContractTests(unittest.TestCase):
         self.assertEqual(1, workflow["attempt"])
         self.assertEqual("wp-intake-bundle-v4-1", intake["artifact_name"])
         self.assertEqual(8838967644, intake["artifact_id"])
+        self.assertEqual(
+            PRIMARY_ARTIFACT_API_DIGEST, intake["artifact_api_digest"]
+        )
         self.assertEqual(PRIMARY_BUNDLE_SHA256, intake["bundle_sha256"])
+        self.assertEqual(8839094646, utility["artifact_id"])
+        self.assertEqual(
+            UTILITY_ARTIFACT_API_DIGEST, utility["artifact_api_digest"]
+        )
+        self.assertEqual(8839160190, gold["artifact_id"])
+        self.assertEqual(
+            f"gold-robustness-{PRODUCT_COMMIT}-{PRODUCT_RUN_ID}",
+            gold["artifact_name"],
+        )
+        self.assertEqual(
+            GOLD_ARTIFACT_API_DIGEST, gold["artifact_api_digest"]
+        )
+        for field, relative in (
+            (
+                "evidence_manifest_sha256",
+                "evidence/v5.0.1/robustness/evidence_manifest.json",
+            ),
+            (
+                "index_sha256",
+                "evidence/v5.0.1/robustness/robustness_index.csv",
+            ),
+            (
+                "summary_sha256",
+                "evidence/v5.0.1/robustness/robustness_summary_merged.json",
+            ),
+        ):
+            self.assertEqual(
+                gold[field], hashlib.sha256((ROOT / relative).read_bytes()).hexdigest()
+            )
 
         manifest = _read_json("intake/manifest.json")
         self.assertEqual(PRODUCT_COMMIT, manifest["source_commit"])
@@ -426,7 +469,9 @@ class V501CharacterizationContractTests(unittest.TestCase):
             second_result = builder.build(ROOT, second)
             self.assertEqual(first.read_bytes(), second.read_bytes())
             self.assertEqual(first_result["sha256"], second_result["sha256"])
-            verified = verifier.verify(first)
+            verified = verifier.verify(
+                first, expected_utility_sha256=UTILITY_SUMMARY_SHA256
+            )
             self.assertEqual("verified", verified["status"])
             self.assertEqual(21, verified["certificate_files"])
             self.assertEqual(18, verified["certificate_unique_nodes"])
@@ -469,6 +514,8 @@ class V501CharacterizationContractTests(unittest.TestCase):
                 [
                     sys.executable,
                     str(extracted / "verify_companion_bundle.py"),
+                    "--expected-utility-sha256",
+                    UTILITY_SUMMARY_SHA256,
                     str(first),
                 ],
                 check=True,
@@ -481,7 +528,10 @@ class V501CharacterizationContractTests(unittest.TestCase):
             with self.assertRaisesRegex(
                 verifier.VerificationError, "(size|SHA-256) mismatch"
             ):
-                verifier.verify(extracted)
+                verifier.verify(
+                    extracted,
+                    expected_utility_sha256=UTILITY_SUMMARY_SHA256,
+                )
 
             utility_tamper = Path(tmp) / "utility-tamper.zip"
             with zipfile.ZipFile(first) as archive:
@@ -503,7 +553,10 @@ class V501CharacterizationContractTests(unittest.TestCase):
             with self.assertRaisesRegex(
                 verifier.VerificationError, "does not match PDF-disclosed SHA-256"
             ):
-                verifier.verify(utility_tamper)
+                verifier.verify(
+                    utility_tamper,
+                    expected_utility_sha256=UTILITY_SUMMARY_SHA256,
+                )
 
             coherent_utility_tamper = Path(tmp) / "coherent-utility-tamper.zip"
             with zipfile.ZipFile(first) as archive:
@@ -560,7 +613,60 @@ class V501CharacterizationContractTests(unittest.TestCase):
             with self.assertRaisesRegex(
                 verifier.VerificationError, "does not match PDF-disclosed SHA-256"
             ):
-                verifier.verify(coherent_utility_tamper)
+                verifier.verify(
+                    coherent_utility_tamper,
+                    expected_utility_sha256=UTILITY_SUMMARY_SHA256,
+                )
+
+            coherent_contract_tamper = (
+                Path(tmp) / "coherent-utility-and-contract-tamper.zip"
+            )
+            with zipfile.ZipFile(first) as archive:
+                contract_replacement = archive.read(
+                    "characterization_contract.py"
+                )
+            forged_utility_sha256 = hashlib.sha256(
+                utility_replacement
+            ).hexdigest()
+            self.assertIn(
+                UTILITY_SUMMARY_SHA256.encode("ascii"), contract_replacement
+            )
+            contract_replacement = contract_replacement.replace(
+                UTILITY_SUMMARY_SHA256.encode("ascii"),
+                forged_utility_sha256.encode("ascii"),
+            )
+            _rewrite_companion_members(
+                first,
+                coherent_contract_tamper,
+                {
+                    UTILITY_SUMMARY_PATH: utility_replacement,
+                    (
+                        "evidence/v5.0.1/publication/"
+                        "characterization_summary.json"
+                    ): characterization_replacement,
+                    "characterization_contract.py": contract_replacement,
+                },
+            )
+            forged_extracted = Path(tmp) / "coherent-contract-extracted"
+            with zipfile.ZipFile(coherent_contract_tamper) as archive:
+                archive.extractall(forged_extracted)
+            forged_standalone = subprocess.run(
+                [
+                    sys.executable,
+                    str(forged_extracted / "verify_companion_bundle.py"),
+                    "--expected-utility-sha256",
+                    UTILITY_SUMMARY_SHA256,
+                    str(coherent_contract_tamper),
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(0, forged_standalone.returncode)
+            self.assertIn(
+                "does not match PDF-disclosed SHA-256",
+                forged_standalone.stderr,
+            )
 
             summary_tamper = Path(tmp) / "characterization-summary-tamper.zip"
             with zipfile.ZipFile(first) as archive:
@@ -584,7 +690,10 @@ class V501CharacterizationContractTests(unittest.TestCase):
                 verifier.VerificationError,
                 "characterization summary fairness projection mismatch",
             ):
-                verifier.verify(summary_tamper)
+                verifier.verify(
+                    summary_tamper,
+                    expected_utility_sha256=UTILITY_SUMMARY_SHA256,
+                )
 
             producer_projection_tamper = Path(tmp) / "producer-projection-tamper.zip"
             with zipfile.ZipFile(first) as archive:
@@ -603,7 +712,10 @@ class V501CharacterizationContractTests(unittest.TestCase):
                 verifier.VerificationError,
                 "consumer intake differs from producer bytes",
             ):
-                verifier.verify(producer_projection_tamper)
+                verifier.verify(
+                    producer_projection_tamper,
+                    expected_utility_sha256=UTILITY_SUMMARY_SHA256,
+                )
 
     def test_certificate_graph_rejects_cycles_and_unresolved_links(self) -> None:
         verifier = _load_module(
@@ -638,17 +750,39 @@ class V501CharacterizationContractTests(unittest.TestCase):
             self.assertIn(
                 "fl-bsa-v5.0.1-companion-evidence.zip", text
             )
+            self.assertIn("--expected-utility-sha256", text)
+            self.assertIn(UTILITY_SUMMARY_SHA256, text)
         self.assertIn(
             "requires the exact `utility_summary.json` bytes", companion_readme
         )
+        normalized_companion_readme = " ".join(companion_readme.split())
         self.assertIn(
             "does not regenerate generator outputs or model predictions",
-            companion_readme,
+            normalized_companion_readme,
         )
-        self.assertIn("digest-bound rows", reproduction)
+        self.assertIn("caller-supplied PDF digest", reproduction)
+        self.assertIn(
+            "whole-ZIP digest comparison is the trust anchor", reproduction
+        )
+        self.assertIn(
+            "when the PDF-disclosed digest is supplied", reproduction
+        )
+        self.assertIn("does not read the PDF", normalized_companion_readme)
+        self.assertIn(
+            "cannot independently authenticate", normalized_companion_readme
+        )
+        makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+        self.assertIn(
+            f"UTILITY_SUMMARY_SHA256={UTILITY_SUMMARY_SHA256}", makefile
+        )
+        self.assertIn(
+            "--expected-utility-sha256 $(UTILITY_SUMMARY_SHA256)", makefile
+        )
         workflow = (ROOT / ".github" / "workflows" / "latex.yml").read_text(
             encoding="utf-8"
         )
+        self.assertIn("--expected-utility-sha256", workflow)
+        self.assertIn(UTILITY_SUMMARY_SHA256, workflow)
         upload_start = workflow.index("- name: Upload PDF artifact")
         upload_end = workflow.index("- name: Package arXiv source", upload_start)
         upload = workflow[upload_start:upload_end]

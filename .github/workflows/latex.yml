@@ -104,6 +104,8 @@ jobs:
             --repo-root . \
             --output dist/fl-bsa-v5.0.1-companion-evidence.zip
           python scripts/verify_companion_bundle.py \
+            --expected-utility-sha256 \
+            2b05a4a2b7ce2d798b9156ed5f837efe890ee87e4f5e914497724802636e4595 \
             dist/fl-bsa-v5.0.1-companion-evidence.zip
           python scripts/gen_publication_identity.py \
             --require-clean \

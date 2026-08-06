@@ -5,7 +5,7 @@
     "publication_status": "candidate_not_published"
   },
   "gold_robustness": {
-    "artifact_api_digest": "sha256:4fc127d7c777ced55df640b54dfb41ae414dad7881513548c56091c10dc9e2bc",
+    "artifact_api_digest": "sha256:4fc12773c6410df3e6b4a1b1ded43c14a4ef2c84d013f09ec42d3ba7df1c7988",
     "artifact_id": 8839160190,
     "artifact_name": "gold-robustness-cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2-30765888408",
     "evidence_manifest_sha256": "353cd77907a5b5b0f64534ce6e5b00defeb872f5a8585aec43006ec24f96e073",

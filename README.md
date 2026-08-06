@@ -56,21 +56,28 @@ aggregate, the generated utility fixture and ten-seed TSTR result, current regul
 interpretation ledger, file manifest, and a standard-library verifier.
 
 ```bash
+sha256sum dist/fl-bsa-v5.0.1-companion-evidence.zip
 mkdir /tmp/flbsa-wp-companion
 python3 -m zipfile -e dist/fl-bsa-v5.0.1-companion-evidence.zip \
   /tmp/flbsa-wp-companion
 python3 /tmp/flbsa-wp-companion/verify_companion_bundle.py \
+  --expected-utility-sha256 \
+  2b05a4a2b7ce2d798b9156ed5f837efe890ee87e4f5e914497724802636e4595 \
   dist/fl-bsa-v5.0.1-companion-evidence.zip
 ```
 
-The verifier checks every member hash and size, source identities, bounded claim flags, corrected
-SRG method, race reference policy, certificate hashes and predecessor links, and exact robustness
-completeness and aggregates. For utility, it requires the paper-owned summary bytes to match the
-separate SHA-256 disclosed in the PDF, then validates its ten-row structure and recomputes its
-aggregates and skill-retention relation. The headline characterization must be an exact projection
-of those layers. The verifier does not regenerate utility model outputs. Certificate signature
-fields are checked for complete encoding only because the public verification key is not bundled;
-the companion therefore claims integrity linkage, not independent authentication.
+First compare the whole companion ZIP with the companion digest on the PDF cover; that external
+comparison authenticates the bundled verifier and its inputs relative to the PDF. Then copy the
+separate utility digest from the PDF into `--expected-utility-sha256`. The verifier consumes that
+caller-supplied value; it does not read the PDF. It checks every member hash and size, source
+identities, bounded claim flags, corrected SRG method, race reference policy, certificate hashes and
+predecessor links, and exact robustness completeness and aggregates. For utility, it requires the
+paper-owned summary bytes to match the supplied digest, validates its ten-row structure, and
+recomputes its aggregates and skill-retention relation. The headline characterization must be an
+exact projection of those layers. The verifier does not regenerate utility model outputs or
+independently authenticate a coherently rewritten ZIP. Certificate signature fields are checked for
+complete encoding only because the public verification key is not bundled; the companion therefore
+claims integrity linkage, not independent authentication.
 
 ## Evidence layers
 
