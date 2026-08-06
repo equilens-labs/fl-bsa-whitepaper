@@ -30,17 +30,23 @@ Outputs:
 `make pdf` regenerates strict intake macros, plots, characterization assets, the deterministic
 companion ZIP, and an untracked self-identity include before compiling. Development builds record a
 dirty source state. After all tracked generated files are reviewed and committed, `make candidate`
-fails unless the checkout is clean and then embeds the exact whitepaper commit.
+fails unless the checkout is clean, selects the reviewed demo/evaluation profile, clears LaTeX
+auxiliary state, and then embeds the exact whitepaper commit.
 
 ```bash
-printf '\\drafttrue\n' > includes/publication_profile.local.tex
-make candidate
+make publication-candidate
 sha256sum dist/fl-bsa-v5.0.1-characterization-candidate.pdf \
-  dist/fl-bsa-v5.0.1-companion-evidence.zip
+  dist/fl-bsa-v5.0.1-companion-evidence.zip \
+  dist/whitepaper_arxiv_source.zip \
+  dist/stable-v5-intake-compatibility.zip \
+  dist/publication-manifest.json
 ```
 
-The ignored publication profile enables the visible and machine-readable
-`DEMO / EVALUATION ONLY` safety marker used by candidate CI and the publication-manifest gate.
+The candidate target copies the reviewed profile from
+`profiles/publication_profile.candidate.tex` to the ignored local override, enabling the visible and
+machine-readable `DEMO / EVALUATION ONLY` safety marker used by candidate CI and the
+publication-manifest gate. The aggregate target rebuilds the PDF, companion, arXiv source,
+compatibility export, and hash-bound publication manifest as one sequential handoff set.
 
 ## Offline companion verification
 

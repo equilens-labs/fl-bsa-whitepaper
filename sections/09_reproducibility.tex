@@ -68,17 +68,17 @@ unmodified verifier even if the companion manifest is repaired.
 At whitepaper commit \IdentityText{\WhitepaperCommitRaw}, the reviewed build sequence is:
 
 \begin{verbatim}
-python3 -m unittest discover -s tests
-make pdf
-make arxiv
+make publication-candidate
 \end{verbatim}
 
-The PDF target regenerates strict evidence macros, old compatibility figures, the six
-characterization visuals, the paper-owned summary, the deterministic companion, and the untracked
-self-identity include before compiling. A release candidate is rebuilt only from a clean source
-checkout so its paper commit and companion manifest agree. The PDF is built twice in verification
-to confirm deterministic bytes; fonts, bookmarks, language metadata, tags, and alternative text
-are separately inspected because byte determinism does not imply accessibility.
+The publication-candidate target runs the full test suite; regenerates strict evidence macros, old
+compatibility figures, the six characterization visuals, the paper-owned summary, and the
+deterministic companion; selects the reviewed demo/evaluation profile; clears prior LaTeX auxiliary
+state; and emits the PDF, arXiv source, compatibility export, and hash-bound publication manifest.
+It refuses a dirty source checkout so the paper commit and companion manifest agree. The complete
+target is run twice in verification to confirm deterministic bytes; fonts, bookmarks, language
+metadata, tags, and alternative text are separately inspected because byte determinism does not
+imply accessibility.
 
 \subsection{Source hierarchy}
 

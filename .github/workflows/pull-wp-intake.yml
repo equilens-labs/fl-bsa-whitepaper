@@ -827,7 +827,7 @@ jobs:
       - name: Enable public demo watermark
         run: |
           mkdir -p includes
-          printf '\\drafttrue\n' > includes/publication_profile.local.tex
+          cp profiles/publication_profile.candidate.tex includes/publication_profile.local.tex
 
       - name: Ensure pdftotext available
         run: |
@@ -860,8 +860,8 @@ jobs:
         run: |
           set -euo pipefail
           hits="$(pdftotext main.pdf - | grep -F -c 'DEMO / EVALUATION ONLY' || true)"
-          if [ "$hits" -lt 1 ]; then
-            echo "whitepaper.pdf is missing DEMO / EVALUATION ONLY text marker." >&2
+          if [ "$hits" -ne 1 ]; then
+            echo "whitepaper.pdf must contain exactly one extractable DEMO / EVALUATION ONLY cover marker; found ${hits}." >&2
             exit 1
           fi
           echo "Found DEMO / EVALUATION ONLY marker ${hits} time(s)."

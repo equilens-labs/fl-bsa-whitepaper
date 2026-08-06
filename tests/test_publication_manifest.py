@@ -317,6 +317,38 @@ print(json.dumps(fixture))
             ):
                 PUBLICATION._assert_pdf_marker(pdf, "pdftotext", "a" * 64)
 
+    def test_pdf_marker_check_requires_exactly_one_extractable_marker(self) -> None:
+        companion_sha256 = "a" * 64
+        for count in (0, 2):
+            with self.subTest(count=count):
+                extracted = ("DEMO / EVALUATION ONLY\n" * count) + companion_sha256
+                completed = subprocess.CompletedProcess(
+                    args=["pdftotext"],
+                    returncode=0,
+                    stdout=extracted,
+                    stderr="",
+                )
+                with mock.patch.object(
+                    PUBLICATION.subprocess, "run", return_value=completed
+                ):
+                    with self.assertRaisesRegex(
+                        PUBLICATION.AnchorError, "exactly one extractable"
+                    ):
+                        PUBLICATION._assert_pdf_marker(
+                            Path("candidate.pdf"), "pdftotext", companion_sha256
+                        )
+
+        completed = subprocess.CompletedProcess(
+            args=["pdftotext"],
+            returncode=0,
+            stdout=f"DEMO / EVALUATION ONLY\n{companion_sha256}\n",
+            stderr="",
+        )
+        with mock.patch.object(PUBLICATION.subprocess, "run", return_value=completed):
+            PUBLICATION._assert_pdf_marker(
+                Path("candidate.pdf"), "pdftotext", companion_sha256
+            )
+
     def test_source_checkout_must_be_exact_head_and_clean(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp) / "repo"
@@ -522,7 +554,13 @@ print(json.dumps(fixture))
             "-f draft_release_tag=v5.0.1"
         )
         self.assertNotIn("gh workflow run latex.yml", readme)
-        self.assertIn(exact_dispatch, publication_doc)
+        self.assertNotIn(exact_dispatch, publication_doc)
+        self.assertIn("## No v5.0.1 draft-release staging", publication_doc)
+        self.assertIn(
+            "Do not dispatch the workflow's draft-release path for v5.0.1",
+            publication_doc,
+        )
+        self.assertIn("separately rebuilt and reviewed against exact v5.0.2", publication_doc)
         self.assertLess(
             publish_step.index(
                 'receipt["publication_status"] = "github_draft_release_assets_staged_characterization_only"'

@@ -27,6 +27,13 @@ The deterministic compatibility export has SHA-256
 of the pinned intake/config projection. It is not the original attested producer ZIP; both
 identities remain explicit.
 
+v5.0.1 is security-superseded: its lock pins `cryptography` 49.0.0 in the affected range for
+CVE-2026-69247. Annotated successor tag `v5.0.2` exists at tag object
+`3d27f7d17c2c853753d40cb883858617ead21677`, peeled commit
+`b246e39a23be938397a6d28612c776bedd8b42e2`, and successful release-evidence run `31087235319`;
+its lock pins `cryptography` 50.0.0. The v5.0.1 material is therefore archival-only and must not be
+presented or staged as a current release.
+
 This repository state is a review candidate only. It creates no tag, release, merge, public URL,
 website update, arXiv submission, customer-evidence authorization, or publication approval.
 
@@ -35,13 +42,7 @@ website update, arXiv submission, customer-evidence authorization, or publicatio
 From a clean checkout of the candidate commit:
 
 ```bash
-python3 -m unittest discover -s tests
-make candidate
-make arxiv
-python3 scripts/intake_anchor.py export \
-  --anchor baselines/stable-v5-characterization.json \
-  --repo-root . \
-  --output dist/stable-v5-intake-compatibility.zip
+make publication-candidate
 python3 scripts/validate_public_intake.py \
   --bundle-root /path/to/extracted/stable-v5-intake \
   --schema-root .
@@ -51,30 +52,21 @@ Review these files as one candidate set:
 
 - `dist/fl-bsa-v5.0.1-characterization-candidate.pdf`;
 - `dist/fl-bsa-v5.0.1-companion-evidence.zip`;
-- `dist/whitepaper_arxiv_source.zip`; and
-- `dist/stable-v5-intake-compatibility.zip`.
+- `dist/whitepaper_arxiv_source.zip`;
+- `dist/stable-v5-intake-compatibility.zip`; and
+- `dist/publication-manifest.json`.
 
 The PDF embeds the exact whitepaper commit and companion digest. The arXiv archive includes the
 validated generated identity include, so it rebuilds the same source-bound candidate. The companion
 contains a standard-library offline verifier; run it before relying on any evidence bytes.
 
-## Optional draft-release staging after owner approval
+## No v5.0.1 draft-release staging
 
-The workflow has a narrowly scoped, manual path that can attach byte-verified assets to an already
-existing unpublished draft release. It does not create a tag or release and does not publish the
-draft. Do not invoke it for an unapproved pull request.
-
-Only after the designated owner has reviewed and approved the exact candidate commit, created the
-exact whitepaper tag and an unpublished draft release, the authorized operator may dispatch:
-
-```bash
-gh workflow run latex.yml --ref v5.0.1 -f draft_release_tag=v5.0.1
-```
-
-The dispatch ref, draft tag, and built commit must agree. The workflow refuses duplicate or
-byte-different assets, never uses `--clobber`, and records a receipt only after remote bytes are
-downloaded and verified. Publishing the draft and submitting to arXiv remain separate human
-actions.
+Do not dispatch the workflow's draft-release path for v5.0.1. The path's existence is not release
+authorization, and the security-superseded tag cannot be staged as a current release. Any later
+archival distribution requires a new, explicit owner decision and current legal/security review.
+A current-release paper must instead be separately rebuilt and reviewed against exact v5.0.2
+evidence; this v5.0.1 paper and companion cannot be relabelled or reused for that purpose.
 
 ## Remaining publication blockers
 
@@ -83,11 +75,13 @@ by the authorized owners:
 
 1. owner review and approval of the exact PDF, companion, hashes, legal wording, and distribution
    route;
-2. a durable public location that co-distributes the PDF and companion;
-3. a trusted external digest channel or verifiable release signature;
-4. product-side convergence or explicit versioning of the configured-reference and highest-rate
+2. an explicit choice to retain the security-superseded v5.0.1 artifact only as an archival
+   characterization or retire it in favour of a separately rebuilt v5.0.2 paper;
+3. a durable public location that co-distributes the PDF and companion;
+4. a trusted external digest channel or verifiable release signature;
+5. product-side convergence or explicit versioning of the configured-reference and highest-rate
    race policies;
-5. confirmation that `customer_evidence_eligible=false`,
+6. confirmation that `customer_evidence_eligible=false`,
    `promotion_evidence_eligible=false`, and `characterization_only` remain appropriate; and
-6. additional evidence before making production-utility, near-duplicate privacy, calibration,
+7. additional evidence before making production-utility, near-duplicate privacy, calibration,
    customer-portfolio, deployment-security, or legal-compliance claims.

@@ -114,10 +114,12 @@
 \newcommand{\DemoEvaluationWatermark}{DEMO / EVALUATION ONLY}
 \ifdraft
 \AddToShipoutPictureBG{%
+  \tagmcbegin{artifact}% Decorative diagonal watermark; exclude from reading order.
   \put(\LenToUnit{0.5\paperwidth},\LenToUnit{0.52\paperheight}){%
     \makebox(0,0){\rotatebox{35}{%
       \textcolor{black!8}{\bfseries\fontsize{36}{42}\selectfont\DemoEvaluationWatermark}}}%
   }%
+  \tagmcend
 }
 \fi
 

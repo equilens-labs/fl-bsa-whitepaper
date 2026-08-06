@@ -352,6 +352,7 @@ class V501CharacterizationContractTests(unittest.TestCase):
             (ROOT / relative).read_text(encoding="utf-8")
             for relative in (
                 "README.md",
+                "docs/stable_v5_publication.md",
                 "sections/01_executive_summary.tex",
                 "sections/10_limitations_monitoring.tex",
                 "bib/references.bib",

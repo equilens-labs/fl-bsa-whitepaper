@@ -94,8 +94,12 @@ def _assert_pdf_marker(
     if completed.returncode != 0:
         detail = completed.stderr.strip() or f"exit {completed.returncode}"
         raise AnchorError(f"unable to inspect publication PDF text: {detail}")
-    if "DEMO / EVALUATION ONLY" not in completed.stdout:
-        raise AnchorError("publication PDF is missing DEMO / EVALUATION ONLY text marker")
+    marker_count = completed.stdout.count("DEMO / EVALUATION ONLY")
+    if marker_count != 1:
+        raise AnchorError(
+            "publication PDF must contain exactly one extractable "
+            f"DEMO / EVALUATION ONLY text marker; found {marker_count}"
+        )
     if companion_sha256 not in completed.stdout:
         raise AnchorError("publication PDF is not bound to the companion SHA-256")
 
