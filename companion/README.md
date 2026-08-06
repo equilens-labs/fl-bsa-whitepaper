@@ -52,8 +52,11 @@ python3 scripts/evaluate_fixture_utility.py \
 This companion remains an archival candidate, not a current release: exact v5.0.1 pins
 `cryptography` 49.0.0 in the affected range for
 [CVE-2026-69247](https://github.com/advisories/GHSA-g6cj-pr64-35w5). It must remain unpublished
-unless the owner expressly approves archival characterization; a current-release paper requires a
-fresh v5.0.2 tag and evidence package, neither of which exists as of 6 August 2026.
+unless the owner expressly approves archival characterization. The annotated successor tag
+`v5.0.2` (tag object `3d27f7d17c2c853753d40cb883858617ead21677`, peeled commit
+`b246e39a23be938397a6d28612c776bedd8b42e2`) is bound to successful release-evidence run
+`31087235319` and pins `cryptography` 50.0.0. This companion does not contain or characterize that
+successor's evidence and must never be relabelled as v5.0.2.
 
 The paper and this ZIP must be distributed together after an authorized publication decision.
 This candidate has no public companion URL. Verify the ZIP SHA-256 printed in the PDF against the

@@ -83,10 +83,13 @@ mechanical post-label control rather than a causal conclusion.
 
 The exact v5.0.1 lock pins `cryptography` 49.0.0, which is in the affected range for
 [CVE-2026-69247](https://github.com/advisories/GHSA-g6cj-pr64-35w5); the fix starts at 50.0.0.
-v5.0.1 is therefore security-superseded and must remain unpublished as a current release.
-Publication requires an owner decision to preserve this only as an archival characterization or
-to rebuild against a fresh v5.0.2 tag and evidence package. No such v5.0.2 tag or evidence exists
-as of 6 August 2026.
+v5.0.1 is therefore security-superseded and must remain unpublished as a current release. The
+annotated successor tag `v5.0.2` (tag object `3d27f7d17c2c853753d40cb883858617ead21677`,
+peeled commit `b246e39a23be938397a6d28612c776bedd8b42e2`) is bound to successful release-evidence
+run `31087235319` and pins `cryptography` 50.0.0. This candidate does not characterize that
+successor. Publication requires an owner decision either to preserve this strictly as an archival
+v5.0.1 characterization or to retire it in favour of a separately rebuilt and reviewed v5.0.2
+paper; it must never be relabelled or presented as current-release evidence.
 
 The PDF and companion must be reviewed and distributed together. This candidate has no public
 companion URL and is not signed. Public publication requires explicit owner approval, current legal

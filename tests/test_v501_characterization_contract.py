@@ -351,6 +351,7 @@ class V501CharacterizationContractTests(unittest.TestCase):
         publication_text = "\n".join(
             (ROOT / relative).read_text(encoding="utf-8")
             for relative in (
+                "README.md",
                 "sections/01_executive_summary.tex",
                 "sections/10_limitations_monitoring.tex",
                 "bib/references.bib",
@@ -364,8 +365,19 @@ class V501CharacterizationContractTests(unittest.TestCase):
             "security-superseded",
             "must remain unpublished",
             "v5.0.2",
+            "3d27f7d17c2c853753d40cb883858617ead21677",
+            "b246e39a23be938397a6d28612c776bedd8b42e2",
+            "31087235319",
+            r"\texttt{cryptography} 50.0.0",
+            "supersedes v5.0.1",
         ):
             self.assertIn(required, normalized)
+        for stale in (
+            "no exact v5.0.2",
+            "no such v5.0.2",
+            "neither of which exists",
+        ):
+            self.assertNotIn(stale, normalized.lower())
 
     def test_forward_facing_sources_drop_obsolete_generator_names(self) -> None:
         joined = "\n".join(
