@@ -1,5 +1,6 @@
 \DocumentMetadata{
   lang=en-US,
+  pdfversion=1.7,
   testphase={phase-III,math,table}
 }
 
@@ -44,6 +45,24 @@
 \usepackage{url}
 \usepackage{hyperref}
 \usepackage[numbers,sort&compress]{natbib}
+
+% Enable the PDF/UA-1 accessibility behaviours that LaTeX otherwise activates
+% only when a document makes a formal conformance declaration. This candidate
+% intentionally withholds that declaration pending human assistive-technology
+% review, while still providing link descriptions and formula alternate text.
+\ExplSyntaxOn
+\keys_if_exist:nnT { __tag / setup } { math/alt/use }
+  { \tagpdfsetup { math/alt/use=true } }
+\cs_if_exist:NT \socket_if_exist:nT
+  {
+    \socket_if_exist:nT { hyp/link/GoTo/Contents }
+      { \socket_assign_plug:nn { hyp/link/GoTo/Contents } { default } }
+    \socket_if_exist:nT { hyp/link/GoToR/Contents }
+      { \socket_assign_plug:nn { hyp/link/GoToR/Contents } { default } }
+    \socket_if_exist:nT { hyp/link/URI/Contents }
+      { \socket_assign_plug:nn { hyp/link/URI/Contents } { default } }
+  }
+\ExplSyntaxOff
 
 \definecolor{EquilensNavy}{HTML}{1B365D}
 \definecolor{EquilensBlue}{HTML}{0072B2}

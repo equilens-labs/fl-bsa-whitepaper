@@ -81,6 +81,13 @@ class PdfAccessibilityContractTests(unittest.TestCase):
         )
         self.assertIn(r"\def\@BTnormal", main)
         self.assertIn(r"\tagmcbegin{artifact}", main)
+        self.assertIn("pdfversion=1.7", main)
+        self.assertIn("math/alt/use=true", main)
+        for link_type in ("GoTo", "GoToR", "URI"):
+            self.assertIn(
+                rf"\socket_assign_plug:nn {{ hyp/link/{link_type}/Contents }} {{ default }}",
+                main,
+            )
         self.assertIsNone(re.search(r"(?m)^\s*\\maketitle\b", main))
         self.assertIn(r"\MakeCoverTitle", main)
         self.assertIn(r"\subsection*{Branch difference register}", appendix)
