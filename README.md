@@ -67,21 +67,29 @@ python3 -m zipfile -e dist/fl-bsa-v5.0.1-companion-evidence.zip \
 python3 /tmp/flbsa-wp-companion/verify_companion_bundle.py \
   --expected-utility-sha256 \
   2b05a4a2b7ce2d798b9156ed5f837efe890ee87e4f5e914497724802636e4595 \
+  --expected-gold-manifest-sha256 \
+  353cd77907a5b5b0f64534ce6e5b00defeb872f5a8585aec43006ec24f96e073 \
+  --expected-gold-index-sha256 \
+  9ffb2c04a95f428f068d471732c7d9ed1e27a16d553749c2ec828907fbe9166c \
+  --expected-gold-summary-sha256 \
+  15bee5d51c6816e4bd8bffdde3bcb657e5a25932f9742f17496c7a53884858ce \
   dist/fl-bsa-v5.0.1-companion-evidence.zip
 ```
 
 First compare the whole companion ZIP with the companion digest on the PDF cover; that external
 comparison authenticates the bundled verifier and its inputs relative to the PDF. Then copy the
-separate utility digest from the PDF into `--expected-utility-sha256`. The verifier consumes that
-caller-supplied value; it does not read the PDF. It checks every member hash and size, source
-identities, bounded claim flags, corrected SRG method, race reference policy, certificate hashes and
-predecessor links, and exact robustness completeness and aggregates. For utility, it requires the
-paper-owned summary bytes to match the supplied digest, validates its ten-row structure, and
-recomputes its aggregates and skill-retention relation. The headline characterization must be an
-exact projection of those layers. The verifier does not regenerate utility model outputs or
-independently authenticate a coherently rewritten ZIP. Certificate signature fields are checked for
-complete encoding only because the public verification key is not bundled; the companion therefore
-claims integrity linkage, not independent authentication.
+separate utility and three Gold digests from the PDF into the four `--expected-*` arguments. The
+verifier consumes those caller-supplied values; it does not read the PDF. It checks every member
+hash and size, source identities, bounded claim flags, corrected SRG method, race reference policy,
+certificate hashes and predecessor links, and exact robustness completeness and aggregates. The
+Gold manifest, index, and merged summary bytes must match their supplied digests before those
+aggregates are consumed. For utility, the paper-owned summary bytes must match its supplied digest
+before the verifier validates the ten-row structure and recomputes aggregates and skill retention.
+The headline characterization must be an exact projection of those anchored layers. The verifier
+does not regenerate utility model outputs or independently authenticate the remaining surfaces of a
+coherently rewritten ZIP. Certificate signature fields are checked for complete encoding only
+because the public verification key is not bundled; the companion therefore claims integrity
+linkage, not independent authentication.
 
 ## Evidence layers
 
@@ -101,12 +109,16 @@ mechanical post-label control rather than a causal conclusion.
 The exact v5.0.1 lock pins `cryptography` 49.0.0, which is in the affected range for
 [CVE-2026-69247](https://github.com/advisories/GHSA-g6cj-pr64-35w5); the fix starts at 50.0.0.
 v5.0.1 is therefore security-superseded and must remain unpublished as a current release. The
-annotated successor tag `v5.0.2` (tag object `3d27f7d17c2c853753d40cb883858617ead21677`,
+annotated candidate tag `v5.0.2` (tag object `3d27f7d17c2c853753d40cb883858617ead21677`,
 peeled commit `b246e39a23be938397a6d28612c776bedd8b42e2`) is bound to successful release-evidence
-run `31087235319` and pins `cryptography` 50.0.0. This candidate does not characterize that
-successor. Publication requires an owner decision either to preserve this strictly as an archival
-v5.0.1 characterization or to retire it in favour of a separately rebuilt and reviewed v5.0.2
-paper; it must never be relabelled or presented as current-release evidence.
+run `31087235319` and pins `cryptography` 50.0.0. Its full Release workflow run `31089912581`
+nevertheless failed on that same commit, and no v5.0.2 GitHub Release had published as of 6 August
+2026. This candidate does not characterize v5.0.2. Publication requires an owner decision either
+to preserve this strictly as an archival v5.0.1 characterization or to retire it. Any
+current-release paper must wait for, and then be rebuilt against, the exact product tag and evidence
+whose full release workflow succeeds and whose release actually publishes; a successor version
+must not be guessed while drafting. This paper must never be relabelled or presented as
+current-release evidence.
 
 The PDF and companion must be reviewed and distributed together. This candidate has no public
 companion URL and is not signed. Public publication requires explicit owner approval, current legal

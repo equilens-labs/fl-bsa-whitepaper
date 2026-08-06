@@ -12,7 +12,7 @@ from pathlib import Path
 
 PRODUCT_COMMIT = "cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2"
 PRODUCT_TAG_OBJECT = "3a0ea6e4faea9d61aabcedebab2a838624fb587d"
-DOCUMENT_VERSION = "WP-5.0.1-candidate.1"
+DOCUMENT_VERSION = "WP-5.0.1-candidate.2"
 
 
 class IdentityError(ValueError):

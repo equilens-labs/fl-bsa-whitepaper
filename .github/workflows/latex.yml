@@ -106,6 +106,12 @@ jobs:
           python scripts/verify_companion_bundle.py \
             --expected-utility-sha256 \
             2b05a4a2b7ce2d798b9156ed5f837efe890ee87e4f5e914497724802636e4595 \
+            --expected-gold-manifest-sha256 \
+            353cd77907a5b5b0f64534ce6e5b00defeb872f5a8585aec43006ec24f96e073 \
+            --expected-gold-index-sha256 \
+            9ffb2c04a95f428f068d471732c7d9ed1e27a16d553749c2ec828907fbe9166c \
+            --expected-gold-summary-sha256 \
+            15bee5d51c6816e4bd8bffdde3bcb657e5a25932f9742f17496c7a53884858ce \
             dist/fl-bsa-v5.0.1-companion-evidence.zip
           python scripts/gen_publication_identity.py \
             --require-clean \

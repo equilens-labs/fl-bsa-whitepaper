@@ -4,6 +4,7 @@ import hashlib
 import io
 import importlib.util
 import json
+import re
 import statistics
 import subprocess
 import sys
@@ -42,6 +43,27 @@ UTILITY_SUMMARY_PATH = "evidence/v5.0.1/utility/utility_summary.json"
 UTILITY_SUMMARY_SHA256 = (
     "2b05a4a2b7ce2d798b9156ed5f837efe890ee87e4f5e914497724802636e4595"
 )
+GOLD_EVIDENCE_MANIFEST_PATH = (
+    "evidence/v5.0.1/robustness/evidence_manifest.json"
+)
+GOLD_INDEX_PATH = "evidence/v5.0.1/robustness/robustness_index.csv"
+GOLD_SUMMARY_PATH = (
+    "evidence/v5.0.1/robustness/robustness_summary_merged.json"
+)
+GOLD_EVIDENCE_MANIFEST_SHA256 = (
+    "353cd77907a5b5b0f64534ce6e5b00defeb872f5a8585aec43006ec24f96e073"
+)
+GOLD_INDEX_SHA256 = (
+    "9ffb2c04a95f428f068d471732c7d9ed1e27a16d553749c2ec828907fbe9166c"
+)
+GOLD_SUMMARY_SHA256 = (
+    "15bee5d51c6816e4bd8bffdde3bcb657e5a25932f9742f17496c7a53884858ce"
+)
+GOLD_VERIFY_KWARGS = {
+    "expected_gold_manifest_sha256": GOLD_EVIDENCE_MANIFEST_SHA256,
+    "expected_gold_index_sha256": GOLD_INDEX_SHA256,
+    "expected_gold_summary_sha256": GOLD_SUMMARY_SHA256,
+}
 
 
 def _read_json(relative: str) -> dict:
@@ -427,7 +449,7 @@ class V501CharacterizationContractTests(unittest.TestCase):
             hashlib.sha256(uncompressed).hexdigest(),
         )
 
-    def test_utility_summary_is_pdf_anchored_and_screen_constant_is_shared(
+    def test_study_summaries_are_pdf_anchored_and_screen_constant_is_shared(
         self,
     ) -> None:
         utility_bytes = (ROOT / UTILITY_SUMMARY_PATH).read_bytes()
@@ -450,6 +472,31 @@ class V501CharacterizationContractTests(unittest.TestCase):
         self.assertEqual(INTERNAL_AIR_SCREEN, contract.INTERNAL_AIR_SCREEN)
         self.assertEqual(UTILITY_SUMMARY_PATH, contract.UTILITY_SUMMARY_PATH)
         self.assertEqual(UTILITY_SUMMARY_SHA256, contract.UTILITY_SUMMARY_SHA256)
+        for path, digest, contract_path, contract_digest in (
+            (
+                GOLD_EVIDENCE_MANIFEST_PATH,
+                GOLD_EVIDENCE_MANIFEST_SHA256,
+                contract.GOLD_EVIDENCE_MANIFEST_PATH,
+                contract.GOLD_EVIDENCE_MANIFEST_SHA256,
+            ),
+            (
+                GOLD_INDEX_PATH,
+                GOLD_INDEX_SHA256,
+                contract.GOLD_INDEX_PATH,
+                contract.GOLD_INDEX_SHA256,
+            ),
+            (
+                GOLD_SUMMARY_PATH,
+                GOLD_SUMMARY_SHA256,
+                contract.GOLD_SUMMARY_PATH,
+                contract.GOLD_SUMMARY_SHA256,
+            ),
+        ):
+            self.assertEqual(path, contract_path)
+            self.assertEqual(digest, contract_digest)
+            self.assertEqual(
+                digest, hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
+            )
         expected_relation = ("at/above", "entirely above")
         self.assertEqual(
             expected_relation, generator._screen_relation(0.79, 0.78, 0.80, 0.75)
@@ -461,17 +508,62 @@ class V501CharacterizationContractTests(unittest.TestCase):
         macros = (ROOT / "includes" / "characterization_macros.tex").read_text(
             encoding="utf-8"
         )
-        self.assertIn(UTILITY_SUMMARY_SHA256, macros)
+        for digest in (
+            UTILITY_SUMMARY_SHA256,
+            GOLD_EVIDENCE_MANIFEST_SHA256,
+            GOLD_INDEX_SHA256,
+            GOLD_SUMMARY_SHA256,
+        ):
+            self.assertIn(digest, macros)
         reproduction = (ROOT / "sections" / "09_reproducibility.tex").read_text(
             encoding="utf-8"
         )
         self.assertIn(r"\IdentityText{\UtilitySummaryShaRaw}", reproduction)
+        for macro in (
+            r"\IdentityText{\GoldEvidenceManifestShaRaw}",
+            r"\IdentityText{\GoldIndexShaRaw}",
+            r"\IdentityText{\GoldSummaryShaRaw}",
+        ):
+            self.assertIn(macro, reproduction)
         utility_narrative = "\n".join(
             (ROOT / "sections" / name).read_text(encoding="utf-8")
             for name in ("01_executive_summary.tex", "06_results.tex")
         )
         self.assertGreaterEqual(
             utility_narrative.count(r"\UtilityBelowChanceSeedCount{}"), 2
+        )
+
+    def test_retired_uplift_stays_retired_and_producer_config_is_immutable(
+        self,
+    ) -> None:
+        forward_sources = "\n".join(
+            (ROOT / relative).read_text(encoding="utf-8")
+            for relative in (
+                "includes/macros.tex",
+                "includes/metrics_macros.tex",
+                "scripts/gen_tex_macros_from_metrics.py",
+            )
+        )
+        self.assertNotIn("GenderAIRUplift", forward_sources)
+        self.assertNotIn("31.756", forward_sources)
+        self.assertNotIn("Four-fifths rule", forward_sources)
+        producer_config = (ROOT / "config/sap.yaml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            "air_min: 0.80           # Four-fifths rule",
+            producer_config,
+        )
+        publication_doc = (
+            ROOT / "docs/stable_v5_publication.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            "changing that byte would invalidate the exact producer ZIP",
+            publication_doc,
+        )
+        self.assertIn(
+            "internally selected characterization screen",
+            publication_doc,
         )
 
     def test_regulatory_overlay_is_dated_and_uses_primary_sources(self) -> None:
@@ -513,8 +605,11 @@ class V501CharacterizationContractTests(unittest.TestCase):
             "3d27f7d17c2c853753d40cb883858617ead21677",
             "b246e39a23be938397a6d28612c776bedd8b42e2",
             "31087235319",
+            "31089912581",
             r"\texttt{cryptography} 50.0.0",
-            "supersedes v5.0.1",
+            "full Release workflow",
+            "not a published-current-release anchor",
+            "whichever exact product tag",
         ):
             self.assertIn(required, normalized)
         for stale in (
@@ -523,6 +618,58 @@ class V501CharacterizationContractTests(unittest.TestCase):
             "neither of which exists",
         ):
             self.assertNotIn(stale, normalized.lower())
+        self.assertNotIn(
+            "separately rebuilt and reviewed against exact v5.0.2",
+            normalized,
+        )
+
+    def test_current_release_forward_path_cannot_forecast_a_version(self) -> None:
+        prescriptions = (
+            (
+                "README.md",
+                "Any current-release paper must wait",
+                "\n\nThe PDF and companion",
+                set(),
+            ),
+            (
+                "companion/README.md",
+                "Any current-release replacement must be separately rebuilt",
+                "\n\nThe paper and this ZIP",
+                set(),
+            ),
+            (
+                "docs/stable_v5_publication.md",
+                "A current-release paper must instead wait",
+                "## Remaining publication blockers",
+                {"v5.0.1"},
+            ),
+            (
+                "sections/01_executive_summary.tex",
+                "A replacement current-release paper must wait",
+                "\n\nThis paper does not claim",
+                set(),
+            ),
+            (
+                "sections/10_limitations_monitoring.tex",
+                "Any current-release replacement must be separately rebuilt",
+                "\n  \\item the PDF and companion",
+                set(),
+            ),
+        )
+        for relative, marker, end_marker, allowed_versions in prescriptions:
+            source = (ROOT / relative).read_text(encoding="utf-8")
+            marker_pattern = re.escape(marker).replace(r"\ ", r"\s+")
+            marker_match = re.search(marker_pattern, source)
+            self.assertIsNotNone(marker_match)
+            assert marker_match is not None
+            block_end = source.index(end_marker, marker_match.end())
+            prescription = source[marker_match.start() : block_end]
+            with self.subTest(relative=relative):
+                self.assertEqual(
+                    allowed_versions,
+                    set(re.findall(r"\bv\d+\.\d+\.\d+\b", prescription)),
+                    "current-release prescription forecasts a product version",
+                )
 
     def test_forward_facing_sources_drop_obsolete_generator_names(self) -> None:
         joined = "\n".join(
@@ -572,7 +719,9 @@ class V501CharacterizationContractTests(unittest.TestCase):
             self.assertEqual(first.read_bytes(), second.read_bytes())
             self.assertEqual(first_result["sha256"], second_result["sha256"])
             verified = verifier.verify(
-                first, expected_utility_sha256=UTILITY_SUMMARY_SHA256
+                first,
+                expected_utility_sha256=UTILITY_SUMMARY_SHA256,
+                **GOLD_VERIFY_KWARGS,
             )
             self.assertEqual("verified", verified["status"])
             self.assertEqual(21, verified["certificate_files"])
@@ -587,6 +736,18 @@ class V501CharacterizationContractTests(unittest.TestCase):
             self.assertEqual(10, verified["utility_seeds"])
             self.assertEqual(5000, verified["utility_fixture_rows"])
             self.assertEqual(6, verified["utility_below_chance_seeds"])
+            self.assertEqual(
+                GOLD_EVIDENCE_MANIFEST_SHA256,
+                verified["gold_evidence_manifest_sha256_expected"],
+            )
+            self.assertEqual(
+                GOLD_INDEX_SHA256,
+                verified["gold_index_sha256_expected"],
+            )
+            self.assertEqual(
+                GOLD_SUMMARY_SHA256,
+                verified["gold_summary_sha256_expected"],
+            )
             self.assertEqual(
                 11, verified["characterization_summary_sections_cross_checked"]
             )
@@ -618,6 +779,12 @@ class V501CharacterizationContractTests(unittest.TestCase):
                     str(extracted / "verify_companion_bundle.py"),
                     "--expected-utility-sha256",
                     UTILITY_SUMMARY_SHA256,
+                    "--expected-gold-manifest-sha256",
+                    GOLD_EVIDENCE_MANIFEST_SHA256,
+                    "--expected-gold-index-sha256",
+                    GOLD_INDEX_SHA256,
+                    "--expected-gold-summary-sha256",
+                    GOLD_SUMMARY_SHA256,
                     str(first),
                 ],
                 check=True,
@@ -633,6 +800,120 @@ class V501CharacterizationContractTests(unittest.TestCase):
                 verifier.verify(
                     extracted,
                     expected_utility_sha256=UTILITY_SUMMARY_SHA256,
+                    **GOLD_VERIFY_KWARGS,
+                )
+
+            for index, member in enumerate(
+                (
+                    GOLD_EVIDENCE_MANIFEST_PATH,
+                    GOLD_INDEX_PATH,
+                    GOLD_SUMMARY_PATH,
+                )
+            ):
+                anchored_tamper = Path(tmp) / f"gold-anchor-{index}.zip"
+                with zipfile.ZipFile(first) as archive:
+                    replacement = archive.read(member) + b"\n"
+                _rewrite_companion_member(
+                    first, anchored_tamper, member, replacement
+                )
+                with self.subTest(gold_anchor=member), self.assertRaisesRegex(
+                    verifier.VerificationError,
+                    "does not match PDF-disclosed SHA-256",
+                ):
+                    verifier.verify(
+                        anchored_tamper,
+                        expected_utility_sha256=UTILITY_SUMMARY_SHA256,
+                        **GOLD_VERIFY_KWARGS,
+                    )
+
+            coherent_gold_tamper = Path(tmp) / "coherent-gold-tamper.zip"
+            with zipfile.ZipFile(first) as archive:
+                gold_summary = json.loads(archive.read(GOLD_SUMMARY_PATH))
+                gold_index_text = archive.read(GOLD_INDEX_PATH).decode("utf-8")
+                evidence_identity = json.loads(
+                    archive.read(
+                        "evidence/v5.0.1/publication/evidence_identity.json"
+                    )
+                )
+                characterization = json.loads(
+                    archive.read(
+                        "evidence/v5.0.1/publication/characterization_summary.json"
+                    )
+                )
+
+            gender = gold_summary["scenarios"]["gender_bias"]
+            forged_di_values = []
+            for seed in gender["seeds"].values():
+                seed["di"] += 0.3
+                forged_di_values.append(seed["di"])
+            gender["aggregates"]["numeric_bands"]["di"] = _sample_band(
+                forged_di_values
+            )
+            self.assertAlmostEqual(
+                0.9500398663615654,
+                gender["aggregates"]["numeric_bands"]["di"]["mean"],
+            )
+
+            reader = csv.DictReader(io.StringIO(gold_index_text))
+            index_rows = list(reader)
+            self.assertIsNotNone(reader.fieldnames)
+            for row in index_rows:
+                if row["scenario"] == "02_gender_bias":
+                    row["di"] = str(float(row["di"]) + 0.3)
+            index_buffer = io.StringIO(newline="")
+            writer = csv.DictWriter(
+                index_buffer,
+                fieldnames=reader.fieldnames,
+                lineterminator="\n",
+            )
+            writer.writeheader()
+            writer.writerows(index_rows)
+
+            for row in characterization["robustness"]["scenarios"]:
+                if row["id"] == "gender_bias":
+                    for field in ("air_min", "air_mean", "air_max"):
+                        row[field] += 0.3
+
+            summary_replacement = (
+                json.dumps(gold_summary, indent=2, sort_keys=True) + "\n"
+            ).encode("utf-8")
+            index_replacement = index_buffer.getvalue().encode("utf-8")
+            characterization_replacement = (
+                json.dumps(characterization, indent=2, sort_keys=True) + "\n"
+            ).encode("utf-8")
+            evidence_identity["gold_robustness"]["index_sha256"] = (
+                hashlib.sha256(index_replacement).hexdigest()
+            )
+            evidence_identity["gold_robustness"]["summary_sha256"] = (
+                hashlib.sha256(summary_replacement).hexdigest()
+            )
+            identity_replacement = (
+                json.dumps(evidence_identity, indent=2, sort_keys=True) + "\n"
+            ).encode("utf-8")
+            _rewrite_companion_members(
+                first,
+                coherent_gold_tamper,
+                {
+                    GOLD_INDEX_PATH: index_replacement,
+                    GOLD_SUMMARY_PATH: summary_replacement,
+                    (
+                        "evidence/v5.0.1/publication/"
+                        "characterization_summary.json"
+                    ): characterization_replacement,
+                    (
+                        "evidence/v5.0.1/publication/"
+                        "evidence_identity.json"
+                    ): identity_replacement,
+                },
+            )
+            with self.assertRaisesRegex(
+                verifier.VerificationError,
+                "robustness_index.csv does not match PDF-disclosed SHA-256",
+            ):
+                verifier.verify(
+                    coherent_gold_tamper,
+                    expected_utility_sha256=UTILITY_SUMMARY_SHA256,
+                    **GOLD_VERIFY_KWARGS,
                 )
 
             utility_tamper = Path(tmp) / "utility-tamper.zip"
@@ -658,6 +939,7 @@ class V501CharacterizationContractTests(unittest.TestCase):
                 verifier.verify(
                     utility_tamper,
                     expected_utility_sha256=UTILITY_SUMMARY_SHA256,
+                    **GOLD_VERIFY_KWARGS,
                 )
 
             source_identity_tamper = Path(tmp) / "source-identity-tamper.zip"
@@ -684,6 +966,7 @@ class V501CharacterizationContractTests(unittest.TestCase):
                 verifier.verify(
                     source_identity_tamper,
                     expected_utility_sha256=UTILITY_SUMMARY_SHA256,
+                    **GOLD_VERIFY_KWARGS,
                 )
 
             coherent_utility_tamper = Path(tmp) / "coherent-utility-tamper.zip"
@@ -744,6 +1027,7 @@ class V501CharacterizationContractTests(unittest.TestCase):
                 verifier.verify(
                     coherent_utility_tamper,
                     expected_utility_sha256=UTILITY_SUMMARY_SHA256,
+                    **GOLD_VERIFY_KWARGS,
                 )
 
             coherent_contract_tamper = (
@@ -784,6 +1068,12 @@ class V501CharacterizationContractTests(unittest.TestCase):
                     str(forged_extracted / "verify_companion_bundle.py"),
                     "--expected-utility-sha256",
                     UTILITY_SUMMARY_SHA256,
+                    "--expected-gold-manifest-sha256",
+                    GOLD_EVIDENCE_MANIFEST_SHA256,
+                    "--expected-gold-index-sha256",
+                    GOLD_INDEX_SHA256,
+                    "--expected-gold-summary-sha256",
+                    GOLD_SUMMARY_SHA256,
                     str(coherent_contract_tamper),
                 ],
                 check=False,
@@ -821,6 +1111,7 @@ class V501CharacterizationContractTests(unittest.TestCase):
                 verifier.verify(
                     summary_tamper,
                     expected_utility_sha256=UTILITY_SUMMARY_SHA256,
+                    **GOLD_VERIFY_KWARGS,
                 )
 
             producer_projection_tamper = Path(tmp) / "producer-projection-tamper.zip"
@@ -843,6 +1134,7 @@ class V501CharacterizationContractTests(unittest.TestCase):
                 verifier.verify(
                     producer_projection_tamper,
                     expected_utility_sha256=UTILITY_SUMMARY_SHA256,
+                    **GOLD_VERIFY_KWARGS,
                 )
 
     def test_certificate_graph_rejects_cycles_and_unresolved_links(self) -> None:
@@ -880,6 +1172,16 @@ class V501CharacterizationContractTests(unittest.TestCase):
             )
             self.assertIn("--expected-utility-sha256", text)
             self.assertIn(UTILITY_SUMMARY_SHA256, text)
+            for flag, digest in (
+                (
+                    "--expected-gold-manifest-sha256",
+                    GOLD_EVIDENCE_MANIFEST_SHA256,
+                ),
+                ("--expected-gold-index-sha256", GOLD_INDEX_SHA256),
+                ("--expected-gold-summary-sha256", GOLD_SUMMARY_SHA256),
+            ):
+                self.assertIn(flag, text)
+                self.assertIn(digest, text)
         self.assertIn(
             "requires the exact `utility_summary.json` bytes", companion_readme
         )
@@ -906,11 +1208,40 @@ class V501CharacterizationContractTests(unittest.TestCase):
         self.assertIn(
             "--expected-utility-sha256 $(UTILITY_SUMMARY_SHA256)", makefile
         )
+        for variable, flag, digest in (
+            (
+                "GOLD_EVIDENCE_MANIFEST_SHA256",
+                "--expected-gold-manifest-sha256",
+                GOLD_EVIDENCE_MANIFEST_SHA256,
+            ),
+            (
+                "GOLD_INDEX_SHA256",
+                "--expected-gold-index-sha256",
+                GOLD_INDEX_SHA256,
+            ),
+            (
+                "GOLD_SUMMARY_SHA256",
+                "--expected-gold-summary-sha256",
+                GOLD_SUMMARY_SHA256,
+            ),
+        ):
+            self.assertIn(f"{variable}={digest}", makefile)
+            self.assertIn(f"{flag} $({variable})", makefile)
         workflow = (ROOT / ".github" / "workflows" / "latex.yml").read_text(
             encoding="utf-8"
         )
         self.assertIn("--expected-utility-sha256", workflow)
         self.assertIn(UTILITY_SUMMARY_SHA256, workflow)
+        for flag, digest in (
+            (
+                "--expected-gold-manifest-sha256",
+                GOLD_EVIDENCE_MANIFEST_SHA256,
+            ),
+            ("--expected-gold-index-sha256", GOLD_INDEX_SHA256),
+            ("--expected-gold-summary-sha256", GOLD_SUMMARY_SHA256),
+        ):
+            self.assertIn(flag, workflow)
+            self.assertIn(digest, workflow)
         upload_start = workflow.index("- name: Upload PDF artifact")
         upload_end = workflow.index("- name: Package arXiv source", upload_start)
         upload = workflow[upload_start:upload_end]

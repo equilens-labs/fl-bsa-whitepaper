@@ -452,8 +452,6 @@ def main() -> int:
     amp_air_ci: Any = None
     intr_air_point: Any = None
     intr_air_ci: Any = None
-    gender_uplift_abs: Any = None
-    gender_uplift_rel: Any = None
     gender_fidelity_abs: Any = None
     gender_fidelity_rel: Any = None
 
@@ -526,14 +524,11 @@ def main() -> int:
             and isinstance(slices.get("intrinsic"), dict)
         )
 
-        imp = slices_payload.get("improvement") if isinstance(slices_payload.get("improvement"), dict) else {}
         bp = (
             slices_payload.get("bias_preservation")
             if isinstance(slices_payload.get("bias_preservation"), dict)
             else {}
         )
-        gender_uplift_abs = imp.get("abs_uplift_air")
-        gender_uplift_rel = imp.get("rel_uplift_air")
         gender_fidelity_abs = bp.get("abs_delta_air")
         gender_fidelity_rel = bp.get("rel_delta_air")
 
@@ -760,15 +755,8 @@ def main() -> int:
             f.write("\\renewcommand{\\GenderAIRIntrinsicLCI}{TBD}\n")
             f.write("\\renewcommand{\\GenderAIRIntrinsicUCI}{TBD}\n")
 
-        # Uplift/fidelity summaries (AIR)
-        f.write(f"\\renewcommand{{\\GenderAIRUpliftAbs}}{{{_fmt_num(gender_uplift_abs)}}}\n")
-        try:
-            f.write(
-                f"\\renewcommand{{\\GenderAIRUpliftRelPct}}{{\\num{{{float(gender_uplift_rel) * 100.0:.3f}}}}}\n"
-            )
-        except Exception:
-            f.write("\\renewcommand{\\GenderAIRUpliftRelPct}{TBD}\n")
-
+        # Fidelity summary (AIR). The former intrinsic-vs-amplification
+        # "uplift" macros were retired because parity is policy-determined.
         f.write(f"\\renewcommand{{\\GenderAIRFidelityAbs}}{{{_fmt_num(gender_fidelity_abs)}}}\n")
         try:
             f.write(

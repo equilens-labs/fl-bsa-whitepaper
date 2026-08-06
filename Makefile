@@ -7,6 +7,9 @@ LOCAL_PROFILE=includes/publication_profile.local.tex
 COMPATIBILITY_INTAKE=dist/stable-v5-intake-compatibility.zip
 PUBLICATION_MANIFEST=dist/publication-manifest.json
 UTILITY_SUMMARY_SHA256=2b05a4a2b7ce2d798b9156ed5f837efe890ee87e4f5e914497724802636e4595
+GOLD_EVIDENCE_MANIFEST_SHA256=353cd77907a5b5b0f64534ce6e5b00defeb872f5a8585aec43006ec24f96e073
+GOLD_INDEX_SHA256=9ffb2c04a95f428f068d471732c7d9ed1e27a16d553749c2ec828907fbe9166c
+GOLD_SUMMARY_SHA256=15bee5d51c6816e4bd8bffdde3bcb657e5a25932f9742f17496c7a53884858ce
 EXPECTED_TABLE_HEADER_CELLS=26
 EXPECTED_FIGURE_TAGS=7
 VERAPDF_IMAGE=ghcr.io/verapdf/cli@sha256:595d7791a9321975cde6b7f5393beed98d76167ea6c39af191704462a4fa8b9d
@@ -38,7 +41,12 @@ assets: macros plots characterization
 
 companion: assets
 	python3 scripts/build_companion_bundle.py --repo-root . --output $(COMPANION)
-	python3 scripts/verify_companion_bundle.py --expected-utility-sha256 $(UTILITY_SUMMARY_SHA256) $(COMPANION)
+	python3 scripts/verify_companion_bundle.py \
+		--expected-utility-sha256 $(UTILITY_SUMMARY_SHA256) \
+		--expected-gold-manifest-sha256 $(GOLD_EVIDENCE_MANIFEST_SHA256) \
+		--expected-gold-index-sha256 $(GOLD_INDEX_SHA256) \
+		--expected-gold-summary-sha256 $(GOLD_SUMMARY_SHA256) \
+		$(COMPANION)
 
 identity: companion
 	python3 scripts/gen_publication_identity.py --repo-root . --companion $(COMPANION) --output $(IDENTITY)
@@ -55,7 +63,12 @@ candidate: test assets
 	test -z "$$(git status --porcelain --untracked-files=all)"
 	cp $(CANDIDATE_PROFILE) $(LOCAL_PROFILE)
 	python3 scripts/build_companion_bundle.py --repo-root . --output $(COMPANION)
-	python3 scripts/verify_companion_bundle.py --expected-utility-sha256 $(UTILITY_SUMMARY_SHA256) $(COMPANION)
+	python3 scripts/verify_companion_bundle.py \
+		--expected-utility-sha256 $(UTILITY_SUMMARY_SHA256) \
+		--expected-gold-manifest-sha256 $(GOLD_EVIDENCE_MANIFEST_SHA256) \
+		--expected-gold-index-sha256 $(GOLD_INDEX_SHA256) \
+		--expected-gold-summary-sha256 $(GOLD_SUMMARY_SHA256) \
+		$(COMPANION)
 	python3 scripts/gen_publication_identity.py --require-clean --repo-root . --companion $(COMPANION) --output $(IDENTITY)
 	latexmk -C main.tex
 	latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex

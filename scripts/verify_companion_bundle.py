@@ -47,6 +47,13 @@ GOLD_ARTIFACT_ID = 8839160190
 GOLD_ARTIFACT_API_DIGEST = (
     "sha256:4fc12773c6410df3e6b4a1b1ded43c14a4ef2c84d013f09ec42d3ba7df1c7988"
 )
+GOLD_EVIDENCE_MANIFEST_PATH = (
+    "evidence/v5.0.1/robustness/evidence_manifest.json"
+)
+GOLD_INDEX_PATH = "evidence/v5.0.1/robustness/robustness_index.csv"
+GOLD_SUMMARY_PATH = (
+    "evidence/v5.0.1/robustness/robustness_summary_merged.json"
+)
 SRG_METHOD = "conservative_wilson_endpoint_difference"
 PRODUCER_BUNDLE_MEMBER = "producer/WhitePaper_Intake_Bundle_v4.zip"
 EXPECTED_SEEDS = (7, 11, 23, 42, 101, 1337, 2025, 4096, 8191, 314159)
@@ -226,20 +233,49 @@ def _require(value: bool, message: str) -> None:
         raise VerificationError(message)
 
 
-def _digest_anchored_json(
+def _digest_anchored_bytes(
     bundle: Bundle, name: str, expected_sha256: str
-) -> dict[str, Any]:
+) -> bytes:
     data = bundle.read(name)
     _require(
         _sha256(data) == expected_sha256,
         f"{name} does not match PDF-disclosed SHA-256",
     )
+    return data
+
+
+def _digest_anchored_json(
+    bundle: Bundle, name: str, expected_sha256: str
+) -> dict[str, Any]:
+    data = _digest_anchored_bytes(bundle, name, expected_sha256)
     try:
         value = json.loads(data.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise VerificationError(f"invalid JSON in {name}: {exc}") from exc
     _require(isinstance(value, dict), f"{name} must contain a JSON object")
     return value
+
+
+def _verify_gold_anchors(
+    bundle: Bundle,
+    *,
+    expected_gold_manifest_sha256: str,
+    expected_gold_index_sha256: str,
+    expected_gold_summary_sha256: str,
+) -> dict[str, str]:
+    for name, expected in (
+        (GOLD_EVIDENCE_MANIFEST_PATH, expected_gold_manifest_sha256),
+        (GOLD_INDEX_PATH, expected_gold_index_sha256),
+        (GOLD_SUMMARY_PATH, expected_gold_summary_sha256),
+    ):
+        _digest_anchored_bytes(bundle, name, expected)
+    return {
+        "gold_evidence_manifest_sha256_expected": (
+            expected_gold_manifest_sha256
+        ),
+        "gold_index_sha256_expected": expected_gold_index_sha256,
+        "gold_summary_sha256_expected": expected_gold_summary_sha256,
+    }
 
 
 def _certificate_content(payload: dict[str, Any]) -> dict[str, Any]:
@@ -363,7 +399,7 @@ def _verify_identity(bundle: Bundle, manifest: dict[str, Any]) -> None:
     _require(product.get("tag_object") == PRODUCT_TAG_OBJECT, "wrong product tag object")
     paper = manifest.get("whitepaper") or {}
     _require(HEX_40.fullmatch(str(paper.get("commit") or "")) is not None, "bad paper commit")
-    _require(paper.get("document_version") == "WP-5.0.1-candidate.1", "bad document version")
+    _require(paper.get("document_version") == "WP-5.0.1-candidate.2", "bad document version")
     _require(paper.get("publication_status") == "candidate_not_published", "bad publication status")
     evidence = manifest.get("evidence") or {}
     _require(
@@ -1437,7 +1473,7 @@ def _expected_characterization_summary(
 
     return {
         "schema_version": "flbsa.whitepaper_characterization.v2",
-        "document_version": "WP-5.0.1-candidate.1",
+        "document_version": "WP-5.0.1-candidate.2",
         "as_of": "2026-08-05",
         "publication_status": "candidate_not_published",
         "product": {
@@ -1577,15 +1613,32 @@ def _verify_publication_overlays(
 
 
 def verify(
-    path: Path, *, expected_utility_sha256: str
+    path: Path,
+    *,
+    expected_utility_sha256: str,
+    expected_gold_manifest_sha256: str,
+    expected_gold_index_sha256: str,
+    expected_gold_summary_sha256: str,
 ) -> dict[str, Any]:
-    _require(
-        HEX_64.fullmatch(expected_utility_sha256) is not None,
-        "expected utility SHA-256 must be 64 lowercase hexadecimal characters",
-    )
+    for label, digest in (
+        ("utility", expected_utility_sha256),
+        ("Gold evidence manifest", expected_gold_manifest_sha256),
+        ("Gold index", expected_gold_index_sha256),
+        ("Gold summary", expected_gold_summary_sha256),
+    ):
+        _require(
+            HEX_64.fullmatch(digest) is not None,
+            f"expected {label} SHA-256 must be 64 lowercase hexadecimal characters",
+        )
     bundle = Bundle(path)
     manifest = bundle.json("MANIFEST.json")
     _verify_file_manifest(bundle, manifest)
+    gold_anchors = _verify_gold_anchors(
+        bundle,
+        expected_gold_manifest_sha256=expected_gold_manifest_sha256,
+        expected_gold_index_sha256=expected_gold_index_sha256,
+        expected_gold_summary_sha256=expected_gold_summary_sha256,
+    )
     producer = _verify_original_producer_bundle(bundle)
     _verify_identity(bundle, manifest)
     fairness = _verify_fairness(bundle)
@@ -1603,6 +1656,7 @@ def verify(
         "product_tag": PRODUCT_TAG,
         "product_commit": PRODUCT_COMMIT,
         "utility_summary_sha256_expected": expected_utility_sha256,
+        **gold_anchors,
         **producer,
         **fairness,
         **certificates,
@@ -1620,12 +1674,32 @@ def main() -> int:
         required=True,
         help="utility_summary.json digest copied from the trusted PDF",
     )
+    parser.add_argument(
+        "--expected-gold-manifest-sha256",
+        required=True,
+        help="Gold evidence_manifest.json digest copied from the trusted PDF",
+    )
+    parser.add_argument(
+        "--expected-gold-index-sha256",
+        required=True,
+        help="Gold robustness_index.csv digest copied from the trusted PDF",
+    )
+    parser.add_argument(
+        "--expected-gold-summary-sha256",
+        required=True,
+        help="Gold robustness_summary_merged.json digest copied from the trusted PDF",
+    )
     parser.add_argument("bundle", type=Path)
     args = parser.parse_args()
     try:
         result = verify(
             args.bundle,
             expected_utility_sha256=args.expected_utility_sha256,
+            expected_gold_manifest_sha256=(
+                args.expected_gold_manifest_sha256
+            ),
+            expected_gold_index_sha256=args.expected_gold_index_sha256,
+            expected_gold_summary_sha256=args.expected_gold_summary_sha256,
         )
     except VerificationError as exc:
         print(f"verification failed: {exc}", file=sys.stderr)

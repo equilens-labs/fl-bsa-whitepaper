@@ -560,7 +560,16 @@ print(json.dumps(fixture))
             "Do not dispatch the workflow's draft-release path for v5.0.1",
             publication_doc,
         )
-        self.assertIn("separately rebuilt and reviewed against exact v5.0.2", publication_doc)
+        self.assertIn(
+            "exact product tag whose full Release workflow",
+            publication_doc,
+        )
+        self.assertIn("whose GitHub Release actually publishes", publication_doc)
+        self.assertIn("Never pre-name a successor version", publication_doc)
+        self.assertNotIn(
+            "separately rebuilt and reviewed against exact v5.0.2",
+            publication_doc,
+        )
         self.assertLess(
             publish_step.index(
                 'receipt["publication_status"] = "github_draft_release_assets_staged_characterization_only"'

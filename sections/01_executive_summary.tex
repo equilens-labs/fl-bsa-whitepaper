@@ -87,13 +87,16 @@ A security-supersession hold also applies. The exact v5.0.1 dependency manifest 
 50.0.0, with the fix beginning at 50.0.0 \citep{github_cve_2026_69247}. Consequently v5.0.1 is
 security-superseded and must remain unpublished as a current-release whitepaper. Before any
 publication, the owner must choose whether to retain this as an explicitly archival v5.0.1
-characterization or retire it in favour of a separately rebuilt successor paper. The annotated
-v5.0.2 tag now exists at tag object
+characterization or retire it. The annotated v5.0.2 candidate tag exists at tag object
 \IdentityText{3d27f7d17c2c853753d40cb883858617ead21677}, peeled product commit
 \IdentityText{b246e39a23be938397a6d28612c776bedd8b42e2}, and successful release-evidence run
-31087235319; its lock pins \texttt{cryptography} 50.0.0. That release supersedes v5.0.1. This paper
-does not characterize the successor evidence and must never be relabelled or presented as a
-current-release v5.0.2 paper.
+31087235319; its lock pins \texttt{cryptography} 50.0.0. The full Release workflow run 31089912581
+later failed on that same commit, and no v5.0.2 GitHub Release had published as of 6 August 2026.
+Thus v5.0.2 remediates the affected dependency but is not a published-current-release anchor. This
+paper does not characterize v5.0.2 evidence and must never be relabelled as v5.0.2. A replacement
+current-release paper must wait for, and then bind to, whichever exact product tag completes the
+full Release workflow and actually publishes; the successor version cannot be forecast while this
+paper is drafted.
 
 This paper does not claim or authorize vendor-authored evidence, broad commercial authorization,
 public Marketplace go-live, production live decisioning, or regulator approval. Those explicit

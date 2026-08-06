@@ -22,17 +22,24 @@ The consumer anchor is `baselines/stable-v5-characterization.json`. It pins inta
 `86d51b0ee92662bf6470ca0120d41022161423bd`, and selected-input projection SHA-256
 `9b40c0e8c8e6291c51b267f38a72c242705895c3269844b37c4b35d23d9526c9`.
 
+The employment-guideline label beside `air_min` in the pinned producer `config/sap.yaml` is retained
+only because changing that byte would invalidate the exact producer ZIP, configuration tree, and
+publication-input projection. It is not adopted as publication language. The paper-owned contract
+and narrative call 0.80 an internally selected characterization screen, not a lending-law rule.
+
 The deterministic compatibility export has SHA-256
 `09f0f404512f0e7366b1070c654c17d5511253b9765a91fcd1e4e9fe9294b626`. It is a Git reconstruction
 of the pinned intake/config projection. It is not the original attested producer ZIP; both
 identities remain explicit.
 
 v5.0.1 is security-superseded: its lock pins `cryptography` 49.0.0 in the affected range for
-CVE-2026-69247. Annotated successor tag `v5.0.2` exists at tag object
+CVE-2026-69247. Annotated candidate tag `v5.0.2` exists at tag object
 `3d27f7d17c2c853753d40cb883858617ead21677`, peeled commit
 `b246e39a23be938397a6d28612c776bedd8b42e2`, and successful release-evidence run `31087235319`;
-its lock pins `cryptography` 50.0.0. The v5.0.1 material is therefore archival-only and must not be
-presented or staged as a current release.
+its lock pins `cryptography` 50.0.0. Full Release workflow run `31089912581` later failed on that
+same commit, however, and no v5.0.2 GitHub Release had published as of 6 August 2026. v5.0.2 is
+therefore not a published-current-release anchor. The v5.0.1 material remains archival-only and
+must not be presented or staged as a current release.
 
 This repository state is a review candidate only. It creates no tag, release, merge, public URL,
 website update, arXiv submission, customer-evidence authorization, or publication approval.
@@ -68,8 +75,12 @@ required before any conformance declaration.
 Do not dispatch the workflow's draft-release path for v5.0.1. The path's existence is not release
 authorization, and the security-superseded tag cannot be staged as a current release. Any later
 archival distribution requires a new, explicit owner decision and current legal/security review.
-A current-release paper must instead be separately rebuilt and reviewed against exact v5.0.2
-evidence; this v5.0.1 paper and companion cannot be relabelled or reused for that purpose.
+A current-release paper must instead wait for the exact product tag whose full Release workflow
+succeeds on the tagged commit and whose GitHub Release actually publishes. Only then may a separate
+paper be rebuilt and reviewed against that tag object, peeled commit, release-evidence run, and
+release outcome. Never pre-name a successor version while drafting: this repository cannot infer
+product release outcomes. This v5.0.1 paper and companion cannot be relabelled or reused for that
+purpose.
 
 ## Remaining publication blockers
 
@@ -79,7 +90,8 @@ by the authorized owners:
 1. owner review and approval of the exact PDF, companion, hashes, legal wording, and distribution
    route;
 2. an explicit choice to retain the security-superseded v5.0.1 artifact only as an archival
-   characterization or retire it in favour of a separately rebuilt v5.0.2 paper;
+   characterization or retire it; any current-release replacement must use the exact tag that
+   successfully publishes rather than a version forecast at drafting time;
 3. a durable public location that co-distributes the PDF and companion;
 4. a trusted external digest channel or verifiable release signature;
 5. product-side convergence or explicit versioning of the configured-reference and highest-rate

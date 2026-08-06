@@ -2,9 +2,29 @@
 
 INTERNAL_AIR_SCREEN = 0.80
 UTILITY_SUMMARY_PATH = "evidence/v5.0.1/utility/utility_summary.json"
+GOLD_EVIDENCE_MANIFEST_PATH = (
+    "evidence/v5.0.1/robustness/evidence_manifest.json"
+)
+GOLD_INDEX_PATH = "evidence/v5.0.1/robustness/robustness_index.csv"
+GOLD_SUMMARY_PATH = (
+    "evidence/v5.0.1/robustness/robustness_summary_merged.json"
+)
 
 # This exact digest is disclosed in the PDF. It anchors the paper-owned utility
 # rows independently of the companion's repairable internal file manifest.
 UTILITY_SUMMARY_SHA256 = (
     "2b05a4a2b7ce2d798b9156ed5f837efe890ee87e4f5e914497724802636e4595"
+)
+
+# These exact producer-derived Gold digests are disclosed in the PDF. They
+# anchor the robustness inventory, index, and aggregate bytes independently of
+# the companion's repairable identity record and file manifest.
+GOLD_EVIDENCE_MANIFEST_SHA256 = (
+    "353cd77907a5b5b0f64534ce6e5b00defeb872f5a8585aec43006ec24f96e073"
+)
+GOLD_INDEX_SHA256 = (
+    "9ffb2c04a95f428f068d471732c7d9ed1e27a16d553749c2ec828907fbe9166c"
+)
+GOLD_SUMMARY_SHA256 = (
+    "15bee5d51c6816e4bd8bffdde3bcb657e5a25932f9742f17496c7a53884858ce"
 )

@@ -14,6 +14,12 @@ python3 -m zipfile -e fl-bsa-v5.0.1-companion-evidence.zip \
 python3 fl-bsa-v5.0.1-companion-evidence/verify_companion_bundle.py \
   --expected-utility-sha256 \
   2b05a4a2b7ce2d798b9156ed5f837efe890ee87e4f5e914497724802636e4595 \
+  --expected-gold-manifest-sha256 \
+  353cd77907a5b5b0f64534ce6e5b00defeb872f5a8585aec43006ec24f96e073 \
+  --expected-gold-index-sha256 \
+  9ffb2c04a95f428f068d471732c7d9ed1e27a16d553749c2ec828907fbe9166c \
+  --expected-gold-summary-sha256 \
+  15bee5d51c6816e4bd8bffdde3bcb657e5a25932f9742f17496c7a53884858ce \
   fl-bsa-v5.0.1-companion-evidence.zip
 \end{verbatim}
 
@@ -22,17 +28,31 @@ standard-library verifier be extracted and run against the delivered ZIP. It rej
 duplicate, oversized, or unexpected archive members; checks every file size and SHA-256 in
 \path{MANIFEST.json}; reconstructs and hashes the original producer ZIP; verifies the exact
 product, workflow, and customer/publication identities; recomputes the displayed Wilson, AIR, SRG,
-two-proportion, and Holm arithmetic; and traverses the complete certificate graph. For robustness
-it checks the exact seed set, per-seed statuses, and aggregates for all 40 Gold runs. The utility
-SHA-256 argument must be copied from the trusted PDF; the verifier consumes that supplied value and
-does not read the PDF. It requires
+two-proportion, and Holm arithmetic; and traverses the complete certificate graph. The three Gold
+SHA-256 arguments and the utility SHA-256 argument must be copied from this trusted PDF; the
+verifier consumes the supplied values and does not read the PDF. Before interpreting robustness it
+requires the exact Gold evidence manifest, index, and merged summary bytes to match, then checks the
+seed set, per-seed statuses, and aggregates for all 40 runs. It requires
 \path{evidence/v5.0.1/utility/utility_summary.json} to match, then validates the ten-row structure,
 recomputes aggregates and skill retention, and cross-checks the paper-owned headline
-characterization. A coherent rewrite of utility rows, bands, derived summary, bundled digest
-constant, and ZIP manifest therefore still fails when the original PDF value is supplied. The
-verifier does not independently authenticate a modified ZIP or regenerate generator outputs or
-model predictions; the preceding whole-ZIP digest comparison is the trust anchor, and full utility
-reproduction still requires the exact product checkout and recorded dependencies.
+characterization. Coherent rewrites of either Gold or utility values, derived summaries, bundled
+identity records, and the ZIP manifest therefore fail when the original PDF values are supplied.
+The verifier does not independently authenticate the companion's remaining surfaces or regenerate
+generator outputs or model predictions. For those remaining surfaces, the preceding
+whole-ZIP digest comparison is the trust anchor; full utility reproduction still requires the exact
+product checkout and recorded dependencies.
+
+The externally anchored Gold bytes have these SHA-256 values:
+
+\begin{KeyBox}
+  \small
+  \texttt{evidence\_manifest.json}\par
+  \IdentityText{\GoldEvidenceManifestShaRaw}\par\smallskip
+  \texttt{robustness\_index.csv}\par
+  \IdentityText{\GoldIndexShaRaw}\par\smallskip
+  \texttt{robustness\_summary\_merged.json}\par
+  \IdentityText{\GoldSummaryShaRaw}
+\end{KeyBox}
 
 No instruction depends on an unbundled repository-relative evidence file. The current regulatory
 overlay is at
