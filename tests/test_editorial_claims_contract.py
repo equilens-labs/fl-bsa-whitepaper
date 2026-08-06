@@ -62,8 +62,10 @@ class EditorialClaimsContractTests(unittest.TestCase):
         )
 
         self.assertIn("colorlinks=true", main_tex)
-        self.assertIn("pdfstandard=UA-1", main_tex)
+        self.assertNotIn("pdfstandard=UA-1", main_tex)
         self.assertIn("lang=en-US", main_tex)
+        self.assertIn("testphase={phase-III,math,table}", main_tex)
+        self.assertIn("does not declare", main_tex)
         self.assertIn("round-pad=true", main_tex)
         self.assertNotIn("round-pad=false", main_tex)
         self.assertNotIn(r"\begin{longtable}", section_text)
@@ -71,6 +73,33 @@ class EditorialClaimsContractTests(unittest.TestCase):
         self.assertNotIn(r"\begin{figure}[t]", section_text)
         self.assertNotIn(r"\clearpage" + "\n" + r"\section{Limitations", section_text)
         self.assertGreaterEqual(section_text.count("alt={"), 7)
+
+    def test_every_data_table_declares_column_header_semantics(self) -> None:
+        main_tex = (ROOT / "main.tex").read_text(encoding="utf-8")
+        self.assertIn(
+            r"\newcommand{\AccessibleTableHeaderRow}"
+            r"{\tagpdfsetup{table-header-rows={1}}}",
+            main_tex,
+        )
+
+        source_paths = [ROOT / "main.tex"]
+        source_paths.extend(sorted((ROOT / "sections").glob("*.tex")))
+        source_paths.extend(sorted((ROOT / "includes").glob("table_*.tex")))
+        table_count = 0
+        for path in source_paths:
+            source = path.read_text(encoding="utf-8")
+            for match in re.finditer(r"\\begin\{tabular\}", source):
+                preceding_line = source[: match.start()].rstrip().splitlines()[-1].strip()
+                self.assertEqual(r"\AccessibleTableHeaderRow", preceding_line, path)
+                table_count += 1
+        self.assertEqual(10, table_count)
+
+        for layout_source in (
+            ROOT / "main.tex",
+            ROOT / "sections" / "01_executive_summary.tex",
+            ROOT / "sections" / "appendix_a_sap.tex",
+        ):
+            self.assertIn("KeyValueList", layout_source.read_text(encoding="utf-8"))
 
     def test_oci_digest_display_chunks_only_digest_hex(self) -> None:
         module = _load_preamble_module()

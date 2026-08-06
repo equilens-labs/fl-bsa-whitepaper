@@ -1,29 +1,30 @@
 \section{Statistical Analysis Plan Summary}
 
-\begin{tabular}{@{}>{\bfseries}p{0.28\linewidth}p{0.66\linewidth}@{}}
-Analysis population & Rows present in the generated fixture or selected branch artifact; no
-population-weighting or applicant-level causal estimand. \\
-Primary comparison & Female versus male gender selection rate. Race retained as a bounded
-multi-group secondary surface. \\
-Selection-rate interval & Two-sided 95\% Wilson score interval without continuity correction. \\
-AIR interval & Delta method on the log selection-rate ratio, then exponentiated. \\
-SRG endpoint range & $[L_g-U_r,U_g-L_r]$, declared as
+\begin{KeyValueList}
+\item[Analysis population] Rows present in the generated fixture or selected branch artifact; no
+population-weighting or applicant-level causal estimand.
+\item[Primary comparison] Female versus male gender selection rate. Race retained as a bounded
+multi-group secondary surface.
+\item[Selection-rate interval] Two-sided 95\% Wilson score interval without continuity correction.
+\item[AIR interval] Delta method on the log selection-rate ratio, then exponentiated.
+\item[SRG endpoint range] $[L_g-U_r,U_g-L_r]$, declared as
 \path{conservative_wilson_endpoint_difference}; based on separate 95\% Wilson intervals but not
-itself a calibrated 95\% confidence interval. \\
-Tests & Two-sided two-proportion $z$ tests; small-count policy can select an exact alternative. \\
-Multiplicity & Holm--Bonferroni for race AIR p-values; displayed confidence intervals are not
-multiplicity-adjusted. \\
-Internal AIR line & 0.80, reported as point relation and interval relation; never a legal verdict. \\
-Race reference & Configured white retained in provenance; active highest-observed-rate policy
-selects black for this run. \\
-Display floor & At least \RaceDisplayMinGroupN{} rows and \RaceDisplayMinGroupPct{}\% share for
+itself a calibrated 95\% confidence interval.
+\item[Tests] Two-sided two-proportion $z$ tests; small-count policy can select an exact alternative.
+\item[Multiplicity] Holm--Bonferroni for race AIR p-values; displayed confidence intervals are not
+multiplicity-adjusted.
+\item[Internal AIR line] 0.80, reported as point relation and interval relation; never a legal
+verdict.
+\item[Race reference] Configured white retained in provenance; active highest-observed-rate policy
+selects black for this run.
+\item[Display floor] At least \RaceDisplayMinGroupN{} rows and \RaceDisplayMinGroupPct{}\% share for
 main-PDF race display. The minimum group has \RaceMinimumGroupN{} rows
 (\RaceMinimumGroupPct{}\%): it \RaceCountFloorRelation{} the count condition and
-\RaceShareFloorRelation{} the share condition. \\
-Unavailable states & ECE \texttt{NOT\_EVALUATED}; EO \texttt{NOT\_INFORMATIVE}. \\
-Intrinsic inference & Policy-determined approvals; interval and $p$-value fields are retained for
-format symmetry only and have no inferential interpretation. \\
-\end{tabular}
+\RaceShareFloorRelation{} the share condition.
+\item[Unavailable states] ECE \texttt{NOT\_EVALUATED}; EO \texttt{NOT\_INFORMATIVE}.
+\item[Intrinsic inference] Policy-determined approvals; interval and $p$-value fields are retained
+for format symmetry only and have no inferential interpretation.
+\end{KeyValueList}
 
 The headline uncertainty objects are deterministic for fixed inputs. Bootstrap BCa fields with
 2,000 replicates remain in compatibility metadata but are not substituted for the methods above.

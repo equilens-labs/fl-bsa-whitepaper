@@ -23,7 +23,7 @@ class LatexCompatibilityContractTests(unittest.TestCase):
                     self.assertIsNone(
                         re.search(r"(?:^|,)\s*(?:style|labelindent\*?)\s*=", setting)
                     )
-        self.assertEqual(2, description_count)
+        self.assertEqual(3, description_count)
 
 
 if __name__ == "__main__":

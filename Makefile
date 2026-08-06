@@ -7,12 +7,16 @@ LOCAL_PROFILE=includes/publication_profile.local.tex
 COMPATIBILITY_INTAKE=dist/stable-v5-intake-compatibility.zip
 PUBLICATION_MANIFEST=dist/publication-manifest.json
 UTILITY_SUMMARY_SHA256=2b05a4a2b7ce2d798b9156ed5f837efe890ee87e4f5e914497724802636e4595
+EXPECTED_TABLE_HEADER_CELLS=26
+EXPECTED_FIGURE_TAGS=7
+VERAPDF_IMAGE=ghcr.io/verapdf/cli@sha256:595d7791a9321975cde6b7f5393beed98d76167ea6c39af191704462a4fa8b9d
+VERAPDF_REPORT=dist/verapdf-ua1-preflight.xml
 SOURCE_DATE_EPOCH ?= $(shell git log -1 --format=%ct HEAD)
 export SOURCE_DATE_EPOCH
 export FORCE_SOURCE_DATE = 1
 export TZ = UTC
 
-.PHONY: all test macros plots characterization assets companion identity pdf candidate arxiv publication-candidate clean
+.PHONY: all test macros plots characterization assets companion identity pdf candidate ua-preflight arxiv publication-candidate clean
 
 all: pdf
 
@@ -56,9 +60,24 @@ candidate: test assets
 	latexmk -C main.tex
 	latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
 	test "$$(pdftotext main.pdf - | grep -F -c 'DEMO / EVALUATION ONLY')" -eq 1
+	python3 scripts/check_pdf_tag_structure.py --expected-header-cells $(EXPECTED_TABLE_HEADER_CELLS) --expected-figures $(EXPECTED_FIGURE_TAGS) main.pdf
 	mkdir -p dist
 	cp main.pdf $(PDF)
 	cp main.pdf $(CANDIDATE_PDF)
+
+# The PDF intentionally makes no formal PDF/UA claim until human assistive-
+# technology review. Forced-profile preflight must therefore fail only on the
+# absent PDF/UA identification metadata, and on no substantive UA-1 rule.
+ua-preflight:
+	@mkdir -p dist; \
+	status=0; \
+	docker run --rm -v "$(CURDIR):/data:ro" $(VERAPDF_IMAGE) \
+		-f ua1 /data/main.pdf > $(VERAPDF_REPORT) || status=$$?; \
+	if [ "$$status" -ne 1 ]; then \
+		echo "expected veraPDF's non-conformance exit 1 for the undeclared candidate; got $$status" >&2; \
+		exit 1; \
+	fi; \
+	python3 scripts/verify_verapdf_ua_preflight.py $(VERAPDF_REPORT)
 
 arxiv: identity
 	latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
@@ -69,6 +88,7 @@ arxiv: identity
 # cannot describe stale ignored artifacts from an earlier whitepaper commit.
 publication-candidate:
 	$(MAKE) candidate
+	$(MAKE) ua-preflight
 	$(MAKE) arxiv
 	python3 -S scripts/intake_anchor.py export --anchor baselines/stable-v5-characterization.json --repo-root . --output $(COMPATIBILITY_INTAKE)
 	python3 scripts/build_publication_manifest.py --whitepaper-commit "$$(git rev-parse HEAD)" --publication-status candidate_not_published --companion $(COMPANION) --arxiv dist/whitepaper_arxiv_source.zip --compatibility-intake $(COMPATIBILITY_INTAKE) --output $(PUBLICATION_MANIFEST)

@@ -46,7 +46,11 @@ The candidate target copies the reviewed profile from
 `profiles/publication_profile.candidate.tex` to the ignored local override, enabling the visible and
 machine-readable `DEMO / EVALUATION ONLY` safety marker used by candidate CI and the
 publication-manifest gate. The aggregate target rebuilds the PDF, companion, arXiv source,
-compatibility export, and hash-bound publication manifest as one sequential handoff set.
+compatibility export, and hash-bound publication manifest as one sequential handoff set. It also
+runs the official veraPDF CLI from a pinned container digest under the explicit UA-1 profile. The
+candidate intentionally withholds PDF/UA identification metadata: the preflight accepts exactly
+that declaration failure and rejects every substantive UA-1 rule failure. This automated check is
+not a substitute for PAC and human assistive-technology review.
 
 ## Offline companion verification
 

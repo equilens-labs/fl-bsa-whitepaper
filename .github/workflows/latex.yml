@@ -134,6 +134,15 @@ jobs:
             exit 1
           fi
           echo "Found DEMO / EVALUATION ONLY marker ${hits} time(s)."
+      - name: Assert reviewed PDF tag structure
+        run: |
+          python3 scripts/check_pdf_tag_structure.py \
+            --expected-header-cells 26 \
+            --expected-figures 7 \
+            main.pdf
+      - name: Preflight PDF/UA structure with pinned official veraPDF
+        run: |
+          make ua-preflight
       - name: Prepare artifacts directory
         run: |
           mkdir -p dist

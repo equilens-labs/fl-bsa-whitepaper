@@ -290,7 +290,7 @@ def _native_disposition(hp_cert: Dict[str, Any]) -> str:
 def _render_chosen_table(rows: List[List[str]], out_path: Path) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding="utf-8") as f:
-        f.write("\\begin{tabular}{lrrrllrr}\n\\toprule\n")
+        f.write("\\AccessibleTableHeaderRow\n\\begin{tabular}{lrrrllrr}\n\\toprule\n")
         f.write(
             "branch & batch size & epochs & pac & gen. layers & disc. layers & gen. lr & disc. lr\\\\\n"
         )
@@ -311,6 +311,7 @@ def _render_native_table(rows: List[List[str]], out_path: Path) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding="utf-8") as f:
         f.write(
+            "\\AccessibleTableHeaderRow\n"
             "\\begin{tabular}{@{}p{0.14\\linewidth}p{0.20\\linewidth}"
             "p{0.20\\linewidth}p{0.32\\linewidth}@{}}\n"
         )

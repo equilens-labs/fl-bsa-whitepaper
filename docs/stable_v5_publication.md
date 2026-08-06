@@ -58,7 +58,10 @@ Review these files as one candidate set:
 
 The PDF embeds the exact whitepaper commit and companion digest. The arXiv archive includes the
 validated generated identity include, so it rebuilds the same source-bound candidate. The companion
-contains a standard-library offline verifier; run it before relying on any evidence bytes.
+contains a standard-library offline verifier; run it before relying on any evidence bytes. The
+aggregate build also performs pinned official veraPDF forced-profile preflight. It permits only the
+intentionally absent PDF/UA declaration metadata; human assistive-technology review remains
+required before any conformance declaration.
 
 ## No v5.0.1 draft-release staging
 
@@ -84,4 +87,6 @@ by the authorized owners:
 6. confirmation that `customer_evidence_eligible=false`,
    `promotion_evidence_eligible=false`, and `characterization_only` remain appropriate; and
 7. additional evidence before making production-utility, near-duplicate privacy, calibration,
-   customer-portfolio, deployment-security, or legal-compliance claims.
+   customer-portfolio, deployment-security, or legal-compliance claims; and
+8. human reading-order and screen-reader review, plus an authorized publication-time accessibility
+   decision before any formal PDF/UA declaration.

@@ -432,6 +432,7 @@ def _write_macros(summary: dict[str, Any], output: Path) -> None:
 
 def _write_tables(summary: dict[str, Any], outdir: Path) -> None:
     slice_lines = [
+        r"\AccessibleTableHeaderRow",
         r"\begin{tabular}{@{}lrrrrl@{}}",
         r"\toprule",
         r"Slice & $n_{prot}$ & $n_{ref}$ & AIR & Reported range & Relation to 0.80 \\",
@@ -456,6 +457,7 @@ def _write_tables(summary: dict[str, Any], outdir: Path) -> None:
     )
 
     quality_lines = [
+        r"\AccessibleTableHeaderRow",
         r"\begin{tabular}{@{}lrrl@{}}",
         r"\toprule",
         r"Measure & Amplification & Intrinsic & Scope \\",
@@ -479,6 +481,7 @@ def _write_tables(summary: dict[str, Any], outdir: Path) -> None:
     )
 
     robustness_lines = [
+        r"\AccessibleTableHeaderRow",
         r"\begin{tabular}{@{}lrrrr@{}}",
         r"\toprule",
         r"Scenario & Runs passing & AIR min & AIR mean & AIR max \\",
@@ -497,6 +500,7 @@ def _write_tables(summary: dict[str, Any], outdir: Path) -> None:
     baseline = summary["utility"]["real_train_baseline"]
     bands = summary["utility"]["synthetic_train_bands"]
     utility_lines = [
+        r"\AccessibleTableHeaderRow",
         r"\begin{tabular}{@{}lrrr@{}}",
         r"\toprule",
         r"Metric & Real-train baseline & Synthetic mean & Synthetic range \\",

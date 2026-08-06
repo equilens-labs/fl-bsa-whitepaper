@@ -1,8 +1,11 @@
 \DocumentMetadata{
   lang=en-US,
-  pdfstandard=UA-1,
   testphase={phase-III,math,table}
 }
+
+% The source emits a tagged, language-bound document, but it does not declare
+% formal PDF/UA conformance until PAC/veraPDF and human assistive-technology
+% review have been completed on the publication artifact.
 
 % Suppress volatile engine metadata. SOURCE_DATE_EPOCH binds the remaining
 % reproducible-build timestamp inputs to the checked-out source commit.
@@ -22,6 +25,14 @@
 \usepackage{xcolor}
 \usepackage{xspace}
 \usepackage{booktabs}
+% TeX Live 2023's tagged-table test phase does not mark booktabs' three
+% horizontal rules. Wrap the drawing operation as an artifact so it cannot
+% appear as untagged real content in the PDF structure tree.
+\makeatletter
+\def\@BTnormal{%
+  {\tagmcbegin{artifact}\CT@arc@\hrule\@height\@thisrulewidth\tagmcend}%
+  \futurenonspacelet\@tempa\@BTendrule}
+\makeatother
 \usepackage{array}
 \usepackage{ragged2e}
 \usepackage[font=small,labelfont=bf]{caption}
@@ -110,6 +121,18 @@
   \fcolorbox{EquilensBlue!45}{EquilensLight}{\usebox{\KeyBoxStorage}}%
   \par\medskip
 }
+\newenvironment{KeyValueList}{%
+  \setlist[description]{font=\normalfont\bfseries,leftmargin=0pt}%
+  \begin{description}%
+    \setlength{\itemsep}{1pt}%
+    \setlength{\parsep}{0pt}%
+    \setlength{\parskip}{0pt}%
+}{%
+  \end{description}%
+}
+% TeX Live's tagged-table test phase converts the declared first row from TD
+% to TH and assigns column scope. Keep this immediately before every data table.
+\newcommand{\AccessibleTableHeaderRow}{\tagpdfsetup{table-header-rows={1}}}
 
 \newcommand{\DemoEvaluationWatermark}{DEMO / EVALUATION ONLY}
 \ifdraft
@@ -132,17 +155,28 @@
 \renewcommand{\headrulewidth}{0.4pt}
 \renewcommand{\footrulewidth}{0pt}
 
-\title{\includegraphics[artifact,width=0.31\textwidth]{figures/equilens-wordmark-light.png}\\[9mm]
-  \textcolor{EquilensNavy}{\bfseries\LARGE FL-BSA v5.0.1\\[5pt]Characterization Whitepaper}\\[10pt]
-  \large Dual-branch synthetic fairness evidence, robustness, utility, and provenance}
-\author{Equilens}
-\date{\PublicationAsOf}
+% article's \maketitle typesets the author in a one-cell tabular, which creates
+% a false Table/TR/TD structure in tagged output. This explicit cover preserves
+% the visual treatment while keeping each title-field line as ordinary text.
+\newcommand{\MakeCoverTitle}{%
+  \null\vskip 2em%
+  \begin{center}
+    \includegraphics[artifact,width=0.31\textwidth]{figures/equilens-wordmark-light.png}\\[9mm]
+    \textcolor{EquilensNavy}{\bfseries\LARGE FL-BSA v5.0.1\\[5pt]Characterization Whitepaper}\\[10pt]
+    {\large Dual-branch synthetic fairness evidence, robustness, utility, and provenance\par}
+    \vskip 1.5em
+    {\large Equilens\par}
+    \vskip 1em
+    {\large \PublicationAsOf\par}
+  \end{center}
+  \par\vskip 1.5em%
+}
 
 \begin{document}
 
 \hypersetup{pageanchor=false}
 \thispagestyle{empty}
-\maketitle
+\MakeCoverTitle
 \thispagestyle{empty}
 \begin{center}
   \vspace{-10mm}
@@ -153,14 +187,16 @@
 \vfill
 \begin{KeyBox}
   \small
-  \begin{tabular}{@{}>{\bfseries}p{0.27\linewidth}p{0.64\linewidth}@{}}
-    Document & \DocumentVersion{} (\WhitepaperTreeState) \\
-    Whitepaper source & \IdentityText{\WhitepaperCommitRaw} \\
-    Product & \ProductReleaseTag{} at \IdentityText{\ProductCommitRaw}; annotated tag object \IdentityText{\ProductTagObjectRaw} \\
-    Evidence & release workflow run \EvidenceRunRaw{}, attempt \EvidenceRunAttemptRaw{}; primary artifact ID \EvidenceArtifactIdRaw{} \\
-    Companion & \IdentityText{\CompanionFilenameRaw} \\
-    Companion SHA-256 & \IdentityText{\CompanionShaRaw} \\
-  \end{tabular}
+  \begin{KeyValueList}
+    \item[Document] \DocumentVersion{} (\WhitepaperTreeState)
+    \item[Whitepaper source] \IdentityText{\WhitepaperCommitRaw}
+    \item[Product] \ProductReleaseTag{} at \IdentityText{\ProductCommitRaw}; annotated tag
+      object \IdentityText{\ProductTagObjectRaw}
+    \item[Evidence] release workflow run \EvidenceRunRaw{}, attempt
+      \EvidenceRunAttemptRaw{}; primary artifact ID \EvidenceArtifactIdRaw{}
+    \item[Companion] \IdentityText{\CompanionFilenameRaw}
+    \item[Companion SHA-256] \IdentityText{\CompanionShaRaw}
+  \end{KeyValueList}
 \end{KeyBox}
 
 \vspace{3mm}

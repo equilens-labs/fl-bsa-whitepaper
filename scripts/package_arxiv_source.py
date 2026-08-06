@@ -15,7 +15,13 @@ import zipfile
 from pathlib import Path
 
 
-_DIRECT_FILES = {".latexmkrc", "main.bbl", "main.tex"}
+_DIRECT_FILES = {
+    ".latexmkrc",
+    "main.bbl",
+    "main.tex",
+    "pdftexspace.pl",
+    "pdftexspace.tfm",
+}
 _SUFFIXES = {
     "bib": {".bib"},
     "figures": {".jpeg", ".jpg", ".pdf", ".png", ".svg"},

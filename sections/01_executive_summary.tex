@@ -28,25 +28,26 @@ deployment-specific data, legal analysis, model validation, and accountable huma
 \subsection{Findings at a glance}
 
 \begin{KeyBox}
-\begin{tabular}{@{}>{\bfseries}p{0.25\linewidth}p{0.66\linewidth}@{}}
-Fairness signal & Historical AIR \HistoricalAIR{} and amplification AIR \AmplificationAIR{} are
-both below the internally selected 0.80 point screen. The amplification 95\% interval is
-[\AmplificationAIRLower{}, \AmplificationAIRUpper{}]. \\
-Branch control & Intrinsic AIR \IntrinsicAIR{} [\IntrinsicAIRLower{}, \IntrinsicAIRUpper{}]
+\begin{KeyValueList}
+\item[Fairness signal] Historical AIR \HistoricalAIR{} and amplification AIR \AmplificationAIR{}
+are both below the internally selected 0.80 point screen. The amplification 95\% interval is
+[\AmplificationAIRLower{}, \AmplificationAIRUpper{}].
+\item[Branch control] Intrinsic AIR \IntrinsicAIR{} [\IntrinsicAIRLower{}, \IntrinsicAIRUpper{}]
 follows an equal-rate post-label policy. This is an expected mechanical result, not a causal
-``debiasing'' conclusion; the displayed range is for format symmetry, not inference. \\
-Quality & Overall quality is \AmplificationQuality{} for amplification and \IntrinsicQuality{}
-for intrinsic. The producer's certificate utility field is unevaluated for both branches. \\
-Robustness & \RobustnessTotalPasses{}/\RobustnessTotalRuns{} configured Gold scenario runs passed
-across ten seeds and four scenarios. This is gate stability, not an interval for a population
-parameter. \\
-Utility study & Ten equal-size train-on-synthetic runs yield mean ROC AUC
+``debiasing'' conclusion; the displayed range is for format symmetry, not inference.
+\item[Quality] Overall quality is \AmplificationQuality{} for amplification and
+\IntrinsicQuality{} for intrinsic. The producer's certificate utility field is unevaluated for
+both branches.
+\item[Robustness] \RobustnessTotalPasses{}/\RobustnessTotalRuns{} configured Gold scenario runs
+passed across ten seeds and four scenarios. This is gate stability, not an interval for a
+population parameter.
+\item[Utility study] Ten equal-size train-on-synthetic runs yield mean ROC AUC
 \UtilitySyntheticAUCMean{} (range \UtilitySyntheticAUCMin{}--\UtilitySyntheticAUCMax{}) on a
 held-out generated fixture, versus \UtilityBaselineAUC{} for the real-train fixture baseline.
 Skill-normalised AUC retention averages \UtilitySkillRetentionMeanPct{}\%;
 \UtilityBelowChanceSeedCount{} of ten runs are below chance, and train-on-synthetic predictive
-utility is not established. \\
-\end{tabular}
+utility is not established.
+\end{KeyValueList}
 \end{KeyBox}
 
 The point screen and confidence-interval relation are reported separately. A row is never labelled

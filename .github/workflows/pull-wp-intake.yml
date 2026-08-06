@@ -866,6 +866,13 @@ jobs:
           fi
           echo "Found DEMO / EVALUATION ONLY marker ${hits} time(s)."
 
+      - name: Assert reviewed PDF tag structure
+        run: |
+          python3 scripts/check_pdf_tag_structure.py \
+            --expected-header-cells 26 \
+            --expected-figures 7 \
+            main.pdf
+
       - name: Upload PDF artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

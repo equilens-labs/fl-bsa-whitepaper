@@ -84,7 +84,10 @@ state; and emits the PDF, arXiv source, compatibility export, and hash-bound pub
 It refuses a dirty source checkout so the paper commit and companion manifest agree. The complete
 target is run twice in verification to confirm deterministic bytes; fonts, bookmarks, language
 metadata, tags, and alternative text are separately inspected because byte determinism does not
-imply accessibility.
+imply accessibility. A forced-profile run of the pinned official veraPDF UA-1 validator must report
+no substantive rule failures; the only permitted failure is the deliberately absent conformance
+identification metadata. The candidate does not claim formal PDF/UA conformance pending human
+reading-order and assistive-technology review.
 
 \subsection{Source hierarchy}
 

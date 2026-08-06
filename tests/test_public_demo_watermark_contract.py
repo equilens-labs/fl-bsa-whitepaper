@@ -23,11 +23,19 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
             "test \"$$(pdftotext main.pdf - | grep -F -c "
             "'DEMO / EVALUATION ONLY')\" -eq 1"
         )
-        for required in (copy_profile, clean_latex, compile_latex, marker_check):
+        structure_check = "scripts/check_pdf_tag_structure.py"
+        for required in (
+            copy_profile,
+            clean_latex,
+            compile_latex,
+            marker_check,
+            structure_check,
+        ):
             self.assertIn(required, candidate)
         self.assertLess(candidate.index(copy_profile), candidate.index(clean_latex))
         self.assertLess(candidate.index(clean_latex), candidate.index(compile_latex))
         self.assertLess(candidate.index(compile_latex), candidate.index(marker_check))
+        self.assertLess(candidate.index(marker_check), candidate.index(structure_check))
 
         publication = makefile.split("publication-candidate:", 1)[1].split(
             "clean:", 1
@@ -100,6 +108,8 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
                 )
                 self.assertIn("Ensure pdftotext available", workflow)
                 self.assertIn("Assert public demo watermark in PDF", workflow)
+                self.assertIn("Assert reviewed PDF tag structure", workflow)
+                self.assertIn("scripts/check_pdf_tag_structure.py", workflow)
                 self.assertIn("pdftotext main.pdf -", workflow)
                 self.assertIn("DEMO / EVALUATION ONLY", workflow)
                 self.assertIn('if [ "$hits" -ne 1 ]; then', workflow)

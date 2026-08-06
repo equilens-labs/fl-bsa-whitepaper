@@ -360,7 +360,10 @@ def _write_table(
 ) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding="utf-8") as f:
-        f.write(f"\\begin{{tabular}}{{{column_spec}}}\n\\toprule\n")
+        f.write(
+            f"\\AccessibleTableHeaderRow\n"
+            f"\\begin{{tabular}}{{{column_spec}}}\n\\toprule\n"
+        )
         f.write(header + "\n\\midrule\n")
         for r in rows:
             f.write(" & ".join(r) + "\\\\\n")
