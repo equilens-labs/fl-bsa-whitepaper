@@ -19,7 +19,7 @@ export SOURCE_DATE_EPOCH
 export FORCE_SOURCE_DATE = 1
 export TZ = UTC
 
-.PHONY: all test macros plots characterization assets companion identity pdf candidate ua-preflight arxiv publication-candidate clean
+.PHONY: all test macros plots characterization assets companion identity pdf candidate ua-preflight arxiv publication-candidate publication-candidate-repeatability clean
 
 all: pdf
 
@@ -105,6 +105,33 @@ publication-candidate:
 	$(MAKE) arxiv
 	python3 -S scripts/intake_anchor.py export --anchor baselines/stable-v5-characterization.json --repo-root . --output $(COMPATIBILITY_INTAKE)
 	python3 scripts/build_publication_manifest.py --whitepaper-commit "$$(git rev-parse HEAD)" --publication-status candidate_not_published --companion $(COMPANION) --arxiv dist/whitepaper_arxiv_source.zip --compatibility-intake $(COMPATIBILITY_INTAKE) --output $(PUBLICATION_MANIFEST)
+
+# Rebuild the complete handoff set twice and compare every delivered artifact.
+# This is intentionally explicit rather than inferred from component-level tests.
+publication-candidate-repeatability:
+	@set -eu; \
+	$(MAKE) publication-candidate; \
+	reference_dir="$$(mktemp -d)"; \
+	trap 'rm -rf "$$reference_dir"' 0; \
+	for artifact in \
+		$(CANDIDATE_PDF) \
+		$(COMPANION) \
+		dist/whitepaper_arxiv_source.zip \
+		$(COMPATIBILITY_INTAKE) \
+		$(PUBLICATION_MANIFEST); do \
+		mkdir -p "$$reference_dir/$$(dirname "$$artifact")"; \
+		cp "$$artifact" "$$reference_dir/$$artifact"; \
+	done; \
+	$(MAKE) publication-candidate; \
+	for artifact in \
+		$(CANDIDATE_PDF) \
+		$(COMPANION) \
+		dist/whitepaper_arxiv_source.zip \
+		$(COMPATIBILITY_INTAKE) \
+		$(PUBLICATION_MANIFEST); do \
+		cmp "$$reference_dir/$$artifact" "$$artifact"; \
+	done; \
+	echo "Complete publication handoff is byte-reproducible across two builds."
 
 clean:
 	latexmk -C

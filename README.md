@@ -34,7 +34,7 @@ fails unless the checkout is clean, selects the reviewed demo/evaluation profile
 auxiliary state, and then embeds the exact whitepaper commit.
 
 ```bash
-make publication-candidate
+make publication-candidate-repeatability
 sha256sum dist/fl-bsa-v5.0.1-characterization-candidate.pdf \
   dist/fl-bsa-v5.0.1-companion-evidence.zip \
   dist/whitepaper_arxiv_source.zip \

@@ -49,7 +49,7 @@ website update, arXiv submission, customer-evidence authorization, or publicatio
 From a clean checkout of the candidate commit:
 
 ```bash
-make publication-candidate
+make publication-candidate-repeatability
 python3 scripts/validate_public_intake.py \
   --bundle-root /path/to/extracted/stable-v5-intake \
   --schema-root .
@@ -72,15 +72,15 @@ required before any conformance declaration.
 
 ## No v5.0.1 draft-release staging
 
-Do not dispatch the workflow's draft-release path for v5.0.1. The path's existence is not release
-authorization, and the security-superseded tag cannot be staged as a current release. Any later
-archival distribution requires a new, explicit owner decision and current legal/security review.
-A current-release paper must instead wait for the exact product tag whose full Release workflow
-succeeds on the tagged commit and whose GitHub Release actually publishes. Only then may a separate
-paper be rebuilt and reviewed against that tag object, peeled commit, release-evidence run, and
-release outcome. Never pre-name a successor version while drafting: this repository cannot infer
-product release outcomes. This v5.0.1 paper and companion cannot be relabelled or reused for that
-purpose.
+The candidate workflow does not contain a release-upload job and has read-only repository
+permissions. It can build and retain review artifacts, but it cannot attach them to a GitHub Release.
+Any later archival distribution requires a new, explicit owner decision, current legal/security
+review, and a separately reviewed publication path. A current-release paper must instead wait for
+the exact product tag whose full Release workflow succeeds on the tagged commit and whose GitHub
+Release actually publishes. Only then may a separate paper be rebuilt and reviewed against that tag
+object, peeled commit, release-evidence run, and release outcome. Never pre-name a successor version
+while drafting: this repository cannot infer product release outcomes. This v5.0.1 paper and
+companion cannot be relabelled or reused for that purpose.
 
 ## Remaining publication blockers
 

@@ -94,20 +94,21 @@ repaired.
 At whitepaper commit \IdentityText{\WhitepaperCommitRaw}, the reviewed build sequence is:
 
 \begin{verbatim}
-make publication-candidate
+make publication-candidate-repeatability
 \end{verbatim}
 
-The publication-candidate target runs the full test suite; regenerates strict evidence macros, old
-compatibility figures, the six characterization visuals, the paper-owned summary, and the
-deterministic companion; selects the reviewed demo/evaluation profile; clears prior LaTeX auxiliary
-state; and emits the PDF, arXiv source, compatibility export, and hash-bound publication manifest.
-It refuses a dirty source checkout so the paper commit and companion manifest agree. The complete
-target is run twice in verification to confirm deterministic bytes; fonts, bookmarks, language
-metadata, tags, and alternative text are separately inspected because byte determinism does not
-imply accessibility. A forced-profile run of the pinned official veraPDF UA-1 validator must report
-no substantive rule failures; the only permitted failure is the deliberately absent conformance
-identification metadata. The candidate does not claim formal PDF/UA conformance pending human
-reading-order and assistive-technology review.
+The repeatability target invokes the complete publication-candidate target twice and byte-compares
+the delivered PDF, companion ZIP, arXiv source, compatibility export, and publication manifest. The
+underlying publication-candidate target runs the full test suite; regenerates strict evidence
+macros, old compatibility figures, the six characterization visuals, the paper-owned summary, and
+the deterministic companion; selects the reviewed demo/evaluation profile; clears prior LaTeX
+auxiliary state; and emits the PDF, arXiv source, compatibility export, and hash-bound publication
+manifest. It refuses a dirty source checkout so the paper commit and companion manifest agree.
+Fonts, bookmarks, language metadata, tags, and alternative text are separately inspected because
+byte determinism does not imply accessibility. A forced-profile run of the pinned official veraPDF
+UA-1 validator must report no substantive rule failures; the only permitted failure is the
+deliberately absent conformance identification metadata. The candidate does not claim formal PDF/UA
+conformance pending human reading-order and assistive-technology review.
 
 \subsection{Source hierarchy}
 

@@ -110,6 +110,28 @@ class PublicClaimBoundariesContractTests(unittest.TestCase):
         self.assertIn("intake/metrics_uncertainty.json", historical_compilation)
         self.assertNotIn("Artifacts Provided (Current Intake Surface)", historical_compilation)
 
+    def test_obsolete_ctgan_working_documents_are_not_current_surfaces(self) -> None:
+        for relative in (
+            "tasks/ACTIVE/ECE-Gap.md",
+            "docs/WhitePaper_RFI.md",
+            "templates/intake_templates/model_hyperparams.yaml",
+        ):
+            with self.subTest(relative=relative):
+                self.assertFalse((ROOT / relative).exists())
+
+        publication_sources = "\n".join(
+            (ROOT / path).read_text(encoding="utf-8")
+            for path in (
+                "README.md",
+                "main.tex",
+                "sections/01_executive_summary.tex",
+                "sections/04_model_algorithm.tex",
+                "sections/10_limitations_monitoring.tex",
+            )
+        ).lower()
+        self.assertNotIn("ctgan", publication_sources)
+        self.assertNotIn("datacebo", publication_sources)
+
     def test_differential_privacy_is_explicitly_not_claimed(self) -> None:
         manifest = json.loads((ROOT / "intake" / "manifest.json").read_text())
         self.assertIn("not_differential_privacy", json.dumps(manifest))
