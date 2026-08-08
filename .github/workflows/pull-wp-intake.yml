@@ -36,7 +36,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Python deps (for macro/plot generation)
+      - name: Install Python deps for intake validation
         run: |
           set -euo pipefail
           test "$(uname -m)" = "x86_64"
@@ -803,101 +803,13 @@ jobs:
             --output intake/whitepaper_snapshot.json \
             --github-env "$GITHUB_ENV"
 
-      - name: Generate TeX macros from metrics
-        run: |
-          set -euo pipefail
-          python scripts/gen_tex_macros_from_metrics.py --strict --metrics intake/metrics_long.csv --sap config/sap.yaml --outdir includes
-          python scripts/gen_tex_preamble_from_manifest.py --strict --manifest intake/manifest.json --sap config/sap.yaml --out includes/provenance_macros.tex
-          python scripts/gen_tex_hyperparams_from_yaml.py --strict --config intake/model_hyperparams.yaml --outdir includes
-
-      - name: Generate figures from intake
-        run: |
-          set -euo pipefail
-          plot_stage="$(mktemp -d "${RUNNER_TEMP}/wp-figures.XXXXXX")"
-          python scripts/gen_plots_from_intake.py \
-            --selection intake/selection_rates.csv \
-            --metrics intake/metrics_long.csv \
-            --outdir "$plot_stage" \
-            --require-all
-          for name in air_summary.pdf gender_air_slices.pdf selection_rates.pdf; do
-            test -s "$plot_stage/$name"
-            install -m 0644 "$plot_stage/$name" "figures/$name"
-          done
-
-      - name: Enable public demo watermark
-        run: |
-          mkdir -p includes
-          cp profiles/publication_profile.candidate.tex includes/publication_profile.local.tex
-
-      - name: Ensure pdftotext available
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends poppler-utils
-
-      - name: Set reproducible source epoch
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "SOURCE_DATE_EPOCH=$(git show -s --format=%ct HEAD)" >> "$GITHUB_ENV"
-          echo "FORCE_SOURCE_DATE=1" >> "$GITHUB_ENV"
-          echo "TZ=UTC" >> "$GITHUB_ENV"
-
-      - name: Compile LaTeX
-        uses: xu-cheng/latex-action@e2f99d4b3685b0da93f97e1b86ad8fab81105098 # v3.3.0
-        with:
-          root_file: main.tex
-          docker_image: ghcr.io/xu-cheng/texlive-full@sha256:d9bfb267e3e3f5e0820ca86e867ee59ebb133fc29561bb28677d9b5a1a9e84ff
-          pre_compile: |
-            export SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
-            export FORCE_SOURCE_DATE=1
-            export TZ=UTC
-            test "$SOURCE_DATE_EPOCH" -gt 0
-            test "$FORCE_SOURCE_DATE" = 1
-            test "$TZ" = UTC
-          latexmk_use_xelatex: false
-
-      - name: Assert public demo watermark in PDF
-        run: |
-          set -euo pipefail
-          hits="$(pdftotext main.pdf - | grep -F -c 'DEMO / EVALUATION ONLY' || true)"
-          if [ "$hits" -ne 1 ]; then
-            echo "whitepaper.pdf must contain exactly one extractable DEMO / EVALUATION ONLY cover marker; found ${hits}." >&2
-            exit 1
-          fi
-          echo "Found DEMO / EVALUATION ONLY marker ${hits} time(s)."
-
-      - name: Assert reviewed PDF tag structure
-        run: |
-          python3 scripts/check_pdf_tag_structure.py \
-            --expected-header-cells 26 \
-            --expected-figures 7 \
-            main.pdf
-
-      - name: Upload PDF artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: whitepaper-pdf-from-intake-${{ github.run_attempt }}
-          path: main.pdf
-
       - name: Upload exact intake receipt
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: whitepaper-intake-receipt-${{ github.run_attempt }}
-          path: |
-            intake/whitepaper_snapshot.json
-            main.pdf
+          path: intake/whitepaper_snapshot.json
           if-no-files-found: error
           retention-days: 90
-
-      - name: Package arXiv source
-        run: |
-          bash scripts/arxiv_pack.sh
-
-      - name: Upload arXiv source
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: arxiv-source-from-intake-${{ github.run_attempt }}
-          path: dist/whitepaper_arxiv_source.zip
 
       - name: Persist intake snapshot
         env:
@@ -962,8 +874,8 @@ jobs:
           cat > "$body_file" <<EOF
           ## Summary
           - sync intake/config artifacts from ${SELECTED_PRODUCER_REPO} ${SELECTED_PRODUCER_WORKFLOW}
-          - regenerate committed TeX macros and figures from the synced intake
-          - preserve the exact whitepaper source snapshot used by pull-wp-intake run ${GITHUB_RUN_ID}
+          - preserve the exact validated intake snapshot used by pull-wp-intake run ${GITHUB_RUN_ID}
+          - do not compile the fixed archival v5.0.1 paper from this rolling intake
 
           ## Provenance
           - producer repo: ${SELECTED_PRODUCER_REPO}
@@ -987,14 +899,14 @@ jobs:
 
           ## Validation
           - bundle schema versions checked by pull-wp-intake
-          - strict macro generation scripts
-          - strict plot generation script
-          - LaTeX compile via xu-cheng/latex-action
+          - exact producer run, commit, artifact, digest, and shared contract checked
+          - disclosure allowlist and public intake schema checked
+          - no PDF or publication artifact produced from rolling intake
           EOF
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add intake config includes figures
+          git add intake config
           snapshot_tree="$(git write-tree)"
 
           remote_ref="refs/remotes/origin/${branch}"

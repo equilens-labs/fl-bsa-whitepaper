@@ -74,11 +74,9 @@ class PullWpIntakeContractTests(unittest.TestCase):
             "rm -rf intake config",
             'mv "$sync_stage/intake" intake',
             'mv "$sync_stage/config" config',
-            'plot_stage="$(mktemp -d "${RUNNER_TEMP}/wp-figures.XXXXXX")"',
-            "--require-all",
             'branch="$INTAKE_SNAPSHOT_BRANCH"',
             'mode="$INTAKE_SNAPSHOT_MODE"',
-            "git add intake config includes figures",
+            "git add intake config",
             'snapshot_tree="$(git write-tree)"',
             'git ls-remote --exit-code --heads origin "refs/heads/${branch}"',
             'parent_args=(-p "$GITHUB_SHA")',
@@ -113,12 +111,16 @@ class PullWpIntakeContractTests(unittest.TestCase):
         self.assertNotIn("wp-evidence-nightly.yml:workflow_dispatch", workflow)
         self.assertNotIn("release-evidence.yml:workflow_dispatch", workflow)
         self.assertNotIn("--status success", workflow)
+        self.assertNotIn("Compile LaTeX", workflow)
+        self.assertNotIn("whitepaper-pdf-from-intake", workflow)
+        self.assertNotIn("main.pdf", workflow)
+        self.assertNotIn("arxiv-source-from-intake", workflow)
         self.assertLess(
             workflow.index('if [ "$mode" = "rolling_history" ]; then'),
             workflow.index('if gh pr view "$branch"'),
         )
         self.assertLess(
-            workflow.index("      - name: Assert public demo watermark in PDF"),
+            workflow.index("      - name: Write deterministic intake snapshot record"),
             workflow.index("      - name: Upload exact intake receipt"),
         )
         self.assertLess(
@@ -1121,7 +1123,9 @@ class PullWpIntakeContractTests(unittest.TestCase):
                     ["git", "-C", str(work), "push", "origin", f"HEAD:refs/heads/{branch}"],
                     check=True,
                 )
-                (work / "includes" / "generated.tex").write_text("drift\n", encoding="utf-8")
+                (work / "config" / "sap.yaml").write_text(
+                    "version: 2\n", encoding="utf-8"
+                )
 
                 env = {
                     **os.environ,

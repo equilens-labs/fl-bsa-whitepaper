@@ -238,16 +238,16 @@ The `.github/workflows/pull-wp-intake.yml` workflow can:
 3. API-verify and bounded-poll the exact producer run/head, reject non-allowlisted private bundle
    members, stage the managed intake/certificate/config files, and replace those surfaces while
    preserving the six explicit repository-owned intake files plus `intake/archive/`
-4. Regenerate macros, figures, and PDF
-5. Upload PDF artifact
-6. Write and upload an exact source receipt. The current shared producer contract disables public
+4. Write and upload an exact source receipt without compiling a PDF. The checked-in paper is the
+   fixed v5.0.1 archival characterization and must not consume arbitrary newer intake.
+5. The current shared producer contract disables public
    Git snapshot persistence; the rolling-history and workflow-write-once branch implementation is
    dormant pending a separately reviewed contract change.
 
-This workflow keeps the PDF build reproducible and up to date with the producer's latest
-evidence run. The exact receipt and workflow PDF are review artifacts, not publication. The raw
-private-producer ZIP is not re-uploaded from this public repository. See `docs/ci_intake.md` for
-the receipt, dormant branch lifecycle, idempotency, and stable-v5 compatibility-anchor contract.
+The receipt proves what the consumer validated; it is not a whitepaper. The raw private-producer
+ZIP is not re-uploaded from this public repository. A current-release PDF must use a separate
+version-bound build. See `docs/ci_intake.md` for the receipt, dormant branch lifecycle,
+idempotency, and stable-v5 compatibility-anchor contract.
 
 ---
 

@@ -91,29 +91,41 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
         )
 
     def test_public_ci_artifacts_enable_demo_watermark(self) -> None:
-        for workflow_name, artifact_name in (
-            ("latex.yml", "whitepaper-pdf"),
-            ("pull-wp-intake.yml", "whitepaper-pdf-from-intake"),
+        workflow = (ROOT / ".github" / "workflows" / "latex.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("Enable public demo watermark", workflow)
+        self.assertIn("includes/publication_profile.local.tex", workflow)
+        self.assertIn(
+            "cp profiles/publication_profile.candidate.tex "
+            "includes/publication_profile.local.tex",
+            workflow,
+        )
+        self.assertIn("Ensure pdftotext available", workflow)
+        self.assertIn("Assert exact archival release identity in PDF", workflow)
+        self.assertIn("scripts/verify_pdf_release_identity.py", workflow)
+        self.assertIn("Assert public demo watermark in PDF", workflow)
+        self.assertIn("Assert reviewed PDF tag structure", workflow)
+        self.assertIn("scripts/check_pdf_tag_structure.py", workflow)
+        self.assertIn("pdftotext main.pdf -", workflow)
+        self.assertIn("DEMO / EVALUATION ONLY", workflow)
+        self.assertIn('if [ "$hits" -ne 1 ]; then', workflow)
+        self.assertIn("name: fl-bsa-v5.0.1-archival-whitepaper", workflow)
+
+    def test_intake_workflow_never_builds_a_paper(self) -> None:
+        workflow = (
+            ROOT / ".github" / "workflows" / "pull-wp-intake.yml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("name: whitepaper-intake-receipt-", workflow)
+        self.assertIn("path: intake/whitepaper_snapshot.json", workflow)
+        for forbidden in (
+            "Compile LaTeX",
+            "main.pdf",
+            "whitepaper-pdf-from-intake",
+            "arxiv-source-from-intake",
         ):
-            with self.subTest(workflow=workflow_name):
-                workflow = (ROOT / ".github" / "workflows" / workflow_name).read_text(
-                    encoding="utf-8"
-                )
-                self.assertIn("Enable public demo watermark", workflow)
-                self.assertIn("includes/publication_profile.local.tex", workflow)
-                self.assertIn(
-                    "cp profiles/publication_profile.candidate.tex "
-                    "includes/publication_profile.local.tex",
-                    workflow,
-                )
-                self.assertIn("Ensure pdftotext available", workflow)
-                self.assertIn("Assert public demo watermark in PDF", workflow)
-                self.assertIn("Assert reviewed PDF tag structure", workflow)
-                self.assertIn("scripts/check_pdf_tag_structure.py", workflow)
-                self.assertIn("pdftotext main.pdf -", workflow)
-                self.assertIn("DEMO / EVALUATION ONLY", workflow)
-                self.assertIn('if [ "$hits" -ne 1 ]; then', workflow)
-                self.assertIn(f"name: {artifact_name}", workflow)
+            self.assertNotIn(forbidden, workflow)
 
     def test_local_watermark_override_is_not_committed_by_intake_pr(self) -> None:
         gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
@@ -122,7 +134,8 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
         )
 
         self.assertIn("includes/publication_profile.local.tex", gitignore)
-        self.assertIn("git add intake config includes figures", workflow)
+        self.assertIn("git add intake config", workflow)
+        self.assertNotIn("git add intake config includes", workflow)
 
 
 if __name__ == "__main__":

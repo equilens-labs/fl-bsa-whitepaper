@@ -290,7 +290,7 @@ class StrictMacroGenerationTests(unittest.TestCase):
                 hyperparams_table.read_text(encoding="utf-8"),
             )
 
-    def test_documented_build_and_intake_sync_are_fail_closed(self) -> None:
+    def test_documented_build_is_strict_and_intake_sync_is_receipt_only(self) -> None:
         makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
         intake_workflow = (
             ROOT / ".github" / "workflows" / "pull-wp-intake.yml"
@@ -302,14 +302,16 @@ class StrictMacroGenerationTests(unittest.TestCase):
             "gen_tex_hyperparams_from_yaml.py",
         ):
             self.assertRegex(makefile, rf"{script}[^\n]*--strict")
-            self.assertRegex(intake_workflow, rf"{script}[^\n]*--strict")
             self.assertNotRegex(makefile, rf"{script}[^\n]*\|\| true")
+            self.assertNotIn(script, intake_workflow)
         self.assertRegex(
             makefile, r"gen_plots_from_intake.py[^\n]*--require-all"
         )
         self.assertNotRegex(
             makefile, r"gen_plots_from_intake.py[^\n]*\|\| true"
         )
+        self.assertNotIn("Compile LaTeX", intake_workflow)
+        self.assertIn("path: intake/whitepaper_snapshot.json", intake_workflow)
 
 
 if __name__ == "__main__":

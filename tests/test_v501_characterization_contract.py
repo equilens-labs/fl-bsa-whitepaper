@@ -1245,7 +1245,7 @@ class V501CharacterizationContractTests(unittest.TestCase):
         upload_start = workflow.index("- name: Upload PDF artifact")
         upload_end = workflow.index("- name: Package arXiv source", upload_start)
         upload = workflow[upload_start:upload_end]
-        self.assertIn("main.pdf", upload)
+        self.assertIn("fl-bsa-v5.0.1-characterization-candidate.pdf", upload)
         self.assertIn("fl-bsa-v5.0.1-companion-evidence.zip", upload)
 
 

@@ -227,10 +227,12 @@ stamp records the whitepaper base commit plus the exact producer selectors and b
 It also records the API-verified run head SHA, which must equal the bundle product commit. This
 prevents timestamp-only Git churn and lets an exact replay compare both snapshot ID and tree.
 
-Strict generators rebuild macros and figures, LaTeX compiles the PDF, and CI verifies the
-`DEMO / EVALUATION ONLY` text marker. The workflow uploads generated
-`whitepaper-pdf-from-intake` and `arxiv-source-from-intake` candidates, but it never re-uploads the
-raw private producer ZIP. The Git snapshot is the long-lived reproducibility surface.
+The live intake workflow stops after validation and snapshot creation. It uploads only
+`intake/whitepaper_snapshot.json`; it does not regenerate or upload a PDF or arXiv source. This is
+deliberate: the repository's document is fixed to the archival v5.0.1 characterization, so
+compiling it with an arbitrary newer product intake would create a mixed-version artifact. The
+Git snapshot is the long-lived reproducibility surface, and a current-release paper requires its
+own version-bound build.
 
 ## Stable-v5 compatibility anchor
 

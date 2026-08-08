@@ -141,21 +141,31 @@ class ReproducibleArtifactTests(unittest.TestCase):
                 encoding="utf-8"
             )
             with self.subTest(workflow=name):
-                self.assertIn(image, workflow)
-                self.assertNotIn("texlive-full:latest", workflow)
                 self.assertIn(
                     "python -m pip install --require-hashes "
                     "-r requirements-ci-linux-x86_64.lock",
                     workflow,
                 )
-                compile_step = workflow.split("- name: Compile LaTeX", 1)[1]
-                self.assertIn(
-                    'export SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"',
-                    compile_step,
-                )
-                self.assertIn("export FORCE_SOURCE_DATE=1", compile_step)
-                self.assertIn("export TZ=UTC", compile_step)
-                self.assertIn('test "$SOURCE_DATE_EPOCH" -gt 0', compile_step)
+
+        latex_workflow = (ROOT / ".github" / "workflows" / "latex.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(image, latex_workflow)
+        self.assertNotIn("texlive-full:latest", latex_workflow)
+        compile_step = latex_workflow.split("- name: Compile LaTeX", 1)[1]
+        self.assertIn(
+            'export SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"',
+            compile_step,
+        )
+        self.assertIn("export FORCE_SOURCE_DATE=1", compile_step)
+        self.assertIn("export TZ=UTC", compile_step)
+        self.assertIn('test "$SOURCE_DATE_EPOCH" -gt 0', compile_step)
+
+        intake_workflow = (
+            ROOT / ".github" / "workflows" / "pull-wp-intake.yml"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn("Compile LaTeX", intake_workflow)
+        self.assertNotIn("texlive-full", intake_workflow)
 
         lock = (ROOT / "requirements-ci-linux-x86_64.lock").read_text(
             encoding="utf-8"

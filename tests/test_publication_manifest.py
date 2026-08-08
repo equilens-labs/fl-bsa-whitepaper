@@ -268,7 +268,10 @@ class PublicationManifestTests(unittest.TestCase):
             "name: stable-v5-publication-candidate-${{ github.run_attempt }}",
             workflow,
         )
-        self.assertIn("name: whitepaper-pdf-${{ github.run_attempt }}", workflow)
+        self.assertIn(
+            "name: fl-bsa-v5.0.1-archival-whitepaper-${{ github.run_attempt }}",
+            workflow,
+        )
         self.assertIn("name: arxiv-source-${{ github.run_attempt }}", workflow)
         self.assertIn("dist/publication-manifest.json", workflow)
 

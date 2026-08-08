@@ -100,6 +100,13 @@ jobs:
             test "$FORCE_SOURCE_DATE" = 1
             test "$TZ" = UTC
           latexmk_use_xelatex: false
+      - name: Assert exact archival release identity in PDF
+        run: |
+          python3 scripts/verify_pdf_release_identity.py \
+            --product-sha cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2 \
+            --evidence-run-id 30765888408 \
+            --whitepaper-sha "$BUILD_COMMIT" \
+            main.pdf
       - name: Assert public demo watermark in PDF
         run: |
           set -euo pipefail
@@ -126,9 +133,9 @@ jobs:
       - name: Upload PDF artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: whitepaper-pdf-${{ github.run_attempt }}
+          name: fl-bsa-v5.0.1-archival-whitepaper-${{ github.run_attempt }}
           path: |
-            main.pdf
+            dist/fl-bsa-v5.0.1-characterization-candidate.pdf
             dist/fl-bsa-v5.0.1-companion-evidence.zip
       - name: Package arXiv source
         run: |
