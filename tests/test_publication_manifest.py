@@ -246,6 +246,11 @@ class PublicationManifestTests(unittest.TestCase):
         self.assertIn("cancel-in-progress: false", workflow)
         self.assertIn("queue: max", workflow)
         self.assertIn("fetch-depth: 0", workflow)
+        self.assertIn(
+            "ref: ${{ github.event_name == 'pull_request' && "
+            "github.event.pull_request.head.sha || github.sha }}",
+            workflow,
+        )
         self.assertIn("Record exact source commit", workflow)
         self.assertLess(
             workflow.index("- name: Ensure pdftotext available"),
@@ -272,7 +277,11 @@ class PublicationManifestTests(unittest.TestCase):
             "name: fl-bsa-v5.0.1-archival-whitepaper-${{ github.run_attempt }}",
             workflow,
         )
-        self.assertIn("name: arxiv-source-${{ github.run_attempt }}", workflow)
+        self.assertIn(
+            "name: fl-bsa-v5.0.1-archival-arxiv-source-"
+            "${{ github.run_attempt }}",
+            workflow,
+        )
         self.assertIn("dist/publication-manifest.json", workflow)
 
         for forbidden in (

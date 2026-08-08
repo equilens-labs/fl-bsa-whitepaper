@@ -24,6 +24,10 @@ jobs:
         with:
           # Stable-v5 validation resolves the pinned historical intake commit/tree.
           fetch-depth: 0
+          # A pull_request workflow otherwise checks out GitHub's synthetic merge
+          # commit, producing an artifact whose embedded identity is not the reviewed
+          # PR head. Push and workflow_dispatch continue to use github.sha.
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       - name: Record exact source commit
         id: source
         shell: bash
@@ -164,7 +168,7 @@ jobs:
       - name: Upload arXiv source
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: arxiv-source-${{ github.run_attempt }}
+          name: fl-bsa-v5.0.1-archival-arxiv-source-${{ github.run_attempt }}
           path: dist/whitepaper_arxiv_source.zip
       - name: Upload stable-v5 publication candidate
         if: github.event_name == 'workflow_dispatch'
