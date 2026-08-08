@@ -1,6 +1,8 @@
 import unittest
 from pathlib import Path
 
+import yaml
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -113,19 +115,56 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
         self.assertIn("name: fl-bsa-v5.0.1-archival-whitepaper", workflow)
 
     def test_intake_workflow_never_builds_a_paper(self) -> None:
-        workflow = (
+        workflow_text = (
             ROOT / ".github" / "workflows" / "pull-wp-intake.yml"
         ).read_text(encoding="utf-8")
+        workflow = yaml.safe_load(workflow_text)
+        steps = workflow["jobs"]["fetch-build"]["steps"]
+        run_scripts = "\n".join(str(step.get("run") or "") for step in steps)
 
-        self.assertIn("name: whitepaper-intake-receipt-", workflow)
-        self.assertIn("path: intake/whitepaper_snapshot.json", workflow)
+        self.assertIn("name: whitepaper-intake-receipt-", workflow_text)
+        self.assertIn("path: intake/whitepaper_snapshot.json", workflow_text)
         for forbidden in (
             "Compile LaTeX",
             "main.pdf",
             "whitepaper-pdf-from-intake",
             "arxiv-source-from-intake",
         ):
-            self.assertNotIn(forbidden, workflow)
+            self.assertNotIn(forbidden, workflow_text)
+
+        for forbidden_command in (
+            "latexmk",
+            "pdflatex",
+            "pdftotext",
+            "gen_tex_",
+            "gen_plots_from_intake.py",
+            "arxiv_pack.sh",
+            "publication_profile.local.tex",
+        ):
+            self.assertNotIn(forbidden_command, run_scripts)
+
+        upload_action = (
+            "actions/upload-artifact@"
+            "ea165f8d65b6e75b540449e92b4886f43607fa02"
+        )
+        uploads = [
+            (step["with"]["name"], step["with"]["path"])
+            for step in steps
+            if str(step.get("uses") or "").startswith(upload_action)
+        ]
+        self.assertEqual(
+            [
+                (
+                    "whitepaper-intake-receipt-${{ github.run_attempt }}",
+                    "intake/whitepaper_snapshot.json",
+                ),
+                (
+                    "intake-pr-soft-fail-${{ github.run_attempt }}",
+                    "dist/intake-pr-soft-fail/intake_pr_soft_fail.json",
+                ),
+            ],
+            uploads,
+        )
 
     def test_local_watermark_override_is_not_committed_by_intake_pr(self) -> None:
         gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
