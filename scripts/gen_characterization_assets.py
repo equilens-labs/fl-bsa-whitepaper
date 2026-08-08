@@ -321,7 +321,7 @@ def build_summary(root: Path) -> dict[str, Any]:
 
     return {
         "schema_version": "flbsa.whitepaper_characterization.v2",
-        "document_version": "WP-5.0.1-candidate.2",
+        "document_version": "WP-5.0.1-candidate.3",
         "as_of": "2026-08-05",
         "publication_status": "candidate_not_published",
         "product": {

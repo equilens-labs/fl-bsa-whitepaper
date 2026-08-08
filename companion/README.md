@@ -6,7 +6,8 @@ a legal opinion, or a publication event.
 
 The bundle contains the original producer ZIP byte-for-byte at
 `producer/WhitePaper_Intake_Bundle_v4.zip`, a consumer-stamped projection in `intake/`, and the
-exact release Gold robustness aggregates in `evidence/v5.0.1/robustness/`. Paper-owned
+exact release Gold manifest/index plus a path-free robustness projection in
+`evidence/v5.0.1/robustness/`. Paper-owned
 interpretation corrections, the current-as-of regulatory mapping, and the synthetic-fixture
 utility study are separate under `evidence/v5.0.1/publication/` and
 `evidence/v5.0.1/utility/`; they do not rewrite producer bytes.
@@ -28,15 +29,16 @@ python3 fl-bsa-v5.0.1-companion-evidence/verify_companion_bundle.py \
   --expected-gold-index-sha256 \
   9ffb2c04a95f428f068d471732c7d9ed1e27a16d553749c2ec828907fbe9166c \
   --expected-gold-summary-sha256 \
-  15bee5d51c6816e4bd8bffdde3bcb657e5a25932f9742f17496c7a53884858ce \
+  4339828263ce4cb3b81353f1fdb3e11ae5c99aeaebe9b3477be18dfe5a436a63 \
   fl-bsa-v5.0.1-companion-evidence.zip
 ```
 
 The verifier checks every bundled file, reconstructs and hashes the original producer ZIP,
-recomputes the fairness arithmetic, validates the exact robustness seed structure and aggregates,
+recomputes the fairness arithmetic, validates the exact robustness seed structure and aggregates
+from the deterministic public projection,
 traverses the complete certificate graph, and enforces the bounded claim flags. Before consuming
-Gold, it requires the exact evidence manifest, robustness index, and merged summary bytes to match
-the three SHA-256 values supplied on the command line. For utility, it
+Gold, it requires the exact evidence manifest and robustness index plus the path-free merged-summary
+projection to match the three SHA-256 values supplied on the command line. For utility, it
 requires the exact `utility_summary.json` bytes to match its supplied SHA-256, then validates the
 ten-row structure and recomputes aggregates and skill retention from those rows. Copy all four
 values from the trusted

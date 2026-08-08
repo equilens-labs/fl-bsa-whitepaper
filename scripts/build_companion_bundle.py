@@ -15,11 +15,20 @@ from pathlib import Path
 from typing import Any
 
 
-DOCUMENT_VERSION = "WP-5.0.1-candidate.2"
+DOCUMENT_VERSION = "WP-5.0.1-candidate.3"
 PRODUCT_COMMIT = "cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2"
 PRODUCT_TAG = "v5.0.1"
 PRODUCT_TAG_OBJECT = "3a0ea6e4faea9d61aabcedebab2a838624fb587d"
 MAX_FILE_BYTES = 20 * 1024 * 1024
+PUBLIC_TEXT_SUFFIXES = frozenset(
+    {".csv", ".json", ".md", ".py", ".tex", ".txt", ".yaml", ".yml"}
+)
+FORBIDDEN_PUBLIC_PATH_MARKERS = (
+    b"/mnt/ci-work/",
+    b"/home/ci/",
+    b"/home/runner/",
+    b"/app/",
+)
 PRIMARY_BUNDLE_SHA256 = (
     "f6a0bd9390565f7bd852b451e11b7384b1628c24caba02865b1ec94c1e263026"
 )
@@ -124,6 +133,17 @@ def _build_original_producer_zip(root: Path) -> bytes:
     return data
 
 
+def _assert_public_safe_members(members: dict[str, bytes]) -> None:
+    for name, data in members.items():
+        if Path(name).suffix.lower() not in PUBLIC_TEXT_SUFFIXES:
+            continue
+        for marker in FORBIDDEN_PUBLIC_PATH_MARKERS:
+            if marker in data:
+                raise CompanionError(
+                    f"public companion member contains machine-local path {marker.decode()}: {name}"
+                )
+
+
 def _collect(root: Path) -> dict[str, bytes]:
     exact_files = [
         "config/fairness_config.yaml",
@@ -174,6 +194,7 @@ def _collect(root: Path) -> dict[str, bytes]:
     for name, data in members.items():
         if len(data) > MAX_FILE_BYTES:
             raise CompanionError(f"companion member exceeds size limit: {name}")
+    _assert_public_safe_members(members)
     return dict(sorted(members.items()))
 
 
