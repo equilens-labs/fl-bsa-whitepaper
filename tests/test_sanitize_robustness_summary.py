@@ -59,6 +59,18 @@ class RobustnessSummaryProjectionTests(unittest.TestCase):
                 expected_source_sha256=hashlib.sha256(short_source).hexdigest(),
             )
 
+    def test_projection_rejects_any_remaining_shared_policy_path(self) -> None:
+        source = json.loads(self._source())
+        source["worker_path"] = "/home/ci/actions-runner/private"
+        source_bytes = (json.dumps(source, indent=2, sort_keys=True) + "\n").encode(
+            "utf-8"
+        )
+        with self.assertRaisesRegex(SANITIZER.ProjectionError, "/home/ci/"):
+            SANITIZER.project(
+                source_bytes,
+                expected_source_sha256=hashlib.sha256(source_bytes).hexdigest(),
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

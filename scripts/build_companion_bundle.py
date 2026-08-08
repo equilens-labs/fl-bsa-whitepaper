@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import io
 import json
@@ -14,6 +15,11 @@ import zipfile
 from pathlib import Path
 from typing import Any
 
+try:
+    from public_path_policy import FORBIDDEN_PUBLIC_PATH_MARKERS
+except ModuleNotFoundError:  # Imported as scripts.build_companion_bundle in tests.
+    from scripts.public_path_policy import FORBIDDEN_PUBLIC_PATH_MARKERS
+
 
 DOCUMENT_VERSION = "WP-5.0.1-candidate.3"
 PRODUCT_COMMIT = "cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2"
@@ -23,11 +29,8 @@ MAX_FILE_BYTES = 20 * 1024 * 1024
 PUBLIC_TEXT_SUFFIXES = frozenset(
     {".csv", ".json", ".md", ".py", ".tex", ".txt", ".yaml", ".yml"}
 )
-FORBIDDEN_PUBLIC_PATH_MARKERS = (
-    b"/mnt/ci-work/",
-    b"/home/ci/",
-    b"/home/runner/",
-    b"/app/",
+PUBLIC_GZIP_MEMBERS = frozenset(
+    {"evidence/v5.0.1/utility/balanced_fixture.csv.gz"}
 )
 PRIMARY_BUNDLE_SHA256 = (
     "f6a0bd9390565f7bd852b451e11b7384b1628c24caba02865b1ec94c1e263026"
@@ -133,15 +136,48 @@ def _build_original_producer_zip(root: Path) -> bytes:
     return data
 
 
+def _assert_no_machine_path(name: str, data: bytes) -> None:
+    for marker in FORBIDDEN_PUBLIC_PATH_MARKERS:
+        if marker in data:
+            raise CompanionError(
+                f"public companion member contains machine-local path {marker.decode()}: {name}"
+            )
+
+
 def _assert_public_safe_members(members: dict[str, bytes]) -> None:
+    """Reject unknown formats and inspect the contents of supported compressed members."""
+
     for name, data in members.items():
-        if Path(name).suffix.lower() not in PUBLIC_TEXT_SUFFIXES:
+        _assert_no_machine_path(name, data)
+        suffix = Path(name).suffix.lower()
+        if suffix in PUBLIC_TEXT_SUFFIXES:
             continue
-        for marker in FORBIDDEN_PUBLIC_PATH_MARKERS:
-            if marker in data:
-                raise CompanionError(
-                    f"public companion member contains machine-local path {marker.decode()}: {name}"
-                )
+        if name in PUBLIC_GZIP_MEMBERS:
+            try:
+                expanded = gzip.decompress(data)
+            except (EOFError, OSError) as exc:
+                raise CompanionError(f"invalid public gzip member: {name}") from exc
+            _assert_no_machine_path(f"{name} (decompressed)", expanded)
+            continue
+        if name == PRODUCER_BUNDLE_MEMBER:
+            try:
+                with zipfile.ZipFile(io.BytesIO(data)) as archive:
+                    for nested in archive.infolist():
+                        if nested.is_dir():
+                            continue
+                        nested_name = nested.filename
+                        if Path(nested_name).suffix.lower() not in PUBLIC_TEXT_SUFFIXES:
+                            raise CompanionError(
+                                "unsupported public companion member format: "
+                                f"{name}!{nested_name}"
+                            )
+                        _assert_no_machine_path(
+                            f"{name}!{nested_name}", archive.read(nested)
+                        )
+            except zipfile.BadZipFile as exc:
+                raise CompanionError(f"invalid public ZIP member: {name}") from exc
+            continue
+        raise CompanionError(f"unsupported public companion member format: {name}")
 
 
 def _collect(root: Path) -> dict[str, bytes]:
@@ -194,7 +230,6 @@ def _collect(root: Path) -> dict[str, bytes]:
     for name, data in members.items():
         if len(data) > MAX_FILE_BYTES:
             raise CompanionError(f"companion member exceeds size limit: {name}")
-    _assert_public_safe_members(members)
     return dict(sorted(members.items()))
 
 
@@ -203,6 +238,7 @@ def build(root: Path, output: Path) -> dict[str, Any]:
     commit = _git(root, "rev-parse", "HEAD")
     dirty = bool(_git(root, "status", "--porcelain"))
     members = _collect(root)
+    _assert_public_safe_members(members)
     files = [
         {"path": name, "sha256": _sha256(data), "size": len(data)}
         for name, data in members.items()

@@ -9,11 +9,15 @@ import json
 from pathlib import Path
 from typing import Any
 
+try:
+    from public_path_policy import FORBIDDEN_PUBLIC_PATH_MARKERS
+except ModuleNotFoundError:  # Imported as scripts.sanitize_robustness_summary in tests.
+    from scripts.public_path_policy import FORBIDDEN_PUBLIC_PATH_MARKERS
+
 
 ALGORITHM = "remove-machine-local-path-fields.v1"
 REMOVED_FIELDS = ("run_dir", "scenario_dir")
 EXPECTED_REMOVALS = {"run_dir": 40, "scenario_dir": 40}
-FORBIDDEN_PATH_MARKERS = ("/mnt/ci-work/", "/home/runner/", "/app/")
 
 
 class ProjectionError(ValueError):
@@ -62,7 +66,8 @@ def project(source_bytes: bytes, *, expected_source_sha256: str) -> bytes:
 
     output = (json.dumps(projected, indent=2, sort_keys=True) + "\n").encode("utf-8")
     output_text = output.decode("utf-8")
-    for marker in FORBIDDEN_PATH_MARKERS:
+    for marker_bytes in FORBIDDEN_PUBLIC_PATH_MARKERS:
+        marker = marker_bytes.decode("ascii")
         if marker in output_text:
             raise ProjectionError(
                 f"public projection still contains forbidden path: {marker}"

@@ -12,6 +12,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest import mock
 
 import yaml
 
@@ -744,6 +745,34 @@ class V501CharacterizationContractTests(unittest.TestCase):
             with self.assertRaisesRegex(builder.CompanionError, "machine-local path"):
                 builder._assert_public_safe_members(
                     {"evidence/example.json": b'{"run_dir":"/mnt/ci-work/private"}'}
+                )
+            with mock.patch.object(
+                builder,
+                "_collect",
+                return_value={"evidence/private.log": b"future unclassified format\n"},
+            ):
+                with self.assertRaisesRegex(
+                    builder.CompanionError, "unsupported public companion member format"
+                ):
+                    builder.build(ROOT, Path(tmp) / "bypass.zip")
+            with self.assertRaisesRegex(builder.CompanionError, "machine-local path"):
+                builder._assert_public_safe_members(
+                    {
+                        "evidence/v5.0.1/utility/balanced_fixture.csv.gz": gzip.compress(
+                            b"worker_path,/home/ci/actions-runner/private\n"
+                        )
+                    }
+                )
+            nested_zip = io.BytesIO()
+            with zipfile.ZipFile(
+                nested_zip, "w", compression=zipfile.ZIP_DEFLATED
+            ) as archive:
+                archive.writestr(
+                    "intake/private.json", b'{"run_dir":"/mnt/ci-work/private"}'
+                )
+            with self.assertRaisesRegex(builder.CompanionError, "machine-local path"):
+                builder._assert_public_safe_members(
+                    {builder.PRODUCER_BUNDLE_MEMBER: nested_zip.getvalue()}
                 )
             verified = verifier.verify(
                 first,
