@@ -28,22 +28,18 @@ This document describes how evidence artifacts flow from the FL-BSA runtime (`fl
                               │ WhitePaper_Intake_Bundle_v4.zip
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  fl-bsa-whitepaper (Consumer / This Repo)                   │
+│  fl-bsa-whitepaper rolling intake validation                │
 │                                                             │
-│  intake/                                                    │
-│    ├─ metrics_uncertainty.json (v4 SoT)                     │
-│    ├─ metrics_long.csv (legacy/annex)                       │
-│    ├─ selection_rates.csv                                   │
-│    ├─ fairness_slices.json                                  │
-│    ├─ manifest.json                                         │
-│    ├─ certificates/*.json                                   │
-│    └─ (other supporting CSVs)                               │
-│                                                             │
-│  make pdf                                                   │
-│    ├─ Generates TeX macros from metrics                     │
-│    └─ Compiles LaTeX → dist/whitepaper.pdf                  │
+│  pull-wp-intake.yml                                         │
+│    ├─ verifies the exact producer run and artifact          │
+│    ├─ validates schema and public-disclosure boundaries     │
+│    └─ uploads intake/whitepaper_snapshot.json only          │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+The receipt-only path above does not build a PDF. The archival v5.0.1 PDF is built separately
+from the repository's checked-in, v5.0.1-pinned intake and exact release identity. A current
+release needs its own version-bound source and evidence contract.
 
 ---
 

@@ -17,6 +17,14 @@ class PublicClaimBoundariesContractTests(unittest.TestCase):
                 self.assertNotIn("cp /tmp/bundle/intake", text)
                 self.assertNotIn("# Generate LaTeX macros and build PDF", text)
 
+        pipeline_spec = (ROOT / "docs" / "data_pipeline_spec.md").read_text(
+            encoding="utf-8"
+        )
+        architecture = pipeline_spec.split("```", maxsplit=2)[1]
+        self.assertIn("uploads intake/whitepaper_snapshot.json only", architecture)
+        self.assertNotIn("make pdf", architecture)
+        self.assertNotIn("dist/whitepaper.pdf", architecture)
+
     def test_release_posture_limits_are_visible_in_executive_summary(self) -> None:
         summary = (ROOT / "sections" / "01_executive_summary.tex").read_text(
             encoding="utf-8"
