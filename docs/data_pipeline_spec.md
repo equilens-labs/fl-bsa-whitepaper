@@ -124,27 +124,21 @@ Defined in `config/sap.yaml`:
 
 ## Consumer: fl-bsa-whitepaper
 
-### Import Process
+### Receipt-Only Import Process
 
 ```bash
-# 1. Get bundle from producer
-# (either download from CI or copy from local run)
+# Extract an exact producer bundle into an isolated temporary directory.
+bundle_dir="$(mktemp -d)"
+unzip WhitePaper_Intake_Bundle_v4.zip -d "$bundle_dir"
 
-# 2. Extract to intake/
-unzip WhitePaper_Intake_Bundle_v4.zip -d /tmp/bundle
-cp /tmp/bundle/intake/*.csv intake/
-cp /tmp/bundle/intake/*.json intake/
-cp /tmp/bundle/provenance/manifest.json intake/manifest.json
-mkdir -p intake/certificates && cp /tmp/bundle/certificates/*.json intake/certificates/
-cp /tmp/bundle/config/sap.yaml config/sap.yaml
-cp /tmp/bundle/config/fairness_config.yaml config/fairness_config.yaml
-
-# 3. Generate TeX macros
-make macros
-
-# 4. Build PDF
-make pdf
+# Validate its public disclosure surface without changing publication sources.
+python3 scripts/validate_public_intake.py --bundle-root "$bundle_dir" --schema-root .
 ```
+
+Do not copy arbitrary producer intake into this checkout and run `make pdf`. The checked-in paper
+is permanently bound to the archival v5.0.1 evidence. A newer release requires a separately
+versioned source tree and build contract. `pull-wp-intake.yml` performs the full exact-run,
+artifact, digest, schema, and disclosure checks and emits only a JSON receipt.
 
 ### Macro Generation
 
@@ -264,10 +258,9 @@ idempotency, and stable-v5 compatibility-anchor contract.
 
 ### Consumer-Side (this repo)
 
-The LaTeX build process will:
-- Show "TBD" placeholders if metrics are missing
-- Generate tables from whatever data is available
-- Fail gracefully on missing optional files
+The archival LaTeX build is fail-closed. Strict generators require the complete pinned v5.0.1
+intake and the characterization contract rejects missing, substituted, or cross-version inputs.
+Rolling intake is validated separately and cannot invoke the PDF build.
 
 ---
 

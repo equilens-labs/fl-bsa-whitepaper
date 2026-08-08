@@ -8,6 +8,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class PublicClaimBoundariesContractTests(unittest.TestCase):
+    def test_docs_do_not_instruct_cross_version_paper_rebuilds(self) -> None:
+        for relative in ("docs/data_pipeline_spec.md", "tasks/Intake.md"):
+            with self.subTest(relative=relative):
+                text = (ROOT / relative).read_text(encoding="utf-8")
+                self.assertRegex(text.lower(), r"\b(?:must not|never)\b")
+                self.assertIn("version-bound", text)
+                self.assertNotIn("cp /tmp/bundle/intake", text)
+                self.assertNotIn("# Generate LaTeX macros and build PDF", text)
+
     def test_release_posture_limits_are_visible_in_executive_summary(self) -> None:
         summary = (ROOT / "sections" / "01_executive_summary.tex").read_text(
             encoding="utf-8"

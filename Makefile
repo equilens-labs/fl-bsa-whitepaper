@@ -72,6 +72,7 @@ candidate: test assets
 	python3 scripts/gen_publication_identity.py --require-clean --repo-root . --companion $(COMPANION) --output $(IDENTITY)
 	latexmk -C main.tex
 	latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
+	python3 scripts/verify_pdf_release_identity.py --product-tag v5.0.1 --product-sha cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2 --evidence-run-id 30765888408 --whitepaper-sha "$$(git rev-parse HEAD)" main.pdf
 	test "$$(pdftotext main.pdf - | grep -F -c 'DEMO / EVALUATION ONLY')" -eq 1
 	python3 scripts/check_pdf_tag_structure.py --expected-header-cells $(EXPECTED_TABLE_HEADER_CELLS) --expected-figures $(EXPECTED_FIGURE_TAGS) main.pdf
 	mkdir -p dist

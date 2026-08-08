@@ -15,6 +15,7 @@ class PdfIdentityError(ValueError):
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _RUN_ID_RE = re.compile(r"^[1-9][0-9]*$")
+_TAG_RE = re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
 _FALLBACK_MARKERS = (
     "SOURCE-COMMIT-NOT-GENERATED",
     "COMPANION-DIGEST-NOT-GENERATED",
@@ -25,12 +26,15 @@ _FALLBACK_MARKERS = (
 def verify_text(
     text: str,
     *,
+    product_tag: str,
     product_sha: str,
     evidence_run_id: str,
     whitepaper_sha: str,
 ) -> None:
     """Validate the three independent identities rendered into the PDF text layer."""
 
+    if not _TAG_RE.fullmatch(product_tag):
+        raise PdfIdentityError("expected product tag must be a semantic v-prefixed version")
     if not _SHA_RE.fullmatch(product_sha):
         raise PdfIdentityError("expected product SHA must be 40 lowercase hex characters")
     if not _SHA_RE.fullmatch(whitepaper_sha):
@@ -42,14 +46,21 @@ def verify_text(
         if marker in text:
             raise PdfIdentityError(f"PDF contains unresolved identity marker {marker!r}")
 
-    expected = {
-        "product SHA": product_sha,
-        "evidence run ID": evidence_run_id,
-        "whitepaper SHA": whitepaper_sha,
+    normalized = re.sub(r"\s+", " ", text)
+    labelled_patterns = {
+        "product identity": (
+            rf"\bProduct {re.escape(product_tag)} at {re.escape(product_sha)}(?![0-9a-f])"
+        ),
+        "evidence run identity": (
+            rf"\bEvidence release workflow run {re.escape(evidence_run_id)}(?![0-9])"
+        ),
+        "whitepaper identity": (
+            rf"\bWhitepaper source {re.escape(whitepaper_sha)}(?![0-9a-f])"
+        ),
     }
-    for label, value in expected.items():
-        if value not in text:
-            raise PdfIdentityError(f"PDF does not contain the expected {label}: {value}")
+    for label, pattern in labelled_patterns.items():
+        if re.search(pattern, normalized) is None:
+            raise PdfIdentityError(f"PDF does not contain the exact labelled {label}")
 
 
 def extract_text(pdf: Path) -> str:
@@ -74,6 +85,7 @@ def extract_text(pdf: Path) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("pdf", type=Path)
+    parser.add_argument("--product-tag", required=True)
     parser.add_argument("--product-sha", required=True)
     parser.add_argument("--evidence-run-id", required=True)
     parser.add_argument("--whitepaper-sha", required=True)
@@ -82,6 +94,7 @@ def main() -> int:
     try:
         verify_text(
             extract_text(args.pdf),
+            product_tag=args.product_tag,
             product_sha=args.product_sha,
             evidence_run_id=args.evidence_run_id,
             whitepaper_sha=args.whitepaper_sha,

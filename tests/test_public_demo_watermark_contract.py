@@ -7,6 +7,17 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _artifact_uploads(workflow: dict) -> list[tuple[str, str, str]]:
+    steps = workflow["jobs"]["fetch-build"]["steps"]
+    uploads = []
+    for step in steps:
+        action = str(step.get("uses") or "")
+        if action.split("@", 1)[0] != "actions/upload-artifact":
+            continue
+        uploads.append((action, step["with"]["name"], step["with"]["path"]))
+    return uploads
+
+
 class PublicDemoWatermarkContractTests(unittest.TestCase):
     def test_candidate_profile_and_target_are_canonical(self) -> None:
         profile = (
@@ -25,18 +36,21 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
             "test \"$$(pdftotext main.pdf - | grep -F -c "
             "'DEMO / EVALUATION ONLY')\" -eq 1"
         )
+        identity_check = "scripts/verify_pdf_release_identity.py"
         structure_check = "scripts/check_pdf_tag_structure.py"
         for required in (
             copy_profile,
             clean_latex,
             compile_latex,
+            identity_check,
             marker_check,
             structure_check,
         ):
             self.assertIn(required, candidate)
         self.assertLess(candidate.index(copy_profile), candidate.index(clean_latex))
         self.assertLess(candidate.index(clean_latex), candidate.index(compile_latex))
-        self.assertLess(candidate.index(compile_latex), candidate.index(marker_check))
+        self.assertLess(candidate.index(compile_latex), candidate.index(identity_check))
+        self.assertLess(candidate.index(identity_check), candidate.index(marker_check))
         self.assertLess(candidate.index(marker_check), candidate.index(structure_check))
 
         publication = makefile.split("publication-candidate:", 1)[1].split(
@@ -143,28 +157,36 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden_command, run_scripts)
 
-        upload_action = (
-            "actions/upload-artifact@"
-            "ea165f8d65b6e75b540449e92b4886f43607fa02"
-        )
-        uploads = [
-            (step["with"]["name"], step["with"]["path"])
-            for step in steps
-            if str(step.get("uses") or "").startswith(upload_action)
-        ]
+        upload_action = "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
         self.assertEqual(
             [
                 (
+                    upload_action,
                     "whitepaper-intake-receipt-${{ github.run_attempt }}",
                     "intake/whitepaper_snapshot.json",
                 ),
                 (
+                    upload_action,
                     "intake-pr-soft-fail-${{ github.run_attempt }}",
                     "dist/intake-pr-soft-fail/intake_pr_soft_fail.json",
                 ),
             ],
-            uploads,
+            _artifact_uploads(workflow),
         )
+
+    def test_intake_upload_inventory_detects_a_differently_pinned_upload(self) -> None:
+        workflow = yaml.safe_load(
+            (ROOT / ".github" / "workflows" / "pull-wp-intake.yml").read_text(
+                encoding="utf-8"
+            )
+        )
+        workflow["jobs"]["fetch-build"]["steps"].append(
+            {
+                "uses": "actions/upload-artifact@" + "0" * 40,
+                "with": {"name": "forbidden", "path": "dist/current-paper.bin"},
+            }
+        )
+        self.assertEqual(3, len(_artifact_uploads(workflow)))
 
     def test_local_watermark_override_is_not_committed_by_intake_pr(self) -> None:
         gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")

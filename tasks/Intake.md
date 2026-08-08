@@ -48,24 +48,17 @@ The gate-wp target:
 
 ---
 
-## Consume Bundle (This Repo)
+## Validate a Bundle Without Building the Archival Paper
 
-### Manual Copy
+### Isolated validation
 ```bash
-# Unzip bundle
-unzip artifacts/WhitePaper_Intake_Bundle_v4.zip -d /tmp/bundle
-
-# Copy intake files
-cp /tmp/bundle/intake/*.csv intake/
-cp /tmp/bundle/intake/*.json intake/
-cp /tmp/bundle/provenance/manifest.json intake/manifest.json
-mkdir -p intake/certificates && cp /tmp/bundle/certificates/*.json intake/certificates/
-cp /tmp/bundle/config/sap.yaml config/sap.yaml
-cp /tmp/bundle/config/fairness_config.yaml config/fairness_config.yaml
-
-# Generate LaTeX macros and build PDF
-make pdf
+bundle_dir="$(mktemp -d)"
+unzip artifacts/WhitePaper_Intake_Bundle_v4.zip -d "$bundle_dir"
+python3 scripts/validate_public_intake.py --bundle-root "$bundle_dir" --schema-root .
 ```
+
+Never copy an arbitrary or current producer bundle into this checkout and run `make pdf`. This
+paper is fixed to v5.0.1. A successor paper needs its own version-bound source and evidence.
 
 ### CI Pull
 The `.github/workflows/pull-wp-intake.yml` workflow can be configured to:
