@@ -261,6 +261,16 @@ class PublicationManifestTests(unittest.TestCase):
         self.assertIn("Build and verify companion evidence identity", workflow)
         self.assertIn("scripts/verify_companion_bundle.py", workflow)
         self.assertIn("scripts/gen_publication_identity.py", workflow)
+        identity_step = workflow.split(
+            "- name: Assert exact archival release identity in PDF", 1
+        )[1].split("- name: Assert public demo watermark in PDF", 1)[0]
+        for exact_argument in (
+            "--product-tag v5.0.1",
+            "--product-sha cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2",
+            "--evidence-run-id 30765888408",
+            '--whitepaper-sha "$BUILD_COMMIT"',
+        ):
+            self.assertIn(exact_argument, identity_step)
         self.assertIn('commit="$(git rev-parse HEAD)"', workflow)
         self.assertIn("Tracked publication sources changed during the build", workflow)
         self.assertIn("python scripts/build_publication_manifest.py", workflow)

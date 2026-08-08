@@ -49,13 +49,13 @@ def verify_text(
     normalized = re.sub(r"\s+", " ", text)
     labelled_patterns = {
         "product identity": (
-            rf"\bProduct {re.escape(product_tag)} at {re.escape(product_sha)}(?![0-9a-f])"
+            rf"\bProduct {re.escape(product_tag)} at {re.escape(product_sha)}(?![0-9A-Za-z])"
         ),
         "evidence run identity": (
-            rf"\bEvidence release workflow run {re.escape(evidence_run_id)}(?![0-9])"
+            rf"\bEvidence release workflow run {re.escape(evidence_run_id)}(?![0-9A-Za-z])"
         ),
         "whitepaper identity": (
-            rf"\bWhitepaper source {re.escape(whitepaper_sha)}(?![0-9a-f])"
+            rf"\bWhitepaper source {re.escape(whitepaper_sha)}(?![0-9A-Za-z])"
         ),
     }
     for label, pattern in labelled_patterns.items():

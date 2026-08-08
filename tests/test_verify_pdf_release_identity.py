@@ -73,6 +73,21 @@ class VerifyPdfReleaseIdentityTests(unittest.TestCase):
         with self.assertRaisesRegex(VERIFY.PdfIdentityError, "evidence run identity"):
             self.verify(text)
 
+    def test_rejects_alphanumeric_suffixes_on_every_identity(self) -> None:
+        mutations = {
+            "product identity": self.valid_text().replace(PRODUCT_SHA, PRODUCT_SHA + "x"),
+            "evidence run identity": self.valid_text().replace(
+                EVIDENCE_RUN_ID, EVIDENCE_RUN_ID + "x"
+            ),
+            "whitepaper identity": self.valid_text().replace(
+                WHITEPAPER_SHA, WHITEPAPER_SHA + "x"
+            ),
+        }
+        for expected_error, text in mutations.items():
+            with self.subTest(expected_error=expected_error):
+                with self.assertRaisesRegex(VERIFY.PdfIdentityError, expected_error):
+                    self.verify(text)
+
     def test_rejects_malformed_expected_identity(self) -> None:
         with self.assertRaisesRegex(VERIFY.PdfIdentityError, "40 lowercase hex"):
             VERIFY.verify_text(
