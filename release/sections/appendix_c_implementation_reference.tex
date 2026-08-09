@@ -1,0 +1,12 @@
+
+\section{Implementation Reference}
+This whitepaper reflects the behaviour of \sysname{} as implemented in the FL-BSA codebase at commit \CodeCommitDisplay{}.
+
+Core metric implementations are:
+\begin{itemize}[leftmargin=*]
+\item \texttt{flbsa.metrics.mathematical\_definitions} (AIR and related fairness metrics)
+\item \texttt{flbsa.metrics.fairness\_uncertainty} (deterministic Wilson/delta uncertainty surface)
+\item \texttt{flbsa.metrics.statistical\_significance} (significance routines)
+\end{itemize}
+
+The module names above provide commit-pinned traceability to the audited implementation. Detailed source review may require repository access; public handoff materials should reference release-published documentation rather than private repository paths.

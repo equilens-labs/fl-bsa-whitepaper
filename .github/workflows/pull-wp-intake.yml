@@ -1,4 +1,5 @@
 name: pull-wp-intake
+run-name: wp-intake-${{ github.event.client_payload.workflow_file || 'schedule' }}-${{ github.event.client_payload.producer_run_id || github.run_id }}-${{ github.event.client_payload.artifact_id || github.run_attempt }}
 
 on:
   # Cross-repo automation strategies:
@@ -210,6 +211,15 @@ jobs:
           fi
 
           expected_workflow_path=".github/workflows/${PRODUCER_WORKFLOW}"
+          release_active_mode="false"
+          if [ "$GITHUB_EVENT_NAME" = "repository_dispatch" ] && \
+             [ "$PRODUCER_WORKFLOW" = "release-evidence.yml" ]; then
+            release_active_mode="true"
+            if [[ ! "$PRODUCER_RUN_ATTEMPT" =~ ^[1-9][0-9]*$ ]]; then
+              echo "Release dispatch must bind a positive producer run attempt." >&2
+              exit 1
+            fi
+          fi
           run_json=""
           for ((attempt=1; attempt<=81; attempt++)); do
             if ! run_json="$(gh api "repos/${PRODUCER_REPO}/actions/runs/${run_id}")"; then
@@ -251,6 +261,98 @@ jobs:
 
             run_status="$(jq -r '.status' <<<"$run_json")"
             run_conclusion="$(jq -r '.conclusion // ""' <<<"$run_json")"
+            run_attempt="$(jq -r '.run_attempt | tostring' <<<"$run_json")"
+            if [[ ! "$run_attempt" =~ ^[1-9][0-9]*$ ]]; then
+              echo "Producer run ${run_id} has a missing or malformed run_attempt=${run_attempt@Q}." >&2
+              exit 1
+            fi
+
+            if [ "$release_active_mode" = "true" ]; then
+              if [ "$PRODUCER_RUN_ATTEMPT" != "$run_attempt" ]; then
+                echo "Dispatched producer run attempt ${PRODUCER_RUN_ATTEMPT} does not match API attempt ${run_attempt}." >&2
+                exit 1
+              fi
+              case "$run_status" in
+                completed)
+                  if [ "$run_conclusion" != "success" ]; then
+                    echo "Release producer run ${run_id} completed without success." >&2
+                    exit 1
+                  fi
+                  ;;
+                queued|in_progress|requested|waiting|pending) ;;
+                *)
+                  echo "Release producer run ${run_id} has unsupported status ${run_status@Q}." >&2
+                  exit 1
+                  ;;
+              esac
+
+              if ! jobs_json="$(gh api --paginate --slurp \
+                "repos/${PRODUCER_REPO}/actions/runs/${run_id}/attempts/${run_attempt}/jobs?per_page=100")"; then
+                echo "Unable to resolve exact-attempt producer jobs for run ${run_id}/${run_attempt}." >&2
+                exit 1
+              fi
+              producer_job_name="WP Evidence (release-grade)"
+              producer_job_count="$(jq --arg name "$producer_job_name" \
+                '[.[].jobs[] | select(.name == $name)] | length' <<<"$jobs_json")"
+              if [ "$producer_job_count" -gt 1 ]; then
+                echo "Producer run ${run_id}/${run_attempt} has duplicate ${producer_job_name@Q} jobs." >&2
+                exit 1
+              fi
+              if [ "$producer_job_count" -eq 1 ]; then
+                producer_job_json="$(jq -c --arg name "$producer_job_name" \
+                  '[.[].jobs[] | select(.name == $name)][0]' <<<"$jobs_json")"
+                if ! jq -e \
+                  --arg run_id "$run_id" \
+                  --arg run_attempt "$run_attempt" \
+                  --arg head_sha "$(jq -r '.head_sha' <<<"$run_json")" \
+                  --arg job_name "$producer_job_name" '
+                    (.id | tostring | test("^[1-9][0-9]*$")) and
+                    (.run_id | tostring) == $run_id and
+                    (.run_attempt | tostring) == $run_attempt and
+                    .head_sha == $head_sha and
+                    .name == $job_name and
+                    (
+                      (.status == "completed" and .conclusion == "success") or
+                      (
+                        (.status == "queued" or .status == "in_progress" or
+                         .status == "requested" or .status == "waiting" or
+                         .status == "pending") and
+                        .conclusion == null
+                      )
+                    )
+                  ' <<<"$producer_job_json" >/dev/null; then
+                  jq '{id, run_id, run_attempt, head_sha, name, status, conclusion}' \
+                    <<<"$producer_job_json" >&2
+                  echo "Release producer job identity does not match the exact dispatched run." >&2
+                  exit 1
+                fi
+                producer_job_status="$(jq -r '.status' <<<"$producer_job_json")"
+                producer_job_conclusion="$(jq -r '.conclusion // ""' <<<"$producer_job_json")"
+                if [ "$producer_job_status" = "completed" ]; then
+                  if [ "$producer_job_conclusion" != "success" ]; then
+                    echo "Exact release producer job completed without success." >&2
+                    exit 1
+                  fi
+                  echo "Release intake authorized by completed ${producer_job_name} job in active run ${run_id}/${run_attempt}."
+                  break
+                fi
+                case "$producer_job_status" in
+                  queued|in_progress|requested|waiting|pending) ;;
+                  *)
+                    echo "Release producer job has unsupported status ${producer_job_status@Q}." >&2
+                    exit 1
+                    ;;
+                esac
+              fi
+              if [ "$attempt" -eq 81 ]; then
+                echo "Exact release producer job did not complete successfully within the 20-minute bounded wait." >&2
+                exit 1
+              fi
+              echo "Waiting for exact release producer job completion (${attempt}/81)."
+              sleep 15
+              continue
+            fi
+
             if [ "$run_status" = "completed" ]; then
               if [ "$run_conclusion" != "success" ]; then
                 jq '{id, status, conclusion, path, head_branch, head_sha}' <<<"$run_json" >&2
@@ -811,6 +913,76 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
+      - name: Prepare exact release whitepaper
+        if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file == 'release-evidence.yml' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/release-whitepaper release/includes release/figures
+          python scripts/release_whitepaper.py prepare \
+            --snapshot intake/whitepaper_snapshot.json \
+            --manifest intake/manifest.json \
+            --pack-intent intake/pack_intent.json \
+            --whitepaper-commit "$GITHUB_SHA" \
+            --whitepaper-run-id "$GITHUB_RUN_ID" \
+            --whitepaper-run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --identity-output dist/release-whitepaper/release-whitepaper-identity.json \
+            --tex-output release/includes/release_identity.tex
+          make release-assets
+          source_epoch="$(git show -s --format=%ct "$GITHUB_SHA")"
+          test "$source_epoch" -gt 0
+          echo "SOURCE_DATE_EPOCH=${source_epoch}" >> "$GITHUB_ENV"
+          echo "FORCE_SOURCE_DATE=1" >> "$GITHUB_ENV"
+          echo "TZ=UTC" >> "$GITHUB_ENV"
+
+      - name: Install PDF text tooling for release paper
+        if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file == 'release-evidence.yml' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends poppler-utils
+
+      - name: Compile exact release whitepaper
+        if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file == 'release-evidence.yml' }}
+        uses: xu-cheng/latex-action@e2f99d4b3685b0da93f97e1b86ad8fab81105098 # v3.3.0
+        with:
+          root_file: release/main.tex
+          docker_image: ghcr.io/xu-cheng/texlive-full@sha256:d9bfb267e3e3f5e0820ca86e867ee59ebb133fc29561bb28677d9b5a1a9e84ff
+          work_in_root_file_dir: false
+          pre_compile: |
+            export SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
+            export FORCE_SOURCE_DATE=1
+            export TZ=UTC
+            test "$SOURCE_DATE_EPOCH" -gt 0
+            test "$FORCE_SOURCE_DATE" = 1
+            test "$TZ" = UTC
+
+      - name: Finalize exact release whitepaper manifest
+        if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file == 'release-evidence.yml' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f main.pdf
+          cp main.pdf dist/release-whitepaper/whitepaper.pdf
+          python scripts/release_whitepaper.py finalize \
+            --identity dist/release-whitepaper/release-whitepaper-identity.json \
+            --pdf dist/release-whitepaper/whitepaper.pdf \
+            --output dist/release-whitepaper/whitepaper_release.json
+          rm dist/release-whitepaper/release-whitepaper-identity.json
+          test "$(find dist/release-whitepaper -mindepth 1 -maxdepth 1 -type f | wc -l)" -eq 2
+
+      - name: Upload exact release whitepaper
+        if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file == 'release-evidence.yml' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-whitepaper-${{ github.run_attempt }}
+          path: |
+            dist/release-whitepaper/whitepaper.pdf
+            dist/release-whitepaper/whitepaper_release.json
+          if-no-files-found: error
+          retention-days: 90
+
       - name: Persist intake snapshot
         env:
           WP_INTAKE_PR_TOKEN: ${{ secrets.WP_INTAKE_PR_TOKEN }}
@@ -901,7 +1073,7 @@ jobs:
           - bundle schema versions checked by pull-wp-intake
           - exact producer run, commit, artifact, digest, and shared contract checked
           - disclosure allowlist and public intake schema checked
-          - no PDF or publication artifact produced from rolling intake
+          - the fixed archival v5.0.1 paper is never compiled from rolling intake; any release-scoped paper remains a separate exact-run artifact
           EOF
 
           git config user.name "github-actions[bot]"
