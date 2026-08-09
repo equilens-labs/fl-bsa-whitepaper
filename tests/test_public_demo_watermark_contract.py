@@ -3,7 +3,6 @@ from pathlib import Path
 
 import yaml
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -20,9 +19,9 @@ def _artifact_uploads(workflow: dict) -> list[tuple[str, str, str]]:
 
 class PublicDemoWatermarkContractTests(unittest.TestCase):
     def test_candidate_profile_and_target_are_canonical(self) -> None:
-        profile = (
-            ROOT / "profiles" / "publication_profile.candidate.tex"
-        ).read_text(encoding="utf-8")
+        profile = (ROOT / "profiles" / "publication_profile.candidate.tex").read_text(
+            encoding="utf-8"
+        )
         self.assertEqual("\\drafttrue\n", profile)
 
         makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
@@ -32,10 +31,7 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
         copy_profile = "cp $(CANDIDATE_PROFILE) $(LOCAL_PROFILE)"
         clean_latex = "latexmk -C main.tex"
         compile_latex = "latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex"
-        marker_check = (
-            "test \"$$(pdftotext main.pdf - | grep -F -c "
-            "'DEMO / EVALUATION ONLY')\" -eq 1"
-        )
+        marker_check = "test \"$$(pdftotext main.pdf - | grep -F -c 'DEMO / EVALUATION ONLY')\" -eq 1"
         identity_check = "scripts/verify_pdf_release_identity.py"
         structure_check = "scripts/check_pdf_tag_structure.py"
         for required in (
@@ -53,9 +49,9 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
         self.assertLess(candidate.index(identity_check), candidate.index(marker_check))
         self.assertLess(candidate.index(marker_check), candidate.index(structure_check))
 
-        publication = makefile.split("publication-candidate:", 1)[1].split(
-            "clean:", 1
-        )[0]
+        publication = makefile.split("publication-candidate:", 1)[1].split("clean:", 1)[
+            0
+        ]
         for required in (
             "$(MAKE) candidate",
             "$(MAKE) arxiv",
@@ -83,9 +79,7 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
         self.assertIn("includes/publication_profile.local.tex", main_tex)
         self.assertIn("DEMO / EVALUATION ONLY", main_tex)
         self.assertIn(r"\AddToShipoutPictureBG", main_tex)
-        watermark = main_tex.split(r"\AddToShipoutPictureBG", 1)[1].split(
-            r"\fi", 1
-        )[0]
+        watermark = main_tex.split(r"\AddToShipoutPictureBG", 1)[1].split(r"\fi", 1)[0]
         self.assertIn(r"\tagmcbegin{artifact}", watermark)
         self.assertIn(r"\tagmcend", watermark)
         self.assertLess(
@@ -113,8 +107,7 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
         self.assertIn("Enable public demo watermark", workflow)
         self.assertIn("includes/publication_profile.local.tex", workflow)
         self.assertIn(
-            "cp profiles/publication_profile.candidate.tex "
-            "includes/publication_profile.local.tex",
+            "cp profiles/publication_profile.candidate.tex includes/publication_profile.local.tex",
             workflow,
         )
         self.assertIn("Ensure pdftotext available", workflow)
@@ -128,42 +121,69 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
         self.assertIn('if [ "$hits" -ne 1 ]; then', workflow)
         self.assertIn("name: fl-bsa-v5.0.1-archival-whitepaper", workflow)
 
-    def test_intake_workflow_never_builds_a_paper(self) -> None:
+    def test_intake_workflow_builds_only_an_exact_release_scoped_paper(self) -> None:
         workflow_text = (
             ROOT / ".github" / "workflows" / "pull-wp-intake.yml"
         ).read_text(encoding="utf-8")
         workflow = yaml.safe_load(workflow_text)
         steps = workflow["jobs"]["fetch-build"]["steps"]
-        run_scripts = "\n".join(str(step.get("run") or "") for step in steps)
 
         self.assertIn("name: whitepaper-intake-receipt-", workflow_text)
         self.assertIn("path: intake/whitepaper_snapshot.json", workflow_text)
         for forbidden in (
-            "Compile LaTeX",
-            "main.pdf",
             "whitepaper-pdf-from-intake",
             "arxiv-source-from-intake",
+            "profiles/publication_profile.candidate.tex",
+            "root_file: main.tex",
         ):
             self.assertNotIn(forbidden, workflow_text)
 
-        for forbidden_command in (
-            "latexmk",
-            "pdflatex",
-            "pdftotext",
-            "gen_tex_",
-            "gen_plots_from_intake.py",
-            "arxiv_pack.sh",
-            "publication_profile.local.tex",
-        ):
-            self.assertNotIn(forbidden_command, run_scripts)
+        release_condition = (
+            "${{ github.event_name == 'repository_dispatch' && "
+            "github.event.client_payload.workflow_file == 'release-evidence.yml' }}"
+        )
+        release_steps = {
+            step["name"]: step
+            for step in steps
+            if step.get("name")
+            in {
+                "Prepare exact release whitepaper",
+                "Install PDF text tooling for release paper",
+                "Compile exact release whitepaper",
+                "Finalize exact release whitepaper manifest",
+                "Upload exact release whitepaper",
+            }
+        }
+        self.assertEqual(5, len(release_steps))
+        for step in release_steps.values():
+            self.assertEqual(release_condition, step.get("if"))
 
-        upload_action = "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
+        compile_step = release_steps["Compile exact release whitepaper"]
+        self.assertEqual("release/main.tex", compile_step["with"]["root_file"])
+        tooling_step = release_steps["Install PDF text tooling for release paper"]
+        self.assertIn("poppler-utils", tooling_step["run"])
+        upload_step = release_steps["Upload exact release whitepaper"]
+        self.assertEqual(
+            "dist/release-whitepaper/whitepaper.pdf\n"
+            "dist/release-whitepaper/whitepaper_release.json\n",
+            upload_step["with"]["path"],
+        )
+
+        upload_action = (
+            "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
+        )
         self.assertEqual(
             [
                 (
                     upload_action,
                     "whitepaper-intake-receipt-${{ github.run_attempt }}",
                     "intake/whitepaper_snapshot.json",
+                ),
+                (
+                    upload_action,
+                    "release-whitepaper-${{ github.run_attempt }}",
+                    "dist/release-whitepaper/whitepaper.pdf\n"
+                    "dist/release-whitepaper/whitepaper_release.json\n",
                 ),
                 (
                     upload_action,
@@ -186,7 +206,7 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
                 "with": {"name": "forbidden", "path": "dist/current-paper.bin"},
             }
         )
-        self.assertEqual(3, len(_artifact_uploads(workflow)))
+        self.assertEqual(4, len(_artifact_uploads(workflow)))
 
     def test_local_watermark_override_is_not_committed_by_intake_pr(self) -> None:
         gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")

@@ -19,7 +19,7 @@ export SOURCE_DATE_EPOCH
 export FORCE_SOURCE_DATE = 1
 export TZ = UTC
 
-.PHONY: all test macros plots characterization assets companion identity pdf candidate ua-preflight arxiv publication-candidate publication-candidate-repeatability clean
+.PHONY: all test macros plots characterization assets release-macros release-plots release-regulatory release-assets release-pdf companion identity pdf candidate ua-preflight arxiv publication-candidate publication-candidate-repeatability clean
 
 all: pdf
 
@@ -38,6 +38,28 @@ characterization:
 	python3 scripts/gen_characterization_assets.py --repo-root .
 
 assets: macros plots characterization
+
+# Release-cut generation is intentionally isolated from the pinned archival paper.
+# The workflow writes release_identity.tex only after validating an exact
+# release-evidence intake with scripts/release_whitepaper.py.
+release-macros:
+	python3 scripts/gen_tex_macros_from_metrics.py --strict --metrics intake/metrics_long.csv --sap config/sap.yaml --outdir release/includes
+	python3 scripts/gen_tex_preamble_from_manifest.py --strict --manifest intake/manifest.json --sap config/sap.yaml --out release/includes/provenance_macros.tex
+	python3 scripts/gen_tex_hyperparams_from_yaml.py --strict --config intake/model_hyperparams.yaml --outdir release/includes
+
+release-plots:
+	python3 scripts/gen_plots_from_intake.py --selection intake/selection_rates.csv --metrics intake/metrics_long.csv --outdir release/figures --require-all
+
+release-regulatory:
+	python3 scripts/release_whitepaper.py regulatory-table --matrix intake/regulatory_matrix.csv --output release/includes/table_regulatory_matrix.tex
+
+release-assets: release-macros release-plots release-regulatory
+
+release-pdf: release-assets
+	test -f release/includes/release_identity.tex
+	latexmk -pdf -interaction=nonstopmode -halt-on-error release/main.tex
+	mkdir -p dist/release-whitepaper
+	cp main.pdf dist/release-whitepaper/whitepaper.pdf
 
 companion: assets
 	python3 scripts/build_companion_bundle.py --repo-root . --output $(COMPANION)
@@ -136,4 +158,6 @@ publication-candidate-repeatability:
 
 clean:
 	latexmk -C
+	latexmk -C release/main.tex
 	rm -f $(IDENTITY) $(PDF) $(CANDIDATE_PDF) $(COMPANION)
+	rm -f release/includes/release_identity.tex

@@ -1,0 +1,156 @@
+% Suppress volatile engine metadata; SOURCE_DATE_EPOCH binds the remaining
+% reproducible-build timestamp inputs to the checked-out source commit.
+\ifdefined\pdfinfoomitdate\pdfinfoomitdate=1\fi
+\ifdefined\pdftrailerid\pdftrailerid{}\fi
+\ifdefined\pdfsuppressptexinfo\pdfsuppressptexinfo=15\fi
+
+\documentclass[11pt]{article}
+
+% --- Packages (arXiv-friendly) ---
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{eso-pic}
+\usepackage{xcolor}
+\usepackage{xspace}
+\usepackage{booktabs}
+\usepackage[font=small]{caption}
+\usepackage{fancyhdr}
+\usepackage[section]{placeins}
+\usepackage{siunitx}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\hypersetup{
+  pdftitle={Equilens - Synthetic Audit and Fairness Evaluation for FL-BSA},
+  pdfauthor={Equilens},
+  pdfsubject={Synthetic Audit and Fairness Evaluation for FL-BSA},
+  pdfkeywords={FL-BSA, fairness, synthetic audit, AIR, SRG, EU AI Act, ECOA, CFPB},
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  citecolor=blue!50!black,
+  urlcolor=blue!50!black
+}
+\usepackage[capitalise]{cleveref}
+\usepackage[numbers]{natbib}
+\usepackage{url}
+\setlength{\headheight}{24pt}
+\addtolength{\topmargin}{-4pt}
+\makeatletter
+\setlength{\@fptop}{0pt}
+\makeatother
+
+\sisetup{
+  detect-all,
+  round-mode=places,
+  round-precision=3,
+  round-pad=true,
+  table-number-alignment=center
+}
+
+\crefname{equation}{Eq.}{Eqs.}
+\Crefname{equation}{Equation}{Equations}
+\crefname{table}{Table}{Tables}
+\Crefname{table}{Table}{Tables}
+\crefname{figure}{Figure}{Figures}
+\Crefname{figure}{Figure}{Figures}
+
+% --- Includes ---
+\input{release/includes/macros}
+\input{release/includes/release_identity}
+\input{release/includes/provenance_macros}
+\input{release/includes/metrics_macros}
+
+% The generated tabular inputs share the archival paper's accessibility hook.
+% This release candidate makes no PDF/UA claim, so the hook is intentionally a
+% no-op until the release template receives the separately reviewed tag surface.
+\newcommand{\AccessibleTableHeaderRow}{}
+
+\newcommand{\DemoEvaluationWatermark}{DEMO / EVALUATION ONLY}
+\ifdraft
+\AddToShipoutPictureBG{%
+  \put(\LenToUnit{0.5\paperwidth},\LenToUnit{0.52\paperheight}){%
+    \makebox(0,0){%
+      \rotatebox{35}{%
+        \textcolor{black!10}{\bfseries\fontsize{36}{42}\selectfont \DemoEvaluationWatermark}%
+      }%
+    }%
+  }%
+}
+\fi
+
+% --- Title ---
+\title{\papertitle}
+\author{FL-BSA Team \\ Equilens}
+\date{Automatically generated for \ProductReleaseTag}
+
+\begin{document}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\raisebox{-0.35\height}{\includegraphics[height=0.6cm]{figures/equilens-wordmark-light.png}}}
+\fancyhead[R]{\scriptsize Equilens \textbar{} Synthetic Audit \& Fairness Evaluation for \sysname}
+\fancyfoot[L]{\scriptsize Equilens}
+\ifdraft\fancyfoot[C]{\scriptsize\textbf{\DemoEvaluationWatermark}}\fi
+\fancyfoot[R]{\scriptsize page~\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyhead[L]{\raisebox{-0.35\height}{\includegraphics[height=0.6cm]{figures/equilens-wordmark-light.png}}}
+  \fancyhead[R]{\scriptsize Equilens \textbar{} Synthetic Audit \& Fairness Evaluation for \sysname}
+  \fancyfoot[L]{\scriptsize Equilens}
+  \ifdraft\fancyfoot[C]{\scriptsize\textbf{\DemoEvaluationWatermark}}\fi
+  \fancyfoot[R]{\scriptsize page~\thepage}
+  \renewcommand{\headrulewidth}{0.4pt}
+  \renewcommand{\footrulewidth}{0pt}
+}
+
+\maketitle
+
+\begin{center}
+\fbox{\begin{minipage}{0.94\linewidth}
+\textbf{Release identity (automatically generated)}\\[2pt]
+Product \ProductReleaseTag{} at \texttt{\ProductCommit}\\
+Evidence release workflow run \EvidenceReleaseRunId{} (attempt \EvidenceReleaseRunAttempt)\\
+Whitepaper source \texttt{\WhitepaperSourceCommit}\\
+Whitepaper workflow run \WhitepaperWorkflowRunId{} (attempt \WhitepaperWorkflowRunAttempt)\\
+Intake snapshot \texttt{\IntakeSnapshotId}\\[3pt]
+\textbf{DEMO / EVALUATION ONLY} --- customer evidence ineligible;
+\texttt{characterization\_only}; \texttt{candidate\_not\_published}.
+\end{minipage}}
+\end{center}
+
+
+\begin{abstract}
+This automatically generated release-candidate paper presents the synthetic characterization evidence emitted by Equilens' Fair Lending Bias-Simulation Appliance (FL-BSA) for the exact release-evidence run identified below. It formalises selection-rate estimands---including the Adverse Impact Ratio (AIR) and approval-rate gaps---and reports the deterministic uncertainty present in the intake bundle. The paper is review material, not customer evidence, a legal opinion, a compliance certification, or proof of production suitability. Calibration is out of scope for this scenario.
+\end{abstract}
+
+\input{release/sections/01_executive_summary}
+\input{release/sections/04_model_algorithm}
+\input{release/sections/05_evaluation}
+\input{release/sections/02_problem_estimands}
+\input{release/sections/03_methods}
+\input{release/sections/06_results}
+\input{release/sections/07_compliance}
+\input{release/sections/08_security_privacy}
+\input{release/sections/09_reproducibility}
+\input{release/sections/10_limitations_monitoring}
+
+\bibliographystyle{plainnat}
+\bibliography{bib/references}
+
+\clearpage
+\section*{Appendices}
+\addcontentsline{toc}{section}{Appendices}
+\appendix
+\input{release/sections/appendix_a_sap}
+\input{release/sections/appendix_b_metrics_defs}
+\input{release/sections/appendix_c_implementation_reference}
+\input{release/sections/appendix_d_regulatory_matrix}
+\input{release/sections/appendix_e_manifest_summary}
+\input{release/sections/appendix_f_hyperparams}
+
+\end{document}

@@ -6,7 +6,6 @@ import unittest
 import zipfile
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "scripts" / "package_arxiv_source.py"
 SPEC = importlib.util.spec_from_file_location("package_arxiv_source_under_test", MODULE_PATH)
@@ -44,13 +43,9 @@ class ReproducibleArtifactTests(unittest.TestCase):
             with zipfile.ZipFile(output, "w") as stale:
                 stale.writestr("arxiv/deleted-secret.txt", b"must disappear")
 
-            PACKAGE.build_archive(
-                repo_root=root, output=output, source_date_epoch=1784332800
-            )
+            PACKAGE.build_archive(repo_root=root, output=output, source_date_epoch=1784332800)
             first = output.read_bytes()
-            PACKAGE.build_archive(
-                repo_root=root, output=output, source_date_epoch=1784332800
-            )
+            PACKAGE.build_archive(repo_root=root, output=output, source_date_epoch=1784332800)
             second = output.read_bytes()
 
             self.assertEqual(hashlib.sha256(first).digest(), hashlib.sha256(second).digest())
@@ -137,19 +132,14 @@ class ReproducibleArtifactTests(unittest.TestCase):
             "d9bfb267e3e3f5e0820ca86e867ee59ebb133fc29561bb28677d9b5a1a9e84ff"
         )
         for name in ("latex.yml", "pull-wp-intake.yml"):
-            workflow = (ROOT / ".github" / "workflows" / name).read_text(
-                encoding="utf-8"
-            )
+            workflow = (ROOT / ".github" / "workflows" / name).read_text(encoding="utf-8")
             with self.subTest(workflow=name):
                 self.assertIn(
-                    "python -m pip install --require-hashes "
-                    "-r requirements-ci-linux-x86_64.lock",
+                    "python -m pip install --require-hashes -r requirements-ci-linux-x86_64.lock",
                     workflow,
                 )
 
-        latex_workflow = (ROOT / ".github" / "workflows" / "latex.yml").read_text(
-            encoding="utf-8"
-        )
+        latex_workflow = (ROOT / ".github" / "workflows" / "latex.yml").read_text(encoding="utf-8")
         self.assertIn(image, latex_workflow)
         self.assertNotIn("texlive-full:latest", latex_workflow)
         compile_step = latex_workflow.split("- name: Compile LaTeX", 1)[1]
@@ -161,15 +151,25 @@ class ReproducibleArtifactTests(unittest.TestCase):
         self.assertIn("export TZ=UTC", compile_step)
         self.assertIn('test "$SOURCE_DATE_EPOCH" -gt 0', compile_step)
 
-        intake_workflow = (
-            ROOT / ".github" / "workflows" / "pull-wp-intake.yml"
-        ).read_text(encoding="utf-8")
-        self.assertNotIn("Compile LaTeX", intake_workflow)
-        self.assertNotIn("texlive-full", intake_workflow)
-
-        lock = (ROOT / "requirements-ci-linux-x86_64.lock").read_text(
+        intake_workflow = (ROOT / ".github" / "workflows" / "pull-wp-intake.yml").read_text(
             encoding="utf-8"
         )
+        self.assertIn(image, intake_workflow)
+        self.assertNotIn("texlive-full:latest", intake_workflow)
+        release_compile = intake_workflow.split("- name: Compile exact release whitepaper", 1)[
+            1
+        ].split("- name: Finalize exact release whitepaper manifest", 1)[0]
+        self.assertIn("root_file: release/main.tex", release_compile)
+        self.assertIn(
+            'export SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"', release_compile
+        )
+        self.assertIn("export FORCE_SOURCE_DATE=1", release_compile)
+        self.assertIn("export TZ=UTC", release_compile)
+        self.assertIn('test "$SOURCE_DATE_EPOCH" -gt 0', release_compile)
+        self.assertIn('test "$FORCE_SOURCE_DATE" = 1', release_compile)
+        self.assertIn('test "$TZ" = UTC', release_compile)
+
+        lock = (ROOT / "requirements-ci-linux-x86_64.lock").read_text(encoding="utf-8")
         self.assertIn("--only-binary=:all:", lock)
         requirements = [
             line for line in lock.splitlines() if line and not line.startswith(("#", " ", "--"))

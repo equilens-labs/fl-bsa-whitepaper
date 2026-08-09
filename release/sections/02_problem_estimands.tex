@@ -1,0 +1,37 @@
+
+\section{Problem and Estimands}
+We work with aggregated selection counts by protected group. We use the following notation:
+\begin{itemize}
+\item $A$ denotes a protected attribute (e.g.\ gender or race), with group values $g\in\mathcal{A}$;
+\item $g_{\mathrm{ref}}$ denotes a reference group, fixed deterministically by configuration and recorded in the provenance manifest; and
+\item $\hat{Y}\in\{0,1\}$ denotes the observed approval decision in this audit scenario (1 = approved).
+\end{itemize}
+
+\subsection{Selection Rates}
+For each group $g\in\mathcal{A}$, define the selection rate
+\begin{equation}
+p_g=\Pr(\hat{Y}=1\mid A=g).
+\end{equation}
+
+\subsection{Disparity Ratio (AIR-equivalent)}
+For a protected group $g$ relative to a fixed reference group $g_{\mathrm{ref}}$, define the disparity ratio
+\begin{equation}
+\mathrm{AIR}(g) \;=\; \frac{p_g}{p_{g_{\mathrm{ref}}}}.
+\label{eq:air}
+\end{equation}
+For gender (binary), we report a single pair (\GenderProtectedGroup{} vs \GenderReferenceGroup{}). For race (multi-class), we compute pairwise ratios vs the configured reference group and report the worst-case pair in the main body only when the small-n display policy is satisfied.
+
+\subsection{Approval-Rate Gap}
+For a protected group $g$ relative to a fixed reference group $g_{\mathrm{ref}}$, define the approval-rate gap
+\begin{equation}
+\mathrm{SRG}(g) \;=\; p_g - p_{g_{\mathrm{ref}}}.
+\label{eq:srg}
+\end{equation}
+
+\subsection{Calibration (ECE)}
+For bins $B_k$ with counts $n_k$, mean score $\bar s_k$, and empirical positive rate $\hat p_k$, the expected calibration error (ECE) is
+\begin{equation}
+\mathrm{ECE} \;=\; \sum_k \frac{n_k}{\sum_j n_j} \,\lvert \hat p_k - \bar s_k\rvert.
+\label{eq:ece}
+\end{equation}
+ECE requires probability scores and calibration bins; it is not evaluated in this scenario.

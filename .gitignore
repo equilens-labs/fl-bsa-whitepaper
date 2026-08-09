@@ -20,6 +20,19 @@ includes/publication_identity.tex
 *.toc
 *.synctex.gz
 main.pdf
+release/main.pdf
+release/figures/air_summary.pdf
+release/figures/gender_air_slices.pdf
+release/figures/selection_rates.pdf
+release/includes/metrics_macros.tex
+release/includes/provenance_macros.tex
+release/includes/release_identity.tex
+release/includes/table_air_summary.tex
+release/includes/table_ece_summary.tex
+release/includes/table_gender_air_slices.tex
+release/includes/table_hparams_chosen.tex
+release/includes/table_regulatory_matrix.tex
+release/includes/table_srg_summary.tex
 
 # Local build directories
 dist/

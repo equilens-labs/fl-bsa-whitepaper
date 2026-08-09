@@ -1,9 +1,11 @@
 # Intake Pull CI — Cross-Repo Automation
 
 This repository consumes the whitepaper intake bundle produced by
-`equilens-labs/fl-bsa` and rebuilds the paper. Public Git persistence is a separate, explicit
-publication mutation: ordinary dispatches and the daily schedule validate and build with
-persistence disabled. When that mutation is approved, the workflow can preserve the exact source
+`equilens-labs/fl-bsa`. The daily schedule validates the bundle and emits a JSON receipt only. An
+exact `release-evidence.yml` dispatch additionally builds a separate version-bound release paper
+and manifest; it never recompiles or rewrites the fixed archival v5.0.1 paper. Public Git
+persistence is a separate, explicit publication mutation and remains disabled for both reviewed
+product producers. When that mutation is approved, the workflow can preserve the exact source
 state under the bounded branch contracts below. Transient Actions artifacts are review outputs,
 not durable publication.
 
@@ -147,10 +149,16 @@ select only the attested primary bundle; the historical reviewer-pack compatibil
 dormant, and there is no automatic fallback. Duplicate same-named artifacts fail as ambiguous.
 It validates the `wp-intake.v1`
 provenance schema and `fairness_uncertainty.v1` metrics schema. Before download, every selected
-run ID (discovered or dispatched) is resolved through the Actions API and must be numeric, match
-the exact workflow path, approved event, source repository, and branch policy, and reach
-`completed/success` within a bounded 20-minute poll. Both reviewed producer workflows run from
-`main`: `wp-evidence-nightly.yml` may use `schedule` or `repository_dispatch`, while
+run ID (discovered or dispatched) is resolved through the Actions API and must be numeric and match
+the exact workflow path, approved event, source repository, branch, SHA, and attempt policy.
+Scheduled and nightly intake requires the whole producer workflow to reach `completed/success`
+within the bounded poll. The release-only dispatch instead requires the exact-attempt
+`WP Evidence (release-grade)` job to complete successfully and admits only the matching active
+producer run while the downstream paper is being built. This narrowly bounded exception avoids a
+cycle in which the product waits for the paper while the paper waits for the whole product workflow;
+a failed job, failed completed run, wrong attempt, wrong SHA, duplicate job name, or unsupported
+pending state fails closed. Both reviewed producer workflows run from `main`:
+`wp-evidence-nightly.yml` may use `schedule` or `repository_dispatch`, while
 `release-evidence.yml` must use `repository_dispatch`. Scheduled discovery additionally binds the
 newest run, regardless of status, to the current `fl-bsa@main` ref and repeats that authority check
 immediately before artifact consumption; it never substitutes an older green run.
@@ -227,12 +235,27 @@ stamp records the whitepaper base commit plus the exact producer selectors and b
 It also records the API-verified run head SHA, which must equal the bundle product commit. This
 prevents timestamp-only Git churn and lets an exact replay compare both snapshot ID and tree.
 
-The live intake workflow stops after validation and snapshot creation. It uploads only
-`intake/whitepaper_snapshot.json`; it does not regenerate or upload a PDF or arXiv source. This is
-deliberate: the repository's document is fixed to the archival v5.0.1 characterization, so
-compiling it with an arbitrary newer product intake would create a mixed-version artifact. The
-Git snapshot is the long-lived reproducibility surface, and a current-release paper requires its
-own version-bound build.
+Every live intake run uploads `intake/whitepaper_snapshot.json`. Scheduled nightly intake stops at
+that receipt and never builds a PDF or arXiv source. For an exact `release-evidence.yml` dispatch,
+the same workflow also validates the release tag, product commit, producer run/attempt and artifact
+identity, intake snapshot, generator backend, and non-customer-evidence claim boundary. It then
+generates the regulatory appendix from every escaped row and column of the exact
+`intake/regulatory_matrix.csv`, compiles `release/main.tex` with the digest-pinned TeX image, and
+uploads exactly:
+
+- `whitepaper.pdf`
+- `whitepaper_release.json`
+
+The manifest binds the PDF digest and visible product, producer-run, whitepaper-commit/run, and
+snapshot identities. The product release workflow downloads that exact downstream run, validates
+both files, and re-uploads them as a product-bound signing input before the release can proceed.
+The release paper remains a demo/evaluation characterization artifact; it is not customer evidence
+or a published paper.
+
+This separation is deliberate: the repository's archival document is fixed to v5.0.1, so compiling
+it with arbitrary newer or rolling intake would create a mixed-version artifact. The Git snapshot
+remains the long-lived intake reproducibility surface, while each current release paper is generated
+only from its own exact release-evidence run.
 
 ## Stable-v5 compatibility anchor
 
