@@ -1,3 +1,4 @@
+import csv
 import hashlib
 import json
 import sys
@@ -212,30 +213,80 @@ class ReleaseWhitepaperTests(unittest.TestCase):
 
     def test_regulatory_table_is_generated_from_every_exact_escaped_cell(self) -> None:
         matrix = self.root / "regulatory_matrix.csv"
-        matrix.write_text(
-            "framework,citation,requirement_text,control_assurance,evidence_artifact,owner,status,notes\n"
-            'Framework & Co.,Art. 1,"Requirement #1",Control_100%,evidence/path_$1.json,Owner^A,in-place,"Note {review} ~ \\ path"\n',
-            encoding="utf-8",
-        )
+        fieldnames = [
+            "framework",
+            "citation",
+            "requirement_text",
+            "control_assurance",
+            "evidence_artifact",
+            "owner",
+            "status",
+            "notes",
+        ]
+        rows = [
+            {
+                "framework": "Framework A & Co.",
+                "citation": "Citation A #1",
+                "requirement_text": "Requirement A %",
+                "control_assurance": "Control A_100%",
+                "evidence_artifact": "evidence/A_$1.json",
+                "owner": "Owner A^",
+                "status": "Status A~",
+                "notes": r"Notes A {review} \ path",
+            },
+            {
+                "framework": "Framework B",
+                "citation": "Citation B",
+                "requirement_text": "Requirement B",
+                "control_assurance": "Control B",
+                "evidence_artifact": "Evidence B",
+                "owner": "Owner B",
+                "status": "Status B",
+                "notes": "Notes B original",
+            },
+        ]
+
+        def write_rows() -> None:
+            with matrix.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(rows)
+
+        write_rows()
         rendered = release_wp.render_regulatory_table(matrix)
         for expected in (
-            r"Framework \& Co.",
-            r"Requirement \#1",
-            r"Control\_100\%",
-            r"evidence/path\_\$1.json",
-            r"Owner\textasciicircum{}A / in-place",
-            r"Note \{review\} \textasciitilde{} \textbackslash{} path",
+            r"Framework A \& Co.",
+            r"Citation A \#1",
+            r"Requirement A \%",
+            r"Control A\_100\%",
+            r"evidence/A\_\$1.json",
+            r"Owner A\textasciicircum{}",
+            r"Status A\textasciitilde{}",
+            r"Notes A \{review\} \textbackslash{} path",
+            "Framework B",
+            "Citation B",
+            "Requirement B",
+            "Control B",
+            "Evidence B",
+            "Owner B",
+            "Status B",
+            "Notes B original",
         ):
             self.assertIn(expected, rendered)
 
-        mutated = matrix.read_text(encoding="utf-8").replace(
-            "Control_100%", "Changed control"
-        )
-        matrix.write_text(mutated, encoding="utf-8")
-        changed = release_wp.render_regulatory_table(matrix)
-        self.assertNotEqual(rendered, changed)
-        self.assertIn("Changed control", changed)
-        self.assertNotIn(r"Control\_100\%", changed)
+        rows[0]["citation"] = "Citation A changed"
+        write_rows()
+        citation_changed = release_wp.render_regulatory_table(matrix)
+        self.assertNotEqual(rendered, citation_changed)
+        self.assertIn("Citation A changed", citation_changed)
+        self.assertNotIn(r"Citation A \#1", citation_changed)
+
+        rows[1]["notes"] = "Notes B changed"
+        write_rows()
+        later_row_changed = release_wp.render_regulatory_table(matrix)
+        self.assertNotEqual(citation_changed, later_row_changed)
+        self.assertIn("Notes B changed", later_row_changed)
+        self.assertNotIn("Notes B original", later_row_changed)
 
     def test_regulatory_table_rejects_schema_and_cell_ambiguity(self) -> None:
         matrix = self.root / "regulatory_matrix.csv"
