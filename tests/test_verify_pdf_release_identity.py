@@ -16,6 +16,12 @@ PRODUCT_SHA = "cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2"
 PRODUCT_TAG = "v5.0.1"
 WHITEPAPER_SHA = "248dab12d41073f183236eb2062a9369beb85066"
 EVIDENCE_RUN_ID = "30765888408"
+EVIDENCE_RUN_ATTEMPT = "2"
+GENERATOR_BACKEND_ID = "first_party_evidence_native"
+WHITEPAPER_RUN_ID = "24680"
+WHITEPAPER_RUN_ATTEMPT = "3"
+INTAKE_SNAPSHOT_ID = "d" * 64
+INTAKE_BUNDLE_SHA256 = "e" * 64
 
 
 class VerifyPdfReleaseIdentityTests(unittest.TestCase):
@@ -23,8 +29,14 @@ class VerifyPdfReleaseIdentityTests(unittest.TestCase):
         return "\n".join(
             (
                 f"Product {PRODUCT_TAG} at {PRODUCT_SHA}",
-                f"Evidence release workflow run {EVIDENCE_RUN_ID}",
+                f"Evidence release workflow run {EVIDENCE_RUN_ID} "
+                f"(attempt {EVIDENCE_RUN_ATTEMPT})",
+                f"Generator backend {GENERATOR_BACKEND_ID}",
                 f"Whitepaper source {WHITEPAPER_SHA}",
+                f"Whitepaper workflow run {WHITEPAPER_RUN_ID} "
+                f"(attempt {WHITEPAPER_RUN_ATTEMPT})",
+                f"Intake snapshot {INTAKE_SNAPSHOT_ID}",
+                f"Intake bundle SHA-256 {INTAKE_BUNDLE_SHA256}",
             )
         )
 
@@ -35,6 +47,12 @@ class VerifyPdfReleaseIdentityTests(unittest.TestCase):
             product_sha=PRODUCT_SHA,
             evidence_run_id=EVIDENCE_RUN_ID,
             whitepaper_sha=WHITEPAPER_SHA,
+            evidence_run_attempt=EVIDENCE_RUN_ATTEMPT,
+            generator_backend_id=GENERATOR_BACKEND_ID,
+            whitepaper_run_id=WHITEPAPER_RUN_ID,
+            whitepaper_run_attempt=WHITEPAPER_RUN_ATTEMPT,
+            intake_snapshot_id=INTAKE_SNAPSHOT_ID,
+            intake_bundle_sha256=INTAKE_BUNDLE_SHA256,
         )
 
     def test_accepts_exact_release_identity(self) -> None:
@@ -51,6 +69,45 @@ class VerifyPdfReleaseIdentityTests(unittest.TestCase):
     def test_rejects_missing_whitepaper_identity(self) -> None:
         with self.assertRaisesRegex(VERIFY.PdfIdentityError, "whitepaper identity"):
             self.verify(self.valid_text().replace(WHITEPAPER_SHA, ""))
+
+    def test_rejects_each_missing_extended_identity(self) -> None:
+        mutations = (
+            (
+                "evidence run identity",
+                f"(attempt {EVIDENCE_RUN_ATTEMPT})",
+                "(attempt removed)",
+            ),
+            (
+                "generator backend identity",
+                f"Generator backend {GENERATOR_BACKEND_ID}",
+                "Generator backend removed",
+            ),
+            (
+                "whitepaper workflow run identity",
+                f"Whitepaper workflow run {WHITEPAPER_RUN_ID}",
+                "Whitepaper workflow run removed",
+            ),
+            (
+                "whitepaper workflow run identity",
+                f"(attempt {WHITEPAPER_RUN_ATTEMPT})",
+                "(attempt removed)",
+            ),
+            (
+                "intake snapshot identity",
+                f"Intake snapshot {INTAKE_SNAPSHOT_ID}",
+                "Intake snapshot removed",
+            ),
+            (
+                "intake bundle identity",
+                f"Intake bundle SHA-256 {INTAKE_BUNDLE_SHA256}",
+                "Intake bundle SHA-256 removed",
+            ),
+        )
+        for expected_error, old, new in mutations:
+            with self.subTest(expected_error=expected_error):
+                text = self.valid_text().replace(old, new, 1)
+                with self.assertRaisesRegex(VERIFY.PdfIdentityError, expected_error):
+                    self.verify(text)
 
     def test_rejects_fallback_identity_marker(self) -> None:
         with self.assertRaisesRegex(VERIFY.PdfIdentityError, "unresolved identity"):
@@ -75,7 +132,9 @@ class VerifyPdfReleaseIdentityTests(unittest.TestCase):
 
     def test_rejects_alphanumeric_suffixes_on_every_identity(self) -> None:
         mutations = {
-            "product identity": self.valid_text().replace(PRODUCT_SHA, PRODUCT_SHA + "x"),
+            "product identity": self.valid_text().replace(
+                PRODUCT_SHA, PRODUCT_SHA + "x"
+            ),
             "evidence run identity": self.valid_text().replace(
                 EVIDENCE_RUN_ID, EVIDENCE_RUN_ID + "x"
             ),

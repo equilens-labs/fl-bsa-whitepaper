@@ -64,6 +64,39 @@ class ReleaseClaimsLintTests(unittest.TestCase):
             ):
                 claims_lint.lint_release_claims(target)
 
+    def test_correction_in_a_tex_comment_does_not_satisfy_the_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "sections"
+            shutil.copytree(ROOT / "release" / "sections", target)
+            section_name, fragments = claims_lint.CORRECTION_RULES["integrity-language"]
+            path = target / section_name
+            text = path.read_text(encoding="utf-8")
+            fragment = fragments[0]
+            path.write_text(
+                text.replace(fragment, f"removed\n% {fragment}"), encoding="utf-8"
+            )
+            with self.assertRaisesRegex(
+                claims_lint.ReleaseClaimsLintError, "integrity-language"
+            ):
+                claims_lint.lint_release_claims(target)
+
+    def test_correction_in_a_dead_tex_branch_does_not_satisfy_the_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "sections"
+            shutil.copytree(ROOT / "release" / "sections", target)
+            section_name, fragments = claims_lint.CORRECTION_RULES["integrity-language"]
+            path = target / section_name
+            text = path.read_text(encoding="utf-8")
+            fragment = fragments[0]
+            path.write_text(
+                text.replace(fragment, f"removed\n\\iffalse {fragment} \\fi"),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                claims_lint.ReleaseClaimsLintError, "integrity-language"
+            ):
+                claims_lint.lint_release_claims(target)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -968,12 +968,17 @@ class PullWpIntakeContractTests(unittest.TestCase):
         validator = match.group(1)
 
         required = {
+            "intake/fairness_slices.json": b"{}\n",
             "intake/metrics_long.csv": b"metric_name,value\n",
             "intake/metrics_uncertainty.json": b"{}\n",
             "intake/pack_intent.json": b"{}\n",
             "intake/regulatory_matrix.csv": b"framework,citation\n",
             "intake/selection_rates.csv": b"attribute,group\n",
             "provenance/manifest.json": b"{}\n",
+            "certificates/hyperparameter_tuning_certificate_amplification.json": b"{}\n",
+            "certificates/hyperparameter_tuning_certificate_intrinsic.json": b"{}\n",
+            "certificates/model_certificate_amplification.json": b"{}\n",
+            "certificates/model_certificate_intrinsic.json": b"{}\n",
             "certificates/synthetic_quality_certificate.json": b"{}\n",
             "config/sap.yaml": b"version: 1\n",
         }
@@ -1002,9 +1007,14 @@ class PullWpIntakeContractTests(unittest.TestCase):
             self.assertEqual(0, safe.returncode, safe.stderr)
 
             for release_input in (
+                "intake/fairness_slices.json",
                 "intake/metrics_long.csv",
                 "intake/selection_rates.csv",
                 "intake/regulatory_matrix.csv",
+                "certificates/hyperparameter_tuning_certificate_amplification.json",
+                "certificates/hyperparameter_tuning_certificate_intrinsic.json",
+                "certificates/model_certificate_amplification.json",
+                "certificates/model_certificate_intrinsic.json",
             ):
                 with self.subTest(missing=release_input):
                     missing_zip = root / f"missing-{Path(release_input).name}.zip"
@@ -1045,12 +1055,17 @@ class PullWpIntakeContractTests(unittest.TestCase):
             if item.get("name") == "Unpack intake bundle"
         )["run"]
         required = {
+            "intake/fairness_slices.json": b"{}\n",
             "intake/metrics_long.csv": b"metric_name,value\n",
             "intake/metrics_uncertainty.json": b"{}\n",
             "intake/pack_intent.json": b"{}\n",
             "intake/regulatory_matrix.csv": b"framework,citation\n",
             "intake/selection_rates.csv": b"attribute,group\n",
             "provenance/manifest.json": b"{}\n",
+            "certificates/hyperparameter_tuning_certificate_amplification.json": b"{}\n",
+            "certificates/hyperparameter_tuning_certificate_intrinsic.json": b"{}\n",
+            "certificates/model_certificate_amplification.json": b"{}\n",
+            "certificates/model_certificate_intrinsic.json": b"{}\n",
             "certificates/synthetic_quality_certificate.json": b"{}\n",
             "config/sap.yaml": b"version: 1\n",
         }
@@ -1148,6 +1163,7 @@ class PullWpIntakeContractTests(unittest.TestCase):
                 json.dumps(manifest), encoding="utf-8"
             )
             for name in (
+                "fairness_slices.json",
                 "metrics_uncertainty.json",
                 "pack_intent.json",
                 "air_status.json",
@@ -1161,9 +1177,16 @@ class PullWpIntakeContractTests(unittest.TestCase):
                 (root / "bundle" / "intake" / name).write_text(
                     "header\n", encoding="utf-8"
                 )
-            (
-                root / "bundle" / "certificates" / "synthetic_quality_certificate.json"
-            ).write_text("{}\n", encoding="utf-8")
+            for name in (
+                "hyperparameter_tuning_certificate_amplification.json",
+                "hyperparameter_tuning_certificate_intrinsic.json",
+                "model_certificate_amplification.json",
+                "model_certificate_intrinsic.json",
+                "synthetic_quality_certificate.json",
+            ):
+                (root / "bundle" / "certificates" / name).write_text(
+                    "{}\n", encoding="utf-8"
+                )
             (root / "bundle" / "config" / "sap.yaml").write_text(
                 "version: 1\n", encoding="utf-8"
             )

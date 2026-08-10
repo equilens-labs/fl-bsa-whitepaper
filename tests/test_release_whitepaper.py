@@ -199,9 +199,12 @@ class ReleaseWhitepaperTests(unittest.TestCase):
         pdf_path.write_bytes(b"deterministic fake PDF bytes")
         text = (
             f"Product v5.0.3 at {PRODUCT_SHA} "
-            "Evidence release workflow run 12345 "
+            "Evidence release workflow run 12345 (attempt 2) "
+            "Generator backend first_party_evidence_native "
             f"Whitepaper source {WHITEPAPER_SHA} "
+            "Whitepaper workflow run 24680 (attempt 1) "
             f"Intake snapshot {self.snapshot['snapshot_id']} "
+            f"Intake bundle SHA-256 {BUNDLE_SHA} "
             "DEMO / EVALUATION ONLY"
         )
         with patch.object(release_wp, "extract_text", return_value=text):

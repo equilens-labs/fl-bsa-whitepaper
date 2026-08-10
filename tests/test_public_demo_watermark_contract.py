@@ -196,6 +196,15 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
             if step.get("name") == "Verify release template smoke identity and marker"
         )
         self.assertIn("verify_pdf_release_identity.py", verify["run"])
+        for coordinate in (
+            "--evidence-run-attempt",
+            "--generator-backend-id",
+            "--whitepaper-run-id",
+            "--whitepaper-run-attempt",
+            "--intake-snapshot-id",
+            "--intake-bundle-sha256",
+        ):
+            self.assertIn(coordinate, verify["run"])
         self.assertIn("grep -F -c 'DEMO / EVALUATION ONLY' || true", verify["run"])
         self.assertIn('[[ "$hits" =~ ^[1-9][0-9]*$ ]]', verify["run"])
 
