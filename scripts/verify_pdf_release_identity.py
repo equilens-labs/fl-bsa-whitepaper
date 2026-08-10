@@ -23,6 +23,20 @@ _FALLBACK_MARKERS = (
     "COMPANION-DIGEST-NOT-GENERATED",
     "identity-include-missing",
 )
+_RELEASE_CLAIM_TOKENS = (
+    ("customer evidence eligibility claim", "customer_evidence_eligible=false"),
+    (
+        "customer evidence disposition claim",
+        "customer_evidence_disposition=characterization_only",
+    ),
+    ("publication status claim", "publication_status=candidate_not_published"),
+)
+
+
+def _breakable_literal_pattern(value: str) -> str:
+    """Match one visible token even when PDF extraction inserts wrap whitespace."""
+
+    return r"\s*".join(re.escape(character) for character in value)
 
 
 def verify_text(
@@ -38,6 +52,7 @@ def verify_text(
     whitepaper_run_attempt: str | None = None,
     intake_snapshot_id: str | None = None,
     intake_bundle_sha256: str | None = None,
+    require_release_claims: bool = False,
 ) -> None:
     """Validate each supplied identity in the PDF's labelled text layer."""
 
@@ -119,6 +134,16 @@ def verify_text(
     for label, pattern in labelled_patterns.items():
         if re.search(pattern, normalized) is None:
             raise PdfIdentityError(f"PDF does not contain the exact labelled {label}")
+    if require_release_claims:
+        for label, token in _RELEASE_CLAIM_TOKENS:
+            pattern = (
+                rf"(?<![0-9A-Za-z_]){_breakable_literal_pattern(token)}"
+                rf"(?![0-9A-Za-z_])"
+            )
+            if re.search(pattern, normalized) is None:
+                raise PdfIdentityError(
+                    f"PDF does not contain the exact labelled {label}"
+                )
 
 
 def extract_text(pdf: Path) -> str:
@@ -153,6 +178,7 @@ def main() -> int:
     parser.add_argument("--whitepaper-run-attempt")
     parser.add_argument("--intake-snapshot-id")
     parser.add_argument("--intake-bundle-sha256")
+    parser.add_argument("--require-release-claims", action="store_true")
     args = parser.parse_args()
 
     try:
@@ -168,6 +194,7 @@ def main() -> int:
             whitepaper_run_attempt=args.whitepaper_run_attempt,
             intake_snapshot_id=args.intake_snapshot_id,
             intake_bundle_sha256=args.intake_bundle_sha256,
+            require_release_claims=args.require_release_claims,
         )
     except PdfIdentityError as exc:
         parser.error(str(exc))

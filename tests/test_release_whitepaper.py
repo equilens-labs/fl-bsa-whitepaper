@@ -205,6 +205,9 @@ class ReleaseWhitepaperTests(unittest.TestCase):
             "Whitepaper workflow run 24680 (attempt 1) "
             f"Intake snapshot {self.snapshot['snapshot_id']} "
             f"Intake bundle SHA-256 {BUNDLE_SHA} "
+            "customer_evidence_eligible=false "
+            "customer_evidence_disposition=characterization_only "
+            "publication_status=candidate_not_published "
             "DEMO / EVALUATION ONLY"
         )
         with patch.object(release_wp, "extract_text", return_value=text):

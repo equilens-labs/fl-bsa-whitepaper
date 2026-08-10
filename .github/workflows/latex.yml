@@ -86,6 +86,8 @@ jobs:
             export FORCE_SOURCE_DATE=1
             export TZ=UTC
             test "$SOURCE_DATE_EPOCH" -gt 0
+      - name: Verify release template layout
+        run: python3 scripts/check_release_layout.py main.log --max-overfull-pt 2
       - name: Verify release template smoke identity and marker
         shell: bash
         run: |
@@ -101,6 +103,7 @@ jobs:
             --whitepaper-run-attempt 1 \
             --intake-snapshot-id bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
             --intake-bundle-sha256 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc \
+            --require-release-claims \
             main.pdf
           hits="$(pdftotext main.pdf - | grep -F -c 'DEMO / EVALUATION ONLY' || true)"
           if ! [[ "$hits" =~ ^[1-9][0-9]*$ ]]; then

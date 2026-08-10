@@ -37,6 +37,9 @@ class VerifyPdfReleaseIdentityTests(unittest.TestCase):
                 f"(attempt {WHITEPAPER_RUN_ATTEMPT})",
                 f"Intake snapshot {INTAKE_SNAPSHOT_ID}",
                 f"Intake bundle SHA-256 {INTAKE_BUNDLE_SHA256}",
+                "customer_evidence_eligible=false",
+                "customer_evidence_disposition=characterization_only",
+                "publication_status=candidate_not_published",
             )
         )
 
@@ -53,6 +56,7 @@ class VerifyPdfReleaseIdentityTests(unittest.TestCase):
             whitepaper_run_attempt=WHITEPAPER_RUN_ATTEMPT,
             intake_snapshot_id=INTAKE_SNAPSHOT_ID,
             intake_bundle_sha256=INTAKE_BUNDLE_SHA256,
+            require_release_claims=True,
         )
 
     def test_accepts_exact_release_identity(self) -> None:
@@ -112,6 +116,27 @@ class VerifyPdfReleaseIdentityTests(unittest.TestCase):
     def test_rejects_fallback_identity_marker(self) -> None:
         with self.assertRaisesRegex(VERIFY.PdfIdentityError, "unresolved identity"):
             self.verify(self.valid_text() + "\nSOURCE-COMMIT-NOT-GENERATED")
+
+    def test_rejects_each_missing_visible_release_claim(self) -> None:
+        mutations = (
+            ("customer evidence eligibility claim", "customer_evidence_eligible=false"),
+            (
+                "customer evidence disposition claim",
+                "customer_evidence_disposition=characterization_only",
+            ),
+            ("publication status claim", "publication_status=candidate_not_published"),
+        )
+        for expected_error, token in mutations:
+            with self.subTest(expected_error=expected_error):
+                with self.assertRaisesRegex(VERIFY.PdfIdentityError, expected_error):
+                    self.verify(self.valid_text().replace(token, "claim_removed", 1))
+
+    def test_accepts_claim_token_broken_across_extracted_lines(self) -> None:
+        wrapped = self.valid_text().replace(
+            "customer_evidence_disposition=characterization_only",
+            "customer_evidence_disposition=characterization_\nonly",
+        )
+        self.verify(wrapped)
 
     def test_rejects_values_under_wrong_labels(self) -> None:
         text = "\n".join(

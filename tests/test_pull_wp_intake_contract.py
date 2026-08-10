@@ -109,6 +109,8 @@ class PullWpIntakeContractTests(unittest.TestCase):
             "make release-assets",
             "name: Compile exact release whitepaper",
             "root_file: release/main.tex",
+            "name: Verify exact release whitepaper layout",
+            "python3 scripts/check_release_layout.py main.log --max-overfull-pt 2",
             "name: Finalize exact release whitepaper manifest",
             "python scripts/release_whitepaper.py finalize",
             "name: release-whitepaper-${{ github.run_attempt }}",
@@ -140,6 +142,14 @@ class PullWpIntakeContractTests(unittest.TestCase):
         self.assertLess(
             workflow.index("      - name: Upload exact intake receipt"),
             workflow.index("      - name: Prepare exact release whitepaper"),
+        )
+        self.assertLess(
+            workflow.index("      - name: Compile exact release whitepaper"),
+            workflow.index("      - name: Verify exact release whitepaper layout"),
+        )
+        self.assertLess(
+            workflow.index("      - name: Verify exact release whitepaper layout"),
+            workflow.index("      - name: Finalize exact release whitepaper manifest"),
         )
         self.assertLess(
             workflow.index("      - name: Upload exact release whitepaper"),
