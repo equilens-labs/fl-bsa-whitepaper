@@ -121,6 +121,23 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             DISCLOSURE.validate_bundle(self._bundle(Path(tmp)), ROOT)
 
+    def test_regulatory_matrix_rejects_unsupported_pdflatex_unicode(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = self._bundle(Path(tmp))
+            source = ROOT / "intake" / "regulatory_matrix.csv"
+            target = bundle / "intake" / "regulatory_matrix.csv"
+            shutil.copyfile(source, target)
+            rows = list(csv.reader(target.read_text(encoding="utf-8").splitlines()))
+            rows[1][2] += " ≥"
+            with target.open("w", encoding="utf-8", newline="") as handle:
+                csv.writer(handle, lineterminator="\n").writerows(rows)
+
+            with self.assertRaisesRegex(
+                DISCLOSURE.DisclosureError,
+                "must be ASCII text for the reviewed pdfLaTeX release path",
+            ):
+                DISCLOSURE.validate_bundle(bundle, ROOT)
+
     @staticmethod
     def _certificate_signature_adornments() -> dict[str, str]:
         return {
@@ -179,9 +196,7 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
                 "invalid reviewed public-key fingerprint",
             ),
             (
-                lambda fields: fields.__setitem__(
-                    "signature_algorithm", "ECDSA-P256"
-                ),
+                lambda fields: fields.__setitem__("signature_algorithm", "ECDSA-P256"),
                 "unreviewed certificate signature algorithm",
             ),
             (
@@ -203,17 +218,13 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
                 certificate_path = (
                     bundle / "certificates" / "synthetic_quality_certificate.json"
                 )
-                certificate = json.loads(
-                    certificate_path.read_text(encoding="utf-8")
-                )
+                certificate = json.loads(certificate_path.read_text(encoding="utf-8"))
                 fields = self._certificate_signature_adornments()
                 mutate(fields)
                 for field in self._certificate_signature_adornments():
                     certificate.pop(field, None)
                 certificate.update(fields)
-                certificate_path.write_text(
-                    json.dumps(certificate), encoding="utf-8"
-                )
+                certificate_path.write_text(json.dumps(certificate), encoding="utf-8")
 
                 with self.assertRaisesRegex(DISCLOSURE.DisclosureError, expected):
                     DISCLOSURE.validate_bundle(bundle, ROOT)
@@ -317,9 +328,7 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
                 "SRG point is outside the reviewed point bounds",
             ),
             (
-                lambda pair: pair["selection_rates"]["ref"].__setitem__(
-                    "p", 10**400
-                ),
+                lambda pair: pair["selection_rates"]["ref"].__setitem__("p", 10**400),
                 "reference selection rate is not a reviewed finite point",
             ),
             (

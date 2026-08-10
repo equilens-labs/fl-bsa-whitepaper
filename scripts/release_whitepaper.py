@@ -315,6 +315,13 @@ def _regulatory_cell(value: Any, *, row_number: int, column: str) -> str:
             f"regulatory matrix row {row_number} column {column!r} "
             "contains unsupported text"
         )
+    try:
+        value.encode("ascii")
+    except UnicodeEncodeError as exc:
+        raise ReleaseWhitepaperError(
+            f"regulatory matrix row {row_number} column {column!r} must be ASCII text "
+            "for the reviewed pdfLaTeX release path"
+        ) from exc
     return value
 
 
@@ -346,7 +353,7 @@ def render_regulatory_table(matrix_path: Path) -> str:
         r"\small",
         r"\begin{tabular}{@{}p{0.16\linewidth}p{0.13\linewidth}p{0.28\linewidth}p{0.28\linewidth}@{}}",
         r"\toprule",
-        "Framework & Citation & Requirement & Controls and evidence (this run) \\\\",
+        "Framework & Citation & Requirement & Producer-supplied mapping metadata \\\\",
         r"\midrule",
     ]
     for row_number, row in enumerate(rows, start=2):
@@ -363,7 +370,7 @@ def render_regulatory_table(matrix_path: Path) -> str:
         controls = (
             f"{cells['control_assurance']} "
             rf"\newline \textit{{Evidence artifacts:}} {cells['evidence_artifact']} "
-            rf"\newline \textit{{Owner/status:}} {cells['owner']} / {cells['status']} "
+            rf"\newline \textit{{Source owner/status:}} {cells['owner']} / {cells['status']} "
             rf"\newline \textit{{Notes:}} {cells['notes']}"
         )
         lines.append(
@@ -374,7 +381,7 @@ def render_regulatory_table(matrix_path: Path) -> str:
         [
             r"\bottomrule",
             r"\end{tabular}",
-            r"\caption{Regulatory mapping generated directly from every row and column of the exact release intake matrix.}",
+            r"\caption{Producer-supplied regulatory mapping metadata from the exact release intake. Labels and status text are retained for provenance and are not adopted as legal validation, compliance findings, or certification.}",
             r"\label{tab:reg_matrix}",
             r"\end{table}",
         ]

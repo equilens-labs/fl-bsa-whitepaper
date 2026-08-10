@@ -968,8 +968,11 @@ class PullWpIntakeContractTests(unittest.TestCase):
         validator = match.group(1)
 
         required = {
+            "intake/metrics_long.csv": b"metric_name,value\n",
             "intake/metrics_uncertainty.json": b"{}\n",
             "intake/pack_intent.json": b"{}\n",
+            "intake/regulatory_matrix.csv": b"framework,citation\n",
+            "intake/selection_rates.csv": b"attribute,group\n",
             "provenance/manifest.json": b"{}\n",
             "certificates/synthetic_quality_certificate.json": b"{}\n",
             "config/sap.yaml": b"version: 1\n",
@@ -998,6 +1001,27 @@ class PullWpIntakeContractTests(unittest.TestCase):
             )
             self.assertEqual(0, safe.returncode, safe.stderr)
 
+            for release_input in (
+                "intake/metrics_long.csv",
+                "intake/selection_rates.csv",
+                "intake/regulatory_matrix.csv",
+            ):
+                with self.subTest(missing=release_input):
+                    missing_zip = root / f"missing-{Path(release_input).name}.zip"
+                    with zipfile.ZipFile(missing_zip, "w") as archive:
+                        for name, payload in required.items():
+                            if name != release_input:
+                                archive.writestr(name, payload)
+                    missing = subprocess.run(
+                        ["python3", "-c", validator],
+                        env={**os.environ, "BUNDLE_PATH": str(missing_zip)},
+                        check=False,
+                        capture_output=True,
+                        text=True,
+                    )
+                    self.assertNotEqual(0, missing.returncode)
+                    self.assertIn(release_input, missing.stderr)
+
             unsafe = subprocess.run(
                 ["python3", "-c", validator],
                 env={**os.environ, "BUNDLE_PATH": str(unsafe_zip)},
@@ -1021,8 +1045,11 @@ class PullWpIntakeContractTests(unittest.TestCase):
             if item.get("name") == "Unpack intake bundle"
         )["run"]
         required = {
+            "intake/metrics_long.csv": b"metric_name,value\n",
             "intake/metrics_uncertainty.json": b"{}\n",
             "intake/pack_intent.json": b"{}\n",
+            "intake/regulatory_matrix.csv": b"framework,citation\n",
+            "intake/selection_rates.csv": b"attribute,group\n",
             "provenance/manifest.json": b"{}\n",
             "certificates/synthetic_quality_certificate.json": b"{}\n",
             "config/sap.yaml": b"version: 1\n",
@@ -1126,6 +1153,14 @@ class PullWpIntakeContractTests(unittest.TestCase):
                 "air_status.json",
             ):
                 (root / "bundle" / "intake" / name).write_text("{}\n", encoding="utf-8")
+            for name in (
+                "metrics_long.csv",
+                "regulatory_matrix.csv",
+                "selection_rates.csv",
+            ):
+                (root / "bundle" / "intake" / name).write_text(
+                    "header\n", encoding="utf-8"
+                )
             (
                 root / "bundle" / "certificates" / "synthetic_quality_certificate.json"
             ).write_text("{}\n", encoding="utf-8")

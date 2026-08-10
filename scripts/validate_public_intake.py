@@ -925,10 +925,7 @@ def _validate_certificate_signature_adornments(
         )
     r_component = int(signature[:64], 16)
     s_component = int(signature[64:], 16)
-    if not (
-        1 <= r_component < _P256_ORDER
-        and 1 <= s_component < _P256_ORDER
-    ):
+    if not (1 <= r_component < _P256_ORDER and 1 <= s_component < _P256_ORDER):
         raise DisclosureError(
             f"{location} has certificate signature components outside the reviewed "
             "P-256 range; value redacted"
@@ -1142,6 +1139,14 @@ def _validate_csv(candidate_path: Path, baseline_path: Path) -> None:
             _scan_text(
                 cell, f"{candidate_path}:{row_number}:{candidate_header[column]}"
             )
+            if candidate_path.name == "regulatory_matrix.csv":
+                try:
+                    cell.encode("ascii")
+                except UnicodeEncodeError as exc:
+                    raise DisclosureError(
+                        f"{candidate_path}:{row_number}:{candidate_header[column]} "
+                        "must be ASCII text for the reviewed pdfLaTeX release path"
+                    ) from exc
 
 
 def validate_bundle(bundle_root: Path, schema_root: Path) -> None:

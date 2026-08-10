@@ -678,8 +678,11 @@ jobs:
           allowed |= {f"config/{name}" for name in config}
           allowed.add("provenance/manifest.json")
           required = {
+              "intake/metrics_long.csv",
               "intake/metrics_uncertainty.json",
               "intake/pack_intent.json",
+              "intake/regulatory_matrix.csv",
+              "intake/selection_rates.csv",
               "provenance/manifest.json",
               "certificates/synthetic_quality_certificate.json",
               "config/sap.yaml",
@@ -837,7 +840,10 @@ jobs:
           done < <(find bundle/config -mindepth 1 -maxdepth 1 -type f \( -name '*.yaml' -o -name '*.yml' \) -print0)
 
           test -f "$sync_stage/intake/metrics_uncertainty.json"
+          test -f "$sync_stage/intake/metrics_long.csv"
           test -f "$sync_stage/intake/pack_intent.json"
+          test -f "$sync_stage/intake/regulatory_matrix.csv"
+          test -f "$sync_stage/intake/selection_rates.csv"
           test -f "$sync_stage/intake/certificates/synthetic_quality_certificate.json"
           test -f "$sync_stage/config/sap.yaml"
 

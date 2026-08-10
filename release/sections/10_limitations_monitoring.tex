@@ -10,5 +10,8 @@ Race uncertainty is displayed in the main text only when all race groups exceed 
 \paragraph{Data coverage, label noise, and covariate shift.}
 The synthetic scenario exercises a defined lending-audit fixture. It does not prove coverage of every geography, product line, credit policy, or protected-class intersection that may appear in a production portfolio. Operators should review data dictionaries, missingness, label provenance, and segment coverage before treating a customer run as deployment evidence. Material distribution drift or label-policy changes should trigger a rerun.
 
+\paragraph{Predictive utility is not established.}
+This release paper does not report an AUC-retention measure. Train-on-synthetic predictive utility is not evaluated or established by the selection-rate characterization, and no raw or skill-normalised AUC ratio should be inferred from it.
+
 \paragraph{Monitoring plan.}
 Customer deployments should define control limits for the primary fairness metric, approval-rate gaps, data-quality checks, and evidence-chain validity before production use. Retraining, threshold changes, feature-policy changes, or sustained drift beyond those limits should trigger governance review and fresh evidence generation.
