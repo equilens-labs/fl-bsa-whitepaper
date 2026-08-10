@@ -448,17 +448,16 @@ def finalize(identity_path: Path, pdf_path: Path) -> dict[str, Any]:
             product_sha=str(product.get("commit_sha") or ""),
             evidence_run_id=str(product.get("run_id") or ""),
             whitepaper_sha=str(whitepaper.get("commit_sha") or ""),
+            evidence_run_attempt=str(product.get("run_attempt") or ""),
+            generator_backend_id=str(product.get("generator_backend_id") or ""),
+            whitepaper_run_id=str(whitepaper.get("run_id") or ""),
+            whitepaper_run_attempt=str(whitepaper.get("run_attempt") or ""),
+            intake_snapshot_id=str(intake.get("snapshot_id") or ""),
+            intake_bundle_sha256=str(intake.get("bundle_sha256") or ""),
         )
     except PdfIdentityError as exc:
         raise ReleaseWhitepaperError(str(exc)) from exc
     normalized = re.sub(r"\s+", " ", text)
-    snapshot_id = _require_match(
-        intake.get("snapshot_id"), _SHA256_RE, "identity snapshot ID"
-    )
-    if f"Intake snapshot {snapshot_id}" not in normalized:
-        raise ReleaseWhitepaperError(
-            "PDF does not contain the exact labelled intake snapshot"
-        )
     if "DEMO / EVALUATION ONLY" not in normalized:
         raise ReleaseWhitepaperError("PDF does not contain the demo/evaluation marker")
 

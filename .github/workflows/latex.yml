@@ -94,7 +94,13 @@ jobs:
             --product-tag v0.0.0-ci-smoke \
             --product-sha aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
             --evidence-run-id 12345 \
+            --evidence-run-attempt 1 \
+            --generator-backend-id ci_release_template_smoke \
             --whitepaper-sha "$BUILD_COMMIT" \
+            --whitepaper-run-id 1 \
+            --whitepaper-run-attempt 1 \
+            --intake-snapshot-id bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
+            --intake-bundle-sha256 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc \
             main.pdf
           hits="$(pdftotext main.pdf - | grep -F -c 'DEMO / EVALUATION ONLY' || true)"
           if ! [[ "$hits" =~ ^[1-9][0-9]*$ ]]; then
