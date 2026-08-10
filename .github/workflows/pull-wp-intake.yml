@@ -974,6 +974,10 @@ jobs:
             test "$FORCE_SOURCE_DATE" = 1
             test "$TZ" = UTC
 
+      - name: Verify exact release whitepaper layout
+        if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file == 'release-evidence.yml' }}
+        run: python3 scripts/check_release_layout.py main.log --max-overfull-pt 2
+
       - name: Finalize exact release whitepaper manifest
         if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file == 'release-evidence.yml' }}
         shell: bash

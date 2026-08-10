@@ -241,7 +241,10 @@ the same workflow also validates the release tag, product commit, producer run/a
 identity, intake snapshot, generator backend, and non-customer-evidence claim boundary. It then
 generates the regulatory appendix from every escaped row and column of the exact
 `intake/regulatory_matrix.csv`, compiles `release/main.tex` with the digest-pinned TeX image, and
-uploads exactly:
+rejects material horizontal overflow from the completed TeX log. The post-compile validator also
+requires the full visible eligibility, disposition, and publication-status tokens in the PDF text
+layer, tolerating only extractor whitespace introduced at visible line wraps. It then uploads
+exactly:
 
 - `whitepaper.pdf`
 - `whitepaper_release.json`
@@ -251,7 +254,8 @@ The bundle is rejected before staging unless `metrics_long.csv`, `selection_rate
 must be non-empty ASCII text: the release path uses reviewed pdfLaTeX/T1 rendering, so unsupported
 Unicode fails at intake rendering instead of failing later in the release cut. The ordinary
 pull-request/push `latex-build` workflow also generates deterministic smoke identity inputs and
-compiles `release/main.tex`; it does not upload that smoke PDF as release evidence.
+compiles `release/main.tex`, applies the same layout and visible-claim checks, and does not upload
+that smoke PDF as release evidence.
 
 The manifest binds the PDF digest and visible product, producer-run, whitepaper-commit/run, and
 snapshot identities. The product release workflow downloads that exact downstream run, validates

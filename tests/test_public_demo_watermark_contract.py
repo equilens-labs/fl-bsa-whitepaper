@@ -183,6 +183,16 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
             if step.get("name") == "Compile release template smoke"
         )
         self.assertEqual("release/main.tex", compile_step["with"]["root_file"])
+        layout = next(
+            step
+            for step in smoke_steps
+            if step.get("name") == "Verify release template layout"
+        )
+        self.assertEqual(
+            "python3 scripts/check_release_layout.py main.log --max-overfull-pt 2",
+            layout["run"],
+        )
+        self.assertLess(smoke_steps.index(compile_step), smoke_steps.index(layout))
         prepare = next(
             step
             for step in smoke_steps
@@ -196,6 +206,7 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
             if step.get("name") == "Verify release template smoke identity and marker"
         )
         self.assertIn("verify_pdf_release_identity.py", verify["run"])
+        self.assertLess(smoke_steps.index(layout), smoke_steps.index(verify))
         for coordinate in (
             "--evidence-run-attempt",
             "--generator-backend-id",
@@ -205,8 +216,18 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
             "--intake-bundle-sha256",
         ):
             self.assertIn(coordinate, verify["run"])
+        self.assertIn("--require-release-claims", verify["run"])
         self.assertIn("grep -F -c 'DEMO / EVALUATION ONLY' || true", verify["run"])
         self.assertIn('[[ "$hits" =~ ^[1-9][0-9]*$ ]]', verify["run"])
+
+        makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+        release_pdf = makefile.split("release-pdf: release-assets", 1)[1].split(
+            "companion: assets", 1
+        )[0]
+        self.assertIn(
+            "python3 scripts/check_release_layout.py main.log --max-overfull-pt 2",
+            release_pdf,
+        )
 
     def test_intake_workflow_builds_only_an_exact_release_scoped_paper(self) -> None:
         workflow_text = (

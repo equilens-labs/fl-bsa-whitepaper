@@ -454,6 +454,7 @@ def finalize(identity_path: Path, pdf_path: Path) -> dict[str, Any]:
             whitepaper_run_attempt=str(whitepaper.get("run_attempt") or ""),
             intake_snapshot_id=str(intake.get("snapshot_id") or ""),
             intake_bundle_sha256=str(intake.get("bundle_sha256") or ""),
+            require_release_claims=True,
         )
     except PdfIdentityError as exc:
         raise ReleaseWhitepaperError(str(exc)) from exc
