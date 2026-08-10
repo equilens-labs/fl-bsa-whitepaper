@@ -19,7 +19,7 @@ For a protected group $g$ relative to a fixed reference group $g_{\mathrm{ref}}$
 \mathrm{AIR}(g) \;=\; \frac{p_g}{p_{g_{\mathrm{ref}}}}.
 \label{eq:air}
 \end{equation}
-For gender (binary), we report a single pair (\GenderProtectedGroup{} vs \GenderReferenceGroup{}). For race (multi-class), we compute pairwise ratios vs the configured reference group and report the worst-case pair in the main body only when the small-n display policy is satisfied.
+For gender (binary), we report a single pair (\GenderProtectedGroup{} vs \GenderReferenceGroup{}). For race (multi-class), the configured reference group is provenance, while the effective pairwise screening comparison may be selected separately under the recorded highest-rate policy. The generated intake is authoritative for both fields. The main body reports the worst-case pair only when the small-n display policy is satisfied.
 
 \subsection{Approval-Rate Gap}
 For a protected group $g$ relative to a fixed reference group $g_{\mathrm{ref}}$, define the approval-rate gap

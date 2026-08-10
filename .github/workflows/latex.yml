@@ -17,6 +17,91 @@ concurrency:
   queue: max
 
 jobs:
+  release-template-smoke:
+    name: release-template-smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      - name: Record exact release-template source commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          commit="$(git rev-parse HEAD)"
+          test "$(git rev-parse "${commit}^{commit}")" = "$commit"
+          echo "BUILD_COMMIT=${commit}" >> "$GITHUB_ENV"
+      - name: Set up Python for release template
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.11'
+      - name: Install release-template Python deps
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = "x86_64"
+          python -m pip install --require-hashes -r requirements-ci-linux-x86_64.lock
+      - name: Ensure release-template PDF text tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends poppler-utils
+      - name: Generate release-template smoke inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          make release-assets
+          python3 - <<'PY'
+          import os
+          import sys
+          from pathlib import Path
+
+          sys.path.insert(0, "scripts")
+          from release_whitepaper import write_identity_tex
+
+          identity = {
+              "release": {"tag": "v0.0.0-ci-smoke"},
+              "product": {
+                  "commit_sha": "a" * 40,
+                  "run_id": "12345",
+                  "run_attempt": "1",
+                  "generator_backend_id": "ci_release_template_smoke",
+              },
+              "intake": {"snapshot_id": "b" * 64, "bundle_sha256": "c" * 64},
+              "whitepaper": {
+                  "commit_sha": os.environ["BUILD_COMMIT"],
+                  "run_id": "1",
+                  "run_attempt": "1",
+              },
+          }
+          write_identity_tex(identity, Path("release/includes/release_identity.tex"))
+          PY
+      - name: Compile release template smoke
+        uses: xu-cheng/latex-action@e2f99d4b3685b0da93f97e1b86ad8fab81105098 # v3.3.0
+        with:
+          root_file: release/main.tex
+          docker_image: ghcr.io/xu-cheng/texlive-full@sha256:d9bfb267e3e3f5e0820ca86e867ee59ebb133fc29561bb28677d9b5a1a9e84ff
+          work_in_root_file_dir: false
+          pre_compile: |
+            export SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
+            export FORCE_SOURCE_DATE=1
+            export TZ=UTC
+            test "$SOURCE_DATE_EPOCH" -gt 0
+      - name: Verify release template smoke identity and marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/verify_pdf_release_identity.py \
+            --product-tag v0.0.0-ci-smoke \
+            --product-sha aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+            --evidence-run-id 12345 \
+            --whitepaper-sha "$BUILD_COMMIT" \
+            main.pdf
+          hits="$(pdftotext main.pdf - | grep -F -c 'DEMO / EVALUATION ONLY' || true)"
+          if ! [[ "$hits" =~ ^[1-9][0-9]*$ ]]; then
+            echo "release template smoke PDF is missing the demo/evaluation marker" >&2
+            exit 1
+          fi
+
   build:
     runs-on: ubuntu-latest
     steps:

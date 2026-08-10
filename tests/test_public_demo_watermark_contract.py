@@ -5,6 +5,59 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 
+RELEASE_CONDITION = (
+    "${{ github.event_name == 'repository_dispatch' && "
+    "github.event.client_payload.workflow_file == 'release-evidence.yml' }}"
+)
+RELEASE_GENERATION_MARKERS = (
+    "scripts/release_whitepaper.py",
+    "make release-",
+    "release/main.tex",
+    "dist/release-whitepaper",
+    "PDF text tooling for release paper",
+    "latexmk",
+    "pdflatex",
+    "pdftotext",
+    "gen_tex_",
+    "gen_plots_from_intake.py",
+    "arxiv_pack.sh",
+    "publication_profile.local.tex",
+)
+
+
+def _assert_release_generators_are_exactly_guarded(workflow: dict) -> None:
+    steps = workflow["jobs"]["fetch-build"]["steps"]
+    guarded = []
+    for step in steps:
+        rendered = str(step)
+        if any(marker in rendered for marker in RELEASE_GENERATION_MARKERS):
+            if step.get("if") != RELEASE_CONDITION:
+                raise AssertionError(
+                    f"release generator step lacks the exact release condition: {step.get('name')}"
+                )
+            guarded.append(step)
+    if not guarded:
+        raise AssertionError("no release generator steps found")
+
+    unguarded_runs = "\n".join(
+        str(step.get("run") or "")
+        for step in steps
+        if step.get("if") != RELEASE_CONDITION
+    )
+    for forbidden_command in (
+        "latexmk",
+        "pdflatex",
+        "pdftotext",
+        "gen_tex_",
+        "gen_plots_from_intake.py",
+        "arxiv_pack.sh",
+        "publication_profile.local.tex",
+    ):
+        if forbidden_command in unguarded_runs:
+            raise AssertionError(
+                f"unguarded intake step contains paper generator {forbidden_command!r}"
+            )
+
 
 def _artifact_uploads(workflow: dict) -> list[tuple[str, str, str]]:
     steps = workflow["jobs"]["fetch-build"]["steps"]
@@ -101,9 +154,8 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
         )
 
     def test_public_ci_artifacts_enable_demo_watermark(self) -> None:
-        workflow = (ROOT / ".github" / "workflows" / "latex.yml").read_text(
-            encoding="utf-8"
-        )
+        workflow_path = ROOT / ".github" / "workflows" / "latex.yml"
+        workflow = workflow_path.read_text(encoding="utf-8")
         self.assertIn("Enable public demo watermark", workflow)
         self.assertIn("includes/publication_profile.local.tex", workflow)
         self.assertIn(
@@ -120,6 +172,32 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
         self.assertIn("DEMO / EVALUATION ONLY", workflow)
         self.assertIn('if [ "$hits" -ne 1 ]; then', workflow)
         self.assertIn("name: fl-bsa-v5.0.1-archival-whitepaper", workflow)
+
+        parsed = yaml.safe_load(workflow)
+        smoke = parsed["jobs"]["release-template-smoke"]
+        self.assertEqual("release-template-smoke", smoke["name"])
+        smoke_steps = smoke["steps"]
+        compile_step = next(
+            step
+            for step in smoke_steps
+            if step.get("name") == "Compile release template smoke"
+        )
+        self.assertEqual("release/main.tex", compile_step["with"]["root_file"])
+        prepare = next(
+            step
+            for step in smoke_steps
+            if step.get("name") == "Generate release-template smoke inputs"
+        )
+        self.assertIn("make release-assets", prepare["run"])
+        self.assertIn("write_identity_tex", prepare["run"])
+        verify = next(
+            step
+            for step in smoke_steps
+            if step.get("name") == "Verify release template smoke identity and marker"
+        )
+        self.assertIn("verify_pdf_release_identity.py", verify["run"])
+        self.assertIn("grep -F -c 'DEMO / EVALUATION ONLY' || true", verify["run"])
+        self.assertIn('[[ "$hits" =~ ^[1-9][0-9]*$ ]]', verify["run"])
 
     def test_intake_workflow_builds_only_an_exact_release_scoped_paper(self) -> None:
         workflow_text = (
@@ -138,25 +216,19 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, workflow_text)
 
-        release_condition = (
-            "${{ github.event_name == 'repository_dispatch' && "
-            "github.event.client_payload.workflow_file == 'release-evidence.yml' }}"
-        )
+        _assert_release_generators_are_exactly_guarded(workflow)
         release_steps = {
-            step["name"]: step
-            for step in steps
-            if step.get("name")
-            in {
+            step["name"]: step for step in steps if step.get("if") == RELEASE_CONDITION
+        }
+        self.assertTrue(
+            {
                 "Prepare exact release whitepaper",
                 "Install PDF text tooling for release paper",
                 "Compile exact release whitepaper",
                 "Finalize exact release whitepaper manifest",
                 "Upload exact release whitepaper",
-            }
-        }
-        self.assertEqual(5, len(release_steps))
-        for step in release_steps.values():
-            self.assertEqual(release_condition, step.get("if"))
+            }.issubset(release_steps)
+        )
 
         compile_step = release_steps["Compile exact release whitepaper"]
         self.assertEqual("release/main.tex", compile_step["with"]["root_file"])
@@ -193,6 +265,23 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
             ],
             _artifact_uploads(workflow),
         )
+
+    def test_a_sixth_unguarded_release_generator_is_rejected(self) -> None:
+        workflow = yaml.safe_load(
+            (ROOT / ".github" / "workflows" / "pull-wp-intake.yml").read_text(
+                encoding="utf-8"
+            )
+        )
+        workflow["jobs"]["fetch-build"]["steps"].append(
+            {
+                "name": "Unexpected release generator",
+                "run": "python scripts/release_whitepaper.py finalize",
+            }
+        )
+        with self.assertRaisesRegex(
+            AssertionError, "lacks the exact release condition"
+        ):
+            _assert_release_generators_are_exactly_guarded(workflow)
 
     def test_intake_upload_inventory_detects_a_differently_pinned_upload(self) -> None:
         workflow = yaml.safe_load(

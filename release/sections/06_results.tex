@@ -1,13 +1,13 @@
 
 \section{Results}
 \subsection{Fairness}
-\noindent \Cref{tab:gender_air_slices} is the main scenario readout. The historical fixture reports AIR \GenderAIRHistorical{} for \GenderProtectedGroup{} vs \GenderReferenceGroup{}, below the \AirMin{} four-fifths threshold. The amplification (bias-preserving) slice reproduces the same level of disparity at AIR \GenderAIRAmplification{}, showing that the branch preserves rather than launders the bias signal. The intrinsic (de-biased) slice restores the ratio to AIR \GenderAIRIntrinsic{}, which localizes the disparity to the decision labels in this fixture. The result should be read as a positive-control pass for detection and branch separation, not as a customer portfolio finding.
+\noindent \Cref{tab:gender_air_slices} is the main scenario readout. The historical fixture reports AIR \GenderAIRHistorical{} for \GenderProtectedGroup{} vs \GenderReferenceGroup{}, below the \AirMin{} internal screen. The amplification (bias-preserving) slice reproduces the same level of disparity at AIR \GenderAIRAmplification{}, showing that the branch preserves the configured positive-control signal. The intrinsic (de-biased) ratio of AIR \GenderAIRIntrinsic{} is a direct consequence of its deterministic equal-rate post-label policy. It does not localize causation or measure remediation efficacy. The result is a positive-control pass for diagnostic detection and descriptive branch separation, not a customer portfolio or legal finding.
 
 \ifnum\GenderSlicesAvailable>0\relax
 \begin{table}[htbp]
 \centering
 \input{release/includes/table_gender_air_slices}
-\caption{Gender disparity ratio (AIR-equivalent) by data slice. We report the historical baseline (synthetic input fixture; no real borrower data), amplification (bias-preserving), and intrinsic (de-biased) slices for the configured pair (\GenderProtectedGroup{} vs \GenderReferenceGroup{}), with deterministic confidence intervals and counts.}
+\caption{Gender disparity ratio (AIR-equivalent) by data slice. We report the historical baseline (synthetic input fixture; no real borrower data), amplification (bias-preserving), and intrinsic (equal-rate post-label policy) slices for the configured pair (\GenderProtectedGroup{} vs \GenderReferenceGroup{}), with deterministic interval fields and counts. The policy-determined intrinsic interval is non-inferential.}
 \label{tab:gender_air_slices}
 \end{table}
 \fi
@@ -23,7 +23,7 @@
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.72\textwidth]{release/figures/gender_air_slices.pdf}
-\caption{Gender AIR across the historical, amplification (bias-preserving), and intrinsic (de-biased) slices, with deterministic 95\% confidence intervals. The dashed line marks the \AirMin{} four-fifths threshold.}
+\caption{Gender AIR across the historical, amplification (bias-preserving), and intrinsic (equal-rate post-label policy) slices. Historical and amplification intervals are conditional on this generated fixture and row count; the intrinsic interval is non-inferential format symmetry. The dashed line marks the \AirMin{} internal screen.}
 \label{fig:gender_air_slices}
 \end{figure}
 }{}
@@ -35,7 +35,7 @@
 \begin{table}[htbp]
 \centering
 \input{release/includes/table_srg_summary}
-\caption{Approval-rate gaps (SRG) by protected attribute on the amplification (bias-preserving) slice. SRG is defined in \cref{eq:srg} as the protected group selection rate minus the reference group selection rate, with deterministic confidence intervals and two-sided p-values.}
+\caption{Approval-rate gaps (SRG) by protected attribute on the amplification (bias-preserving) slice. SRG is defined in \cref{eq:srg} as the protected group selection rate minus the reference group selection rate. Its conservative Wilson-endpoint range is not itself a calibrated 95\% confidence interval; p-values are two-sided under the stated small-sample policy.}
 \label{tab:srg_summary}
 \end{table}
 

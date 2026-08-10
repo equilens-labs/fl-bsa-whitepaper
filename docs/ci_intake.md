@@ -246,6 +246,13 @@ uploads exactly:
 - `whitepaper.pdf`
 - `whitepaper_release.json`
 
+The bundle is rejected before staging unless `metrics_long.csv`, `selection_rates.csv`, and
+`regulatory_matrix.csv` are present alongside the other required intake members. Regulatory cells
+must be non-empty ASCII text: the release path uses reviewed pdfLaTeX/T1 rendering, so unsupported
+Unicode fails at intake rendering instead of failing later in the release cut. The ordinary
+pull-request/push `latex-build` workflow also generates deterministic smoke identity inputs and
+compiles `release/main.tex`; it does not upload that smoke PDF as release evidence.
+
 The manifest binds the PDF digest and visible product, producer-run, whitepaper-commit/run, and
 snapshot identities. The product release workflow downloads that exact downstream run, validates
 both files, and re-uploads them as a product-bound signing input before the release can proceed.
