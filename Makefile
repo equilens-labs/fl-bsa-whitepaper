@@ -63,6 +63,7 @@ release-pdf: release-assets
 	test -f release/includes/release_identity.tex
 	latexmk -pdf -interaction=nonstopmode -halt-on-error release/main.tex
 	python3 scripts/check_release_layout.py main.log --max-overfull-pt 2
+	python3 scripts/check_release_pdf_passive.py main.pdf
 	mkdir -p dist/release-whitepaper
 	cp main.pdf dist/release-whitepaper/whitepaper.pdf
 

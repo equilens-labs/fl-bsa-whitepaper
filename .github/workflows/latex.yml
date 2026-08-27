@@ -88,6 +88,8 @@ jobs:
             test "$SOURCE_DATE_EPOCH" -gt 0
       - name: Verify release template layout
         run: python3 scripts/check_release_layout.py main.log --max-overfull-pt 2
+      - name: Verify release template PDF is passive
+        run: python3 scripts/check_release_pdf_passive.py main.pdf
       - name: Verify release template smoke identity and marker
         shell: bash
         run: |
