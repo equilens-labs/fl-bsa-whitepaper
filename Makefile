@@ -12,7 +12,8 @@ GOLD_INDEX_SHA256=9ffb2c04a95f428f068d471732c7d9ed1e27a16d553749c2ec828907fbe916
 GOLD_SUMMARY_SHA256=15bee5d51c6816e4bd8bffdde3bcb657e5a25932f9742f17496c7a53884858ce
 EXPECTED_TABLE_HEADER_CELLS=26
 EXPECTED_FIGURE_TAGS=7
-VERAPDF_IMAGE=ghcr.io/verapdf/cli@sha256:595d7791a9321975cde6b7f5393beed98d76167ea6c39af191704462a4fa8b9d
+# Official production v1.28.2 image; upstream GHCR development images are purged weekly.
+VERAPDF_IMAGE=docker.io/verapdf/cli@sha256:e1c674f6dd0ee08418cfa525f6f47040377236432d55d67f747b2bc9c55e7d66
 VERAPDF_REPORT=dist/verapdf-ua1-preflight.xml
 SOURCE_DATE_EPOCH ?= $(shell git log -1 --format=%ct HEAD)
 export SOURCE_DATE_EPOCH

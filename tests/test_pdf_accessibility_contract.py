@@ -94,8 +94,8 @@ class PdfAccessibilityContractTests(unittest.TestCase):
         self.assertNotIn(r"\paragraph{Branch difference register.}", appendix)
 
         image = (
-            "ghcr.io/verapdf/cli@sha256:"
-            "595d7791a9321975cde6b7f5393beed98d76167ea6c39af191704462a4fa8b9d"
+            "docker.io/verapdf/cli@sha256:"
+            "e1c674f6dd0ee08418cfa525f6f47040377236432d55d67f747b2bc9c55e7d66"
         )
         self.assertIn(image, makefile)
         self.assertIn("$(MAKE) ua-preflight", makefile)
