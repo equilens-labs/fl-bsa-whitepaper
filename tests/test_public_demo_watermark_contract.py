@@ -11,6 +11,7 @@ RELEASE_CONDITION = (
 )
 RELEASE_GENERATION_MARKERS = (
     "scripts/release_whitepaper.py",
+    "scripts/check_release_pdf_passive.py",
     "make release-",
     "release/main.tex",
     "dist/release-whitepaper",
@@ -193,6 +194,16 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
             layout["run"],
         )
         self.assertLess(smoke_steps.index(compile_step), smoke_steps.index(layout))
+        passive = next(
+            step
+            for step in smoke_steps
+            if step.get("name") == "Verify release template PDF is passive"
+        )
+        self.assertEqual(
+            "python3 scripts/check_release_pdf_passive.py main.pdf",
+            passive["run"],
+        )
+        self.assertLess(smoke_steps.index(layout), smoke_steps.index(passive))
         prepare = next(
             step
             for step in smoke_steps
@@ -206,7 +217,7 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
             if step.get("name") == "Verify release template smoke identity and marker"
         )
         self.assertIn("verify_pdf_release_identity.py", verify["run"])
-        self.assertLess(smoke_steps.index(layout), smoke_steps.index(verify))
+        self.assertLess(smoke_steps.index(passive), smoke_steps.index(verify))
         for coordinate in (
             "--evidence-run-attempt",
             "--generator-backend-id",
@@ -227,6 +238,9 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
         self.assertIn(
             "python3 scripts/check_release_layout.py main.log --max-overfull-pt 2",
             release_pdf,
+        )
+        self.assertIn(
+            "python3 scripts/check_release_pdf_passive.py main.pdf", release_pdf
         )
 
     def test_intake_workflow_builds_only_an_exact_release_scoped_paper(self) -> None:
@@ -255,6 +269,7 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
                 "Prepare exact release whitepaper",
                 "Install PDF text tooling for release paper",
                 "Compile exact release whitepaper",
+                "Verify exact release whitepaper is passive",
                 "Finalize exact release whitepaper manifest",
                 "Upload exact release whitepaper",
             }.issubset(release_steps)
@@ -264,6 +279,19 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
         self.assertEqual("release/main.tex", compile_step["with"]["root_file"])
         tooling_step = release_steps["Install PDF text tooling for release paper"]
         self.assertIn("poppler-utils", tooling_step["run"])
+        passive_step = release_steps["Verify exact release whitepaper is passive"]
+        self.assertEqual(
+            "python3 scripts/check_release_pdf_passive.py main.pdf",
+            passive_step["run"],
+        )
+        self.assertLess(
+            steps.index(release_steps["Verify exact release whitepaper layout"]),
+            steps.index(passive_step),
+        )
+        self.assertLess(
+            steps.index(passive_step),
+            steps.index(release_steps["Finalize exact release whitepaper manifest"]),
+        )
         upload_step = release_steps["Upload exact release whitepaper"]
         self.assertEqual(
             "dist/release-whitepaper/whitepaper.pdf\n"

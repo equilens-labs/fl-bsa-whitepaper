@@ -111,6 +111,8 @@ class PullWpIntakeContractTests(unittest.TestCase):
             "root_file: release/main.tex",
             "name: Verify exact release whitepaper layout",
             "python3 scripts/check_release_layout.py main.log --max-overfull-pt 2",
+            "name: Verify exact release whitepaper is passive",
+            "python3 scripts/check_release_pdf_passive.py main.pdf",
             "name: Finalize exact release whitepaper manifest",
             "python scripts/release_whitepaper.py finalize",
             "name: release-whitepaper-${{ github.run_attempt }}",
@@ -149,6 +151,10 @@ class PullWpIntakeContractTests(unittest.TestCase):
         )
         self.assertLess(
             workflow.index("      - name: Verify exact release whitepaper layout"),
+            workflow.index("      - name: Verify exact release whitepaper is passive"),
+        )
+        self.assertLess(
+            workflow.index("      - name: Verify exact release whitepaper is passive"),
             workflow.index("      - name: Finalize exact release whitepaper manifest"),
         )
         self.assertLess(
