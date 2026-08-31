@@ -11,6 +11,7 @@ RELEASE_CONDITION = (
 )
 RELEASE_GENERATION_MARKERS = (
     "scripts/release_whitepaper.py",
+    "scripts/canonicalize_release_pdf.py",
     "scripts/check_release_pdf_passive.py",
     "make release-",
     "release/main.tex",
@@ -177,6 +178,7 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
         parsed = yaml.safe_load(workflow)
         smoke = parsed["jobs"]["release-template-smoke"]
         self.assertEqual("release-template-smoke", smoke["name"])
+        self.assertEqual("ubuntu-24.04", smoke["runs-on"])
         smoke_steps = smoke["steps"]
         compile_step = next(
             step
@@ -184,6 +186,16 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
             if step.get("name") == "Compile release template smoke"
         )
         self.assertEqual("release/main.tex", compile_step["with"]["root_file"])
+        canonical = next(
+            step
+            for step in smoke_steps
+            if step.get("name") == "Canonicalize release template PDF bytes"
+        )
+        self.assertEqual(
+            "python3 scripts/canonicalize_release_pdf.py main.pdf",
+            canonical["run"],
+        )
+        self.assertLess(smoke_steps.index(compile_step), smoke_steps.index(canonical))
         layout = next(
             step
             for step in smoke_steps
@@ -193,7 +205,7 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
             "python3 scripts/check_release_layout.py main.log --max-overfull-pt 2",
             layout["run"],
         )
-        self.assertLess(smoke_steps.index(compile_step), smoke_steps.index(layout))
+        self.assertLess(smoke_steps.index(canonical), smoke_steps.index(layout))
         passive = next(
             step
             for step in smoke_steps
@@ -242,6 +254,13 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
         self.assertIn(
             "python3 scripts/check_release_pdf_passive.py main.pdf", release_pdf
         )
+        self.assertIn(
+            "python3 scripts/canonicalize_release_pdf.py main.pdf", release_pdf
+        )
+        self.assertLess(
+            release_pdf.index("python3 scripts/canonicalize_release_pdf.py main.pdf"),
+            release_pdf.index("python3 scripts/check_release_pdf_passive.py main.pdf"),
+        )
 
     def test_intake_workflow_builds_only_an_exact_release_scoped_paper(self) -> None:
         workflow_text = (
@@ -269,6 +288,7 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
                 "Prepare exact release whitepaper",
                 "Install PDF text tooling for release paper",
                 "Compile exact release whitepaper",
+                "Canonicalize exact release whitepaper bytes",
                 "Verify exact release whitepaper is passive",
                 "Finalize exact release whitepaper manifest",
                 "Upload exact release whitepaper",
@@ -279,10 +299,23 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
         self.assertEqual("release/main.tex", compile_step["with"]["root_file"])
         tooling_step = release_steps["Install PDF text tooling for release paper"]
         self.assertIn("poppler-utils", tooling_step["run"])
+        self.assertIn("mupdf-tools", tooling_step["run"])
+        self.assertIn("mutool version 1.23.10", tooling_step["run"])
+        self.assertEqual("ubuntu-24.04", workflow["jobs"]["fetch-build"]["runs-on"])
+        canonical_step = release_steps["Canonicalize exact release whitepaper bytes"]
+        self.assertEqual(
+            "python3 scripts/canonicalize_release_pdf.py main.pdf",
+            canonical_step["run"],
+        )
+        self.assertLess(steps.index(compile_step), steps.index(canonical_step))
         passive_step = release_steps["Verify exact release whitepaper is passive"]
         self.assertEqual(
             "python3 scripts/check_release_pdf_passive.py main.pdf",
             passive_step["run"],
+        )
+        self.assertLess(
+            steps.index(canonical_step),
+            steps.index(release_steps["Verify exact release whitepaper layout"]),
         )
         self.assertLess(
             steps.index(release_steps["Verify exact release whitepaper layout"]),

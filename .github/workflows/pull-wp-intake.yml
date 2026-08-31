@@ -26,7 +26,7 @@ concurrency:
 
 jobs:
   fetch-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
@@ -957,7 +957,9 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends poppler-utils
+          sudo apt-get install -y --no-install-recommends mupdf-tools poppler-utils
+          test "$(dpkg-query -W -f='${Version}' mupdf-tools)" = "1.23.10+ds1-1build3"
+          test "$(/usr/bin/mutool -v 2>&1)" = "mutool version 1.23.10"
 
       - name: Compile exact release whitepaper
         if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file == 'release-evidence.yml' }}
@@ -973,6 +975,10 @@ jobs:
             test "$SOURCE_DATE_EPOCH" -gt 0
             test "$FORCE_SOURCE_DATE" = 1
             test "$TZ" = UTC
+
+      - name: Canonicalize exact release whitepaper bytes
+        if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file == 'release-evidence.yml' }}
+        run: python3 scripts/canonicalize_release_pdf.py main.pdf
 
       - name: Verify exact release whitepaper layout
         if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file == 'release-evidence.yml' }}
