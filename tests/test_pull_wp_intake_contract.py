@@ -101,7 +101,8 @@ class PullWpIntakeContractTests(unittest.TestCase):
             "run-name: wp-intake-${{ github.event.client_payload.workflow_file",
             "name: Prepare exact release whitepaper",
             "name: Install PDF text tooling for release paper",
-            "sudo apt-get install -y --no-install-recommends poppler-utils",
+            "sudo apt-get install -y --no-install-recommends mupdf-tools poppler-utils",
+            "mutool version 1.23.10",
             "github.event.client_payload.workflow_file == 'release-evidence.yml'",
             "python scripts/release_whitepaper.py prepare",
             "--snapshot intake/whitepaper_snapshot.json",
@@ -109,6 +110,8 @@ class PullWpIntakeContractTests(unittest.TestCase):
             "make release-assets",
             "name: Compile exact release whitepaper",
             "root_file: release/main.tex",
+            "name: Canonicalize exact release whitepaper bytes",
+            "python3 scripts/canonicalize_release_pdf.py main.pdf",
             "name: Verify exact release whitepaper layout",
             "python3 scripts/check_release_layout.py main.log --max-overfull-pt 2",
             "name: Verify exact release whitepaper is passive",
@@ -147,6 +150,10 @@ class PullWpIntakeContractTests(unittest.TestCase):
         )
         self.assertLess(
             workflow.index("      - name: Compile exact release whitepaper"),
+            workflow.index("      - name: Canonicalize exact release whitepaper bytes"),
+        )
+        self.assertLess(
+            workflow.index("      - name: Canonicalize exact release whitepaper bytes"),
             workflow.index("      - name: Verify exact release whitepaper layout"),
         )
         self.assertLess(
