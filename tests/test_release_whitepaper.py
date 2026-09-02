@@ -100,7 +100,7 @@ class ReleaseWhitepaperTests(unittest.TestCase):
             "pack_intent_sha256": _sha(self.pack_path),
         }
         self.snapshot = {
-            "schema_version": "flbsa.whitepaper_intake_snapshot.v3",
+            "schema_version": "flbsa.whitepaper_intake_snapshot.v4",
             "snapshot_id": _snapshot_id(producer, whitepaper),
             "claims": {
                 "customer_evidence_eligible": False,

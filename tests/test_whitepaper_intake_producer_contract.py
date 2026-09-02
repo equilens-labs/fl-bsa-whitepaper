@@ -19,7 +19,7 @@ SPEC.loader.exec_module(CONTRACT)
 def _dispatch_inputs() -> dict[str, str]:
     return {
         "producer_repo": "equilens-labs/fl-bsa",
-        "workflow": "wp-evidence-nightly.yml",
+        "workflow": "release-evidence.yml",
         "branch": "main",
         "producer_event": "repository_dispatch",
         "artifact_name": "wp-intake-bundle-v4-3",
@@ -37,15 +37,6 @@ class WhitepaperIntakeProducerContractTests(unittest.TestCase):
 
         self.assertEqual(64, len(digest))
         self.assertEqual(
-            {"schedule", "repository_dispatch"},
-            CONTRACT.authority_events(
-                contract,
-                producer_repo="equilens-labs/fl-bsa",
-                workflow="wp-evidence-nightly.yml",
-                branch="main",
-            ),
-        )
-        self.assertEqual(
             {"repository_dispatch"},
             CONTRACT.authority_events(
                 contract,
@@ -55,23 +46,20 @@ class WhitepaperIntakeProducerContractTests(unittest.TestCase):
             ),
         )
 
-        for workflow, event in (
-            ("wp-evidence-nightly.yml", "schedule"),
-            ("wp-evidence-nightly.yml", "repository_dispatch"),
-            ("release-evidence.yml", "repository_dispatch"),
-        ):
-            CONTRACT.validate_authority(
-                contract,
-                producer_repo="equilens-labs/fl-bsa",
-                workflow=workflow,
-                branch="main",
-                event=event,
-            )
+        CONTRACT.validate_authority(
+            contract,
+            producer_repo="equilens-labs/fl-bsa",
+            workflow="release-evidence.yml",
+            branch="main",
+            event="repository_dispatch",
+        )
 
     def test_stale_or_unreviewed_authority_is_rejected(self) -> None:
         contract, _ = CONTRACT.load_contract(CONTRACT_PATH)
 
         for workflow, branch, event in (
+            ("wp-evidence-nightly.yml", "main", "schedule"),
+            ("wp-evidence-nightly.yml", "main", "repository_dispatch"),
             ("wp-evidence-nightly.yml", "main", "workflow_dispatch"),
             ("release-evidence.yml", "main", "workflow_dispatch"),
             ("release-evidence.yml", "main", "schedule"),

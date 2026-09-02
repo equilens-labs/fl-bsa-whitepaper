@@ -28,18 +28,18 @@ This document describes how evidence artifacts flow from the FL-BSA runtime (`fl
                               │ WhitePaper_Intake_Bundle_v4.zip
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  fl-bsa-whitepaper rolling intake validation                │
+│  fl-bsa-whitepaper release-bound intake                     │
 │                                                             │
 │  pull-wp-intake.yml                                         │
 │    ├─ verifies the exact producer run and artifact          │
 │    ├─ validates schema and public-disclosure boundaries     │
-│    └─ uploads intake/whitepaper_snapshot.json only          │
+│    ├─ uploads intake/whitepaper_snapshot.json               │
+│    └─ builds the exact version-bound release paper          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-The receipt-only path above does not build a PDF. The archival v5.0.1 PDF is built separately
-from the repository's checked-in, v5.0.1-pinned intake and exact release identity. A current
-release needs its own version-bound source and evidence contract.
+This route must not rebuild the archival v5.0.1 PDF. It builds a separate version-bound release
+paper from the exact dispatched intake and release identity.
 
 ---
 
@@ -120,7 +120,7 @@ Defined in `config/sap.yaml`:
 
 ## Consumer: fl-bsa-whitepaper
 
-### Receipt-Only Import Process
+### Release-Bound Import Process
 
 ```bash
 # Extract an exact producer bundle into an isolated temporary directory.
@@ -134,7 +134,8 @@ python3 scripts/validate_public_intake.py --bundle-root "$bundle_dir" --schema-r
 Do not copy arbitrary producer intake into this checkout and run `make pdf`. The checked-in paper
 is permanently bound to the archival v5.0.1 evidence. A newer release requires a separately
 versioned source tree and build contract. `pull-wp-intake.yml` performs the full exact-run,
-artifact, digest, schema, and disclosure checks and emits only a JSON receipt.
+artifact, digest, schema, and disclosure checks, emits the JSON receipt, and builds only that
+version-bound release paper.
 
 ### Macro Generation
 
@@ -221,23 +222,20 @@ run_id,split,model_id,attribute,group,selected,n
 ## CI Integration
 
 The `.github/workflows/pull-wp-intake.yml` workflow can:
-1. Trigger on producer CI completion (`repository_dispatch`)
-2. Download the requested intake bundle artifact from producer (`wp-intake-bundle-v4` from
-   `wp-evidence-nightly.yml`; the unattested `wp-reviewer-pack-v4` compatibility artifact must be
-   requested explicitly and is never an automatic fallback)
+1. Trigger only on the contract-bound `wp-intake-ready` repository dispatch from
+   `release-evidence.yml`
+2. Download the exact attempt-qualified and attested `wp-intake-bundle-v4-<run-attempt>` artifact
 3. API-verify and bounded-poll the exact producer run/head, reject non-allowlisted private bundle
    members, stage the managed intake/certificate/config files, and replace those surfaces while
    preserving the six explicit repository-owned intake files plus `intake/archive/`
-4. Write and upload an exact source receipt without compiling a PDF. The checked-in paper is the
-   fixed v5.0.1 archival characterization and must not consume arbitrary newer intake.
-5. The current shared producer contract disables public
-   Git snapshot persistence; the rolling-history and workflow-write-once branch implementation is
-   dormant pending a separately reviewed contract change.
+4. Write and upload an exact source receipt, then compile and upload the version-bound release
+   paper. The checked-in paper remains the fixed v5.0.1 archival characterization.
+5. Reject timers, arbitrary selectors, compatibility artifacts, and public Git/PR persistence.
 
 The receipt proves what the consumer validated; it is not a whitepaper. The raw private-producer
-ZIP is not re-uploaded from this public repository. A current-release PDF must use a separate
-version-bound build. See `docs/ci_intake.md` for the receipt, dormant branch lifecycle,
-idempotency, and stable-v5 compatibility-anchor contract.
+ZIP is not re-uploaded from this public repository. A current-release PDF uses the same exact
+release-bound consumer run. See `docs/ci_intake.md` for the receipt, identity checks, and stable-v5
+compatibility-anchor contract.
 
 ---
 
@@ -256,7 +254,8 @@ idempotency, and stable-v5 compatibility-anchor contract.
 
 The archival LaTeX build is fail-closed. Strict generators require the complete pinned v5.0.1
 intake and the characterization contract rejects missing, substituted, or cross-version inputs.
-Rolling intake is validated separately and cannot invoke the PDF build.
+The sole release-bound intake route validates its exact input and compiles only the version-bound
+`release/main.tex`; it cannot rebuild the archival paper.
 
 ---
 

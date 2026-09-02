@@ -20,7 +20,7 @@ from verify_pdf_release_identity import PdfIdentityError, extract_text, verify_t
 
 IDENTITY_SCHEMA = "flbsa.release_whitepaper_identity.v1"
 RELEASE_SCHEMA = "flbsa.release_whitepaper.v1"
-SNAPSHOT_SCHEMA = "flbsa.whitepaper_intake_snapshot.v3"
+SNAPSHOT_SCHEMA = "flbsa.whitepaper_intake_snapshot.v4"
 MANIFEST_SCHEMA = "wp-intake.v1"
 PACK_INTENT_SCHEMA = "wp.pack_intent.v1"
 PRODUCT_REPO = "equilens-labs/fl-bsa"
