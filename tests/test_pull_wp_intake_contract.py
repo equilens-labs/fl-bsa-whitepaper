@@ -20,94 +20,75 @@ class PullWpIntakeContractTests(unittest.TestCase):
         self.workflow = WORKFLOW.read_text(encoding="utf-8")
 
     def assert_contract(self, workflow: str) -> None:
+        parsed = yaml.safe_load(workflow)
+        on_section = parsed.get(True, parsed.get("on"))
+        self.assertEqual(
+            {"repository_dispatch": {"types": ["wp-intake-ready"]}},
+            on_section,
+        )
+        self.assertEqual(
+            "wp-intake-release-evidence.yml-"
+            "${{ github.event.client_payload.producer_run_id }}-"
+            "${{ github.event.client_payload.artifact_id }}",
+            parsed["run-name"],
+        )
+        self.assertEqual(
+            {
+                "contents": "read",
+                "actions": "read",
+                "attestations": "read",
+            },
+            parsed["permissions"],
+        )
+        self.assertEqual(
+            "pull-wp-intake-${{ github.event.client_payload.producer_run_id }}",
+            parsed["concurrency"]["group"],
+        )
+        self.assertIs(parsed["concurrency"]["cancel-in-progress"], False)
+
         required = (
-            "group: pull-wp-intake-persistence",
-            "cancel-in-progress: false",
-            "queue: max",
-            "python scripts/intake_anchor.py snapshot",
-            "python scripts/validate_public_intake.py",
-            "test -f bundle/intake/pack_intent.json",
-            "--pack-intent bundle/intake/pack_intent.json",
-            '--producer-head-sha "$SELECTED_PRODUCER_HEAD_SHA"',
-            '--producer-run-attempt "$SELECTED_PRODUCER_RUN_ATTEMPT"',
-            '--producer-artifact-id "$SELECTED_PRODUCER_ARTIFACT_ID"',
-            '--producer-artifact-digest "$SELECTED_PRODUCER_ARTIFACT_DIGEST"',
-            '--producer-contract-sha256 "$SELECTED_PRODUCER_CONTRACT_SHA256"',
-            "--output intake/whitepaper_snapshot.json",
+            "scripts/whitepaper_intake_producer_contract.py validate-dispatch",
+            "scripts/whitepaper_intake_producer_contract.py validate-authority",
+            "contracts/whitepaper-intake-producer-contract.v1.json",
             'if [[ ! "$run_id" =~ ^[1-9][0-9]*$ ]]; then',
             'if ! run_json="$(gh api "repos/${PRODUCER_REPO}/actions/runs/${run_id}")"; then',
             "for ((attempt=1; attempt<=81; attempt++)); do",
-            'if [ "$run_status" = "completed" ]; then',
-            'if [ "$run_conclusion" != "success" ]; then',
-            "did not complete successfully within the 20-minute bounded wait",
-            'release_active_mode="true"',
             "actions/runs/${run_id}/attempts/${run_attempt}/jobs?per_page=100",
             'producer_job_name="WP Evidence (release-grade)"',
             "Release intake authorized by completed ${producer_job_name} job",
             '((.path // "") | split("@")[0]) == $workflow_path',
             ".head_branch == $branch",
             ".head_repository.full_name == $producer_repo",
-            "scripts/whitepaper_intake_producer_contract.py validate-dispatch",
-            "scripts/whitepaper_intake_producer_contract.py validate-selector",
-            "scripts/whitepaper_intake_producer_contract.py validate-authority",
-            "contracts/whitepaper-intake-producer-contract.v1.json",
-            "verify_scheduled_producer_contract() (",
-            "application/vnd.github.raw+json",
-            '"repos/${PRODUCER_REPO}/contents/${contract_path}?ref=${producer_sha}"',
-            'if [ "$actual_sha256" != "$expected_sha256" ]; then',
-            "does not match the reviewed consumer contract",
-            "SELECTED_PRODUCER_CONTRACT_SHA256",
-            'run_attempt="$(jq -r \'.run_attempt | tostring\' <<<"$run_json")"',
-            "wp-intake-bundle-v4-${run_attempt}",
+            'if [ "$PRODUCER_ARTIFACT" != "wp-intake-bundle-v4-${run_attempt}" ]; then',
+            'if [ "$PRODUCER_ARTIFACT_ID" != "$artifact_id" ]; then',
+            'if [ "$PRODUCER_ARTIFACT_DIGEST" != "$artifact_digest" ]; then',
             'artifact_match_count="$(jq --arg name "$PRODUCER_ARTIFACT"',
             'gh api "repos/${PRODUCER_REPO}/actions/artifacts/${artifact_id}/zip"',
             'downloaded_digest="sha256:$(sha256sum "$artifact_archive"',
+            'expected_bundle_filename="WhitePaper_Intake_Bundle_v4.zip"',
+            "gh attestation verify",
             '[[ "$artifact_created_at" < "$run_started_at" ]]',
             "product_sha != expected_head_sha",
+            "producer bundle contains non-public/unreviewed members",
             "Stage and replace managed intake/config surfaces",
             "repo_owned_intake=(",
             "producer_managed_intake=(",
-            "producer bundle contains non-public/unreviewed members",
-            "names redacted",
             'sync_stage="$(mktemp -d "${RUNNER_TEMP}/wp-intake-sync.XXXXXX")"',
             'cp -a intake/archive/. "$sync_stage/intake/archive/"',
             "rm -rf intake config",
             'mv "$sync_stage/intake" intake',
             'mv "$sync_stage/config" config',
-            'branch="$INTAKE_SNAPSHOT_BRANCH"',
-            'mode="$INTAKE_SNAPSHOT_MODE"',
-            "git add intake config",
-            'snapshot_tree="$(git write-tree)"',
-            'git ls-remote --exit-code --heads origin "refs/heads/${branch}"',
-            'parent_args=(-p "$GITHUB_SHA")',
-            'parent_args+=(-p "$remote_head")',
-            'git commit-tree "$snapshot_tree" "${parent_args[@]}" -F "$commit_message"',
-            'git push origin "$anchor_commit:refs/heads/$branch"',
-            "already exists with a different tree; refusing nondeterministic identity drift",
-            'if [ "$mode" = "workflow_write_once_release_snapshot" ] && [ -n "$remote_head" ]; then',
-            "already exists with different content; refusing to rewrite it",
-            'if [ "$mode" = "rolling_history" ]; then',
-            "Routine nightly snapshot retained in append-only history",
-            'permission_guard="GitHub Actions is not permitted to create or approve pull requests"',
-            'soft_fail_sentinel="${soft_fail_dir}/intake_pr_soft_fail.json"',
-            "record_pr_permission_soft_fail()",
-            '>> "$GITHUB_STEP_SUMMARY"',
-            "name: intake-pr-soft-fail-${{ github.run_attempt }}",
-            "path: dist/intake-pr-soft-fail/intake_pr_soft_fail.json",
+            "python scripts/validate_public_intake.py",
+            "python scripts/intake_anchor.py snapshot",
+            '--producer-head-sha "$SELECTED_PRODUCER_HEAD_SHA"',
+            '--producer-run-attempt "$SELECTED_PRODUCER_RUN_ATTEMPT"',
+            '--producer-artifact-id "$SELECTED_PRODUCER_ARTIFACT_ID"',
+            '--producer-artifact-digest "$SELECTED_PRODUCER_ARTIFACT_DIGEST"',
+            '--producer-contract-sha256 "$SELECTED_PRODUCER_CONTRACT_SHA256"',
+            "--output intake/whitepaper_snapshot.json",
             "name: whitepaper-intake-receipt-${{ github.run_attempt }}",
-            "intake/whitepaper_snapshot.json",
-            "if-no-files-found: error",
-            "retention-days: 90",
-            "run-name: wp-intake-${{ github.event.client_payload.workflow_file",
             "name: Prepare exact release whitepaper",
-            "name: Install PDF text tooling for release paper",
-            "sudo apt-get install -y --no-install-recommends mupdf-tools poppler-utils",
-            "mutool version 1.23.10",
-            "github.event.client_payload.workflow_file == 'release-evidence.yml'",
             "python scripts/release_whitepaper.py prepare",
-            "--snapshot intake/whitepaper_snapshot.json",
-            '--whitepaper-run-id "$GITHUB_RUN_ID"',
-            "make release-assets",
             "name: Compile exact release whitepaper",
             "root_file: release/main.tex",
             "name: Canonicalize exact release whitepaper bytes",
@@ -125,277 +106,58 @@ class PullWpIntakeContractTests(unittest.TestCase):
         for fragment in required:
             self.assertIn(fragment, workflow)
 
-        self.assertNotIn("--force", workflow)
-        self.assertNotIn("name: intake-bundle-used", workflow)
-        self.assertNotIn("wp-bundle/**/WhitePaper_Intake_Bundle_v4.zip", workflow)
-        self.assertNotIn("release/vMAJOR.MINOR.PATCH-SHA8", workflow)
-        self.assertNotIn("git/ref/tags/${release_tag}", workflow)
-        self.assertNotIn("git/tags/${release_tag_sha}", workflow)
-        self.assertNotIn("wp-evidence-nightly.yml:workflow_dispatch", workflow)
-        self.assertNotIn("release-evidence.yml:workflow_dispatch", workflow)
-        self.assertNotIn("--status success", workflow)
-        self.assertNotIn("whitepaper-pdf-from-intake", workflow)
-        self.assertNotIn("arxiv-source-from-intake", workflow)
-        self.assertLess(
-            workflow.index('if [ "$mode" = "rolling_history" ]; then'),
-            workflow.index('if gh pr view "$branch"'),
+        forbidden = (
+            "schedule:",
+            "scheduled",
+            "nightly",
+            "wp-evidence-nightly",
+            "wp-reviewer-pack",
+            "validate-selector",
+            "gh run list",
+            "resolve_latest_producer_run",
+            "PERSIST_INTAKE",
+            "WP_INTAKE_PR_TOKEN",
+            "pull-requests:",
+            "git push",
+            "gh pr ",
+            "intake-pr-soft-fail",
+            "github.event.client_payload.workflow_file == 'release-evidence.yml'",
         )
-        self.assertLess(
-            workflow.index("      - name: Write deterministic intake snapshot record"),
-            workflow.index("      - name: Upload exact intake receipt"),
-        )
-        self.assertLess(
-            workflow.index("      - name: Upload exact intake receipt"),
-            workflow.index("      - name: Prepare exact release whitepaper"),
-        )
-        self.assertLess(
-            workflow.index("      - name: Compile exact release whitepaper"),
-            workflow.index("      - name: Canonicalize exact release whitepaper bytes"),
-        )
-        self.assertLess(
-            workflow.index("      - name: Canonicalize exact release whitepaper bytes"),
-            workflow.index("      - name: Verify exact release whitepaper layout"),
-        )
-        self.assertLess(
-            workflow.index("      - name: Verify exact release whitepaper layout"),
-            workflow.index("      - name: Verify exact release whitepaper is passive"),
-        )
-        self.assertLess(
-            workflow.index("      - name: Verify exact release whitepaper is passive"),
-            workflow.index("      - name: Finalize exact release whitepaper manifest"),
-        )
-        self.assertLess(
-            workflow.index("      - name: Upload exact release whitepaper"),
-            workflow.index("      - name: Persist intake snapshot"),
-        )
+        lowered = workflow.lower()
+        for fragment in forbidden:
+            self.assertNotIn(fragment.lower(), lowered)
 
-        guard = re.search(
-            r"record_pr_permission_soft_fail\(\).*?if ! printf '%s\\n' \"\$pr_output\" "
-            r"\| grep -Fq \"\$permission_guard\"; then.*?return 1.*?fi",
-            workflow,
-            flags=re.DOTALL,
-        )
-        self.assertIsNotNone(guard, "non-permission PR failures must hard-fail")
+        steps = parsed["jobs"]["fetch-build"]["steps"]
+        step_names = [step.get("name") for step in steps]
+        for name in (
+            "Prepare exact release whitepaper",
+            "Install PDF text tooling for release paper",
+            "Compile exact release whitepaper",
+            "Canonicalize exact release whitepaper bytes",
+            "Verify exact release whitepaper layout",
+            "Verify exact release whitepaper is passive",
+            "Finalize exact release whitepaper manifest",
+            "Upload exact release whitepaper",
+        ):
+            step = next(step for step in steps if step.get("name") == name)
+            self.assertNotIn("if", step)
 
-        for operation in ("update", "creation"):
-            self.assertIn(
-                f'record_pr_permission_soft_fail "{operation}" "$branch" "$pr_output"\n'
-                "              exit $?",
-                workflow,
-            )
+        ordered = (
+            "Write deterministic intake snapshot record",
+            "Upload exact intake receipt",
+            "Prepare exact release whitepaper",
+            "Compile exact release whitepaper",
+            "Canonicalize exact release whitepaper bytes",
+            "Verify exact release whitepaper layout",
+            "Verify exact release whitepaper is passive",
+            "Finalize exact release whitepaper manifest",
+            "Upload exact release whitepaper",
+        )
+        positions = [step_names.index(name) for name in ordered]
+        self.assertEqual(sorted(positions), positions)
 
-        self.assert_scheduled_freshness_contract(workflow)
-
-    def assert_scheduled_freshness_contract(self, workflow: str) -> None:
-        download = workflow.split(
-            "      - name: Download intake bundle from producer", 1
-        )[1].split("      - name: Unpack intake bundle", 1)[0]
-        newest_resolver = download.split(
-            "          resolve_latest_producer_run() {", 1
-        )[1].split("\n          }\n\n          verify_scheduled_producer_contract", 1)[
-            0
-        ]
-        contract_verifier = download.split(
-            "          verify_scheduled_producer_contract() (", 1
-        )[1].split("\n          )\n\n          scheduled_authority_sha", 1)[0]
-
-        self.assertIn(
-            'gh api "repos/${PRODUCER_REPO}/git/ref/heads/${PRODUCER_BRANCH}"',
-            download,
-        )
-        self.assertIn("--json databaseId,headSha", newest_resolver)
-        self.assertIn("--limit 1", newest_resolver)
-        self.assertNotIn(
-            "--status success",
-            newest_resolver,
-            "scheduled discovery must consider the newest run regardless of status",
-        )
-        self.assertIn(
-            '"repos/${PRODUCER_REPO}/contents/${contract_path}?ref=${producer_sha}"',
-            contract_verifier,
-        )
-        self.assertIn(
-            'if [ "$actual_sha256" != "$expected_sha256" ]; then',
-            contract_verifier,
-        )
-        self.assertIn(
-            'scheduled_authority_sha="$(resolve_producer_branch_sha)"', download
-        )
-        self.assertIn(
-            'if [ "$scheduled_run_head_sha" != "$scheduled_authority_sha" ]; then',
-            download,
-        )
-        self.assertIn("Refusing to fall back to an older successful run.", download)
-        self.assertIn(
-            '[ "$(jq -r \'.head_sha\' <<<"$run_json")" != "$scheduled_authority_sha" ]',
-            download,
-        )
-        self.assertIn(
-            "verify_scheduled_producer_contract \\\n"
-            '              "$run_head_sha" \\\n'
-            '              "$producer_contract" \\\n'
-            '              "$producer_contract_sha256"',
-            download,
-        )
-        self.assertLess(
-            download.index("verify_scheduled_producer_contract \\\n"),
-            download.index("actions/runs/${run_id}/artifacts"),
-        )
-
-        self.assertEqual(
-            1,
-            download.count("gh run list"),
-            "only scheduled latest-run discovery should remain",
-        )
-
-        recheck_start = 'current_authority_sha_before="$(resolve_producer_branch_sha)"'
-        recheck = (
-            recheck_start
-            + download.split(
-                '          if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then\n'
-                f"            {recheck_start}",
-                1,
-            )[1]
-        )
-        self.assertIn(
-            '[ "$current_authority_sha_before" != "$scheduled_authority_sha" ]',
-            recheck,
-        )
-        self.assertIn(
-            '[ "$current_authority_sha_after" != "$scheduled_authority_sha" ]',
-            recheck,
-        )
-        self.assertIn('[ "$current_latest_run_id" != "$run_id" ]', recheck)
-        self.assertIn(
-            '[ "$current_latest_run_head_sha" != "$scheduled_authority_sha" ]',
-            recheck,
-        )
-        self.assertIn(
-            'current_run_json="$(gh api "repos/${PRODUCER_REPO}/actions/runs/${run_id}")"',
-            recheck,
-        )
-        self.assertIn("(.run_attempt | tostring) == $run_attempt", recheck)
-        self.assertIn('.status == "completed"', recheck)
-        self.assertIn('.conclusion == "success"', recheck)
-        self.assertLess(
-            recheck.index(
-                'current_authority_sha_before="$(resolve_producer_branch_sha)"'
-            ),
-            recheck.index(
-                "IFS=$'\\t' read -r current_latest_run_id current_latest_run_head_sha"
-            ),
-        )
-        self.assertLess(
-            recheck.index(
-                "IFS=$'\\t' read -r current_latest_run_id current_latest_run_head_sha"
-            ),
-            recheck.index(
-                'current_run_json="$(gh api "repos/${PRODUCER_REPO}/actions/runs/${run_id}")"'
-            ),
-        )
-        self.assertLess(
-            recheck.index(
-                'current_run_json="$(gh api "repos/${PRODUCER_REPO}/actions/runs/${run_id}")"'
-            ),
-            recheck.index(
-                'current_authority_sha_after="$(resolve_producer_branch_sha)"'
-            ),
-        )
-        self.assertLess(
-            download.index(
-                'current_authority_sha_after="$(resolve_producer_branch_sha)"'
-            ),
-            download.index('echo "Downloading artifact ${artifact_id}'),
-        )
-
-    def test_pull_wp_intake_preserves_append_only_contract(self) -> None:
+    def test_pull_wp_intake_is_release_dispatch_only(self) -> None:
         self.assert_contract(self.workflow)
-
-    def test_scheduled_pull_selects_and_rechecks_exact_current_authority(
-        self,
-    ) -> None:
-        self.assert_scheduled_freshness_contract(self.workflow)
-
-    def test_scheduled_contract_bytes_are_verified_at_exact_run_head(self) -> None:
-        workflow = yaml.safe_load(self.workflow)
-        download = next(
-            step
-            for step in workflow["jobs"]["fetch-build"]["steps"]
-            if step.get("name") == "Download intake bundle from producer"
-        )["run"]
-        function = (
-            "verify_scheduled_producer_contract() ("
-            + download.split("verify_scheduled_producer_contract() (", 1)[1].split(
-                "\n)\n\nscheduled_authority_sha", 1
-            )[0]
-        )
-        function += "\n)\n"
-
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            fake_bin = root / "bin"
-            fake_bin.mkdir()
-            producer_contract = root / "producer-contract.json"
-            producer_contract.write_bytes(
-                b'{"schema_version":"flbsa.whitepaper_intake_producer_contract.v1"}\n'
-            )
-            expected_sha256 = hashlib.sha256(producer_contract.read_bytes()).hexdigest()
-            gh_args = root / "gh-args.txt"
-            fake_gh = fake_bin / "gh"
-            fake_gh.write_text(
-                '#!/bin/sh\nprintf "%s\\n" "$@" > "$FAKE_GH_ARGS"\ncat "$FAKE_PRODUCER_CONTRACT"\n',
-                encoding="utf-8",
-            )
-            fake_gh.chmod(0o755)
-            producer_sha = "a" * 40
-            command = (
-                function
-                + 'verify_scheduled_producer_contract "$PRODUCER_SHA" '
-                + '"$CONTRACT_PATH" "$EXPECTED_SHA256"\n'
-            )
-            env = {
-                **os.environ,
-                "PATH": f"{fake_bin}:{os.environ['PATH']}",
-                "RUNNER_TEMP": str(root),
-                "PRODUCER_REPO": "equilens-labs/fl-bsa",
-                "PRODUCER_SHA": producer_sha,
-                "CONTRACT_PATH": (
-                    "contracts/whitepaper-intake-producer-contract.v1.json"
-                ),
-                "EXPECTED_SHA256": expected_sha256,
-                "FAKE_PRODUCER_CONTRACT": str(producer_contract),
-                "FAKE_GH_ARGS": str(gh_args),
-            }
-
-            accepted = subprocess.run(
-                ["bash", "-c", command],
-                env=env,
-                check=False,
-                capture_output=True,
-                text=True,
-            )
-            self.assertEqual(0, accepted.returncode, accepted.stderr)
-            self.assertIn("Verified shared producer contract", accepted.stdout)
-            args = gh_args.read_text(encoding="utf-8")
-            self.assertIn("application/vnd.github.raw+json", args)
-            self.assertIn(
-                "repos/equilens-labs/fl-bsa/contents/"
-                "contracts/whitepaper-intake-producer-contract.v1.json"
-                f"?ref={producer_sha}",
-                args,
-            )
-
-            rejected = subprocess.run(
-                ["bash", "-c", command],
-                env={**env, "EXPECTED_SHA256": "0" * 64},
-                check=False,
-                capture_output=True,
-                text=True,
-            )
-            self.assertNotEqual(0, rejected.returncode)
-            self.assertIn(
-                "does not match the reviewed consumer contract", rejected.stderr
-            )
 
     def test_repository_dispatch_requires_exact_run_and_artifact_identity(
         self,
@@ -427,13 +189,13 @@ class PullWpIntakeContractTests(unittest.TestCase):
             "producer_repo": "equilens-labs/fl-bsa",
             "producer_run_attempt": "3",
             "producer_run_id": "123",
-            "workflow_file": "wp-evidence-nightly.yml",
+            "workflow_file": "release-evidence.yml",
         }
         valid_env = {
             **os.environ,
             "GITHUB_EVENT_NAME": "repository_dispatch",
             "PRODUCER_REPO": "equilens-labs/fl-bsa",
-            "PRODUCER_WORKFLOW": "wp-evidence-nightly.yml",
+            "PRODUCER_WORKFLOW": "release-evidence.yml",
             "PRODUCER_ARTIFACT": "wp-intake-bundle-v4-3",
             "PRODUCER_BRANCH": "main",
             "PRODUCER_RUN_ID": "123",
@@ -479,296 +241,12 @@ class PullWpIntakeContractTests(unittest.TestCase):
                     rejected.stderr,
                 )
 
-    def test_scheduled_freshness_contract_is_mutation_sensitive(self) -> None:
-        mutations = (
-            self.workflow.replace(
-                '              --branch "$PRODUCER_BRANCH" \\\n'
-                "              --limit 1 \\\n"
-                "              --json databaseId,headSha)",
-                '              --branch "$PRODUCER_BRANCH" \\\n'
-                "              --status success \\\n"
-                "              --limit 1 \\\n"
-                "              --json databaseId,headSha)",
-                1,
-            ),
-            self.workflow.replace(
-                'if [ "$scheduled_run_head_sha" != "$scheduled_authority_sha" ]; then',
-                'if [ -z "$scheduled_run_head_sha" ]; then',
-                1,
-            ),
-            self.workflow.replace(
-                '[ "$current_authority_sha_before" != "$scheduled_authority_sha" ]',
-                '[ -z "$current_authority_sha_before" ]',
-                1,
-            ),
-            self.workflow.replace(
-                '[ "$current_authority_sha_after" != "$scheduled_authority_sha" ]',
-                '[ -z "$current_authority_sha_after" ]',
-                1,
-            ),
-            self.workflow.replace(
-                "(.run_attempt | tostring) == $run_attempt and\n"
-                "               .head_sha == $authority_sha",
-                "true and\n               .head_sha == $authority_sha",
-                1,
-            ),
-            self.workflow.replace(
-                'if [ "$actual_sha256" != "$expected_sha256" ]; then',
-                'if [ -z "$actual_sha256" ]; then',
-                1,
-            ),
-        )
-        for mutated in mutations:
-            with self.subTest():
-                with self.assertRaises((AssertionError, IndexError)):
-                    self.assert_scheduled_freshness_contract(mutated)
-
-    def test_public_snapshot_persistence_is_explicit_and_defaults_off(self) -> None:
-        workflow = yaml.safe_load(self.workflow)
-        self.assertEqual("read", workflow["permissions"]["contents"])
-        self.assertEqual("read", workflow["permissions"]["pull-requests"])
-        steps = workflow["jobs"]["fetch-build"]["steps"]
-        checkout = next(
-            item
-            for item in steps
-            if str(item.get("uses", "")).startswith("actions/checkout@")
-        )
-        self.assertIs(checkout["with"]["persist-credentials"], False)
-        persist = next(
-            item for item in steps if item.get("name") == "Persist intake snapshot"
-        )
-
-        expression = persist["env"]["PERSIST_INTAKE_SNAPSHOT"]
-        self.assertEqual(
-            "${{ github.event_name == 'repository_dispatch' && "
-            "format('{0}', github.event.client_payload.persist_intake_pr) || 'false' }}",
-            expression,
-        )
-        self.assertNotIn("|| 'true'", expression)
-        self.assertIn(
-            "Skipping intake snapshot persistence because persist_intake_pr=${PERSIST_INTAKE_SNAPSHOT}.",
-            persist["run"],
-        )
-        guard = persist["run"].split('if [ -z "${WP_INTAKE_PR_TOKEN:-}" ]; then', 1)[0]
-        probe = guard + "\nprintf 'persistence-enabled\\n'\n"
-
-        disabled = subprocess.run(
-            ["bash", "-c", probe],
-            env={**os.environ, "PERSIST_INTAKE_SNAPSHOT": "false"},
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-        self.assertEqual(0, disabled.returncode, disabled.stderr)
-        self.assertNotIn("persistence-enabled", disabled.stdout)
-
-        enabled = subprocess.run(
-            ["bash", "-c", probe],
-            env={**os.environ, "PERSIST_INTAKE_SNAPSHOT": "true"},
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-        self.assertEqual(0, enabled.returncode, enabled.stderr)
-        self.assertIn("persistence-enabled", enabled.stdout)
-
-        for malformed in ("", "0", "no", "1", "yes", "tru", " false ", "random"):
-            with self.subTest(malformed=malformed):
-                rejected = subprocess.run(
-                    ["bash", "-c", probe],
-                    env={**os.environ, "PERSIST_INTAKE_SNAPSHOT": malformed},
-                    check=False,
-                    capture_output=True,
-                    text=True,
-                )
-                self.assertNotEqual(0, rejected.returncode)
-                self.assertIn("expected literal true or false", rejected.stderr)
-
-        self.assertNotIn("GH_TOKEN", persist["env"])
-        self.assertEqual(
-            "${{ secrets.WP_INTAKE_PR_TOKEN }}",
-            persist["env"]["WP_INTAKE_PR_TOKEN"],
-        )
-        self.assertIn(
-            "Explicit public intake persistence requires WP_INTAKE_PR_TOKEN",
-            persist["run"],
-        )
-        self.assertIn('export GH_TOKEN="$WP_INTAKE_PR_TOKEN"', persist["run"])
-        self.assertIn("gh auth setup-git", persist["run"])
-        self.assertIn("git remote get-url --all origin", persist["run"])
-        self.assertIn("git remote get-url --push --all origin", persist["run"])
-        self.assertIn(
-            'canonical_origin="https://github.com/${GITHUB_REPOSITORY}"', persist["run"]
-        )
-        self.assertIn('"${#origin_fetch_urls[@]}" -ne 1', persist["run"])
-        self.assertIn('"${#origin_push_urls[@]}" -ne 1', persist["run"])
-        self.assertIn('fetch_url="${origin_fetch_urls[0]}"', persist["run"])
-        self.assertIn('push_url="${origin_push_urls[0]}"', persist["run"])
-        self.assertNotIn("https://github.com/*", persist["run"])
-        self.assertNotIn("git@github.com:*", persist["run"])
-        self.assertIn('if [ "${GITHUB_ACTIONS:-}" = "true" ]; then', persist["run"])
-        self.assertIn("unexpected Actions fetch origin", persist["run"])
-        self.assertIn("unexpected Actions push origin", persist["run"])
-        self.assertLess(
-            persist["run"].index("gh auth setup-git"),
-            persist["run"].index('git push origin "$anchor_commit:refs/heads/$branch"'),
-        )
-
-    def test_public_persistence_rejects_unexpected_actions_origin_before_mutation(
-        self,
-    ) -> None:
-        workflow = yaml.safe_load(self.workflow)
-        persist = next(
-            item
-            for item in workflow["jobs"]["fetch-build"]["steps"]
-            if item.get("name") == "Persist intake snapshot"
-        )["run"]
-
-        canonical = "https://github.com/equilens-labs/fl-bsa-whitepaper.git"
-        different = "https://github.com/equilens-labs/not-fl-bsa-whitepaper.git"
-        ssh = "git@github.com:equilens-labs/fl-bsa-whitepaper.git"
-        unexpected_origins = (
-            ("local", (), ()),
-            (different, (), ()),
-            (ssh, (), ()),
-            (canonical, (different,), ()),
-            (canonical, (ssh,), ()),
-            (canonical, (canonical, different), ()),
-            (
-                canonical,
-                (),
-                ((f"url.{different}.pushInsteadOf", canonical),),
-            ),
-            (
-                canonical,
-                (),
-                ((f"url.{different}.insteadOf", canonical),),
-            ),
-        )
-        for fetch_origin, push_origins, url_rewrites in unexpected_origins:
-            with (
-                self.subTest(
-                    fetch_origin=fetch_origin,
-                    push_origins=push_origins,
-                    url_rewrites=url_rewrites,
-                ),
-                tempfile.TemporaryDirectory() as tmp,
-            ):
-                root = Path(tmp)
-                work = root / "work"
-                subprocess.run(["git", "init", "-b", "main", str(work)], check=True)
-                origin = fetch_origin
-                if origin == "local":
-                    remote = root / "remote.git"
-                    subprocess.run(["git", "init", "--bare", str(remote)], check=True)
-                    origin = str(remote)
-                subprocess.run(
-                    ["git", "-C", str(work), "remote", "add", "origin", origin],
-                    check=True,
-                )
-                for push_origin in push_origins:
-                    subprocess.run(
-                        [
-                            "git",
-                            "-C",
-                            str(work),
-                            "config",
-                            "--add",
-                            "remote.origin.pushurl",
-                            push_origin,
-                        ],
-                        check=True,
-                    )
-                for key, value in url_rewrites:
-                    subprocess.run(
-                        ["git", "-C", str(work), "config", "--add", key, value],
-                        check=True,
-                    )
-
-                completed = subprocess.run(
-                    ["bash", "-c", persist],
-                    cwd=work,
-                    env={
-                        **os.environ,
-                        "GIT_CONFIG_GLOBAL": "/dev/null",
-                        "GIT_CONFIG_SYSTEM": "/dev/null",
-                        "GITHUB_ACTIONS": "true",
-                        "GITHUB_REPOSITORY": "equilens-labs/fl-bsa-whitepaper",
-                        "PERSIST_INTAKE_SNAPSHOT": "true",
-                        "WP_INTAKE_PR_TOKEN": "unused-test-token",
-                    },
-                    check=False,
-                    capture_output=True,
-                    text=True,
-                )
-                self.assertNotEqual(0, completed.returncode)
-                self.assertIn("Refusing public persistence", completed.stderr)
-                local_refs = subprocess.check_output(
-                    ["git", "-C", str(work), "for-each-ref", "--format=%(refname)"],
-                    text=True,
-                )
-                self.assertEqual("", local_refs)
-
-    def test_public_persistence_accepts_only_canonical_https_origins(self) -> None:
-        workflow = yaml.safe_load(self.workflow)
-        persist = next(
-            item
-            for item in workflow["jobs"]["fetch-build"]["steps"]
-            if item.get("name") == "Persist intake snapshot"
-        )["run"]
-        guard = persist.split('branch="$INTAKE_SNAPSHOT_BRANCH"', 1)[0]
-        probe = guard + "\nprintf 'origin-approved\\n'\n"
-
-        for suffix in ("", ".git"):
-            with self.subTest(suffix=suffix), tempfile.TemporaryDirectory() as tmp:
-                root = Path(tmp)
-                work = root / "work"
-                fake_bin = root / "bin"
-                fake_bin.mkdir()
-                fake_gh = fake_bin / "gh"
-                fake_gh.write_text(
-                    '#!/bin/sh\n[ "$1 $2" = "auth setup-git" ]\n',
-                    encoding="utf-8",
-                )
-                fake_gh.chmod(0o755)
-                subprocess.run(["git", "init", "-b", "main", str(work)], check=True)
-                subprocess.run(
-                    [
-                        "git",
-                        "-C",
-                        str(work),
-                        "remote",
-                        "add",
-                        "origin",
-                        f"https://github.com/equilens-labs/fl-bsa-whitepaper{suffix}",
-                    ],
-                    check=True,
-                )
-
-                completed = subprocess.run(
-                    ["bash", "-c", probe],
-                    cwd=work,
-                    env={
-                        **os.environ,
-                        "GIT_CONFIG_GLOBAL": "/dev/null",
-                        "GIT_CONFIG_SYSTEM": "/dev/null",
-                        "GITHUB_ACTIONS": "true",
-                        "GITHUB_REPOSITORY": "equilens-labs/fl-bsa-whitepaper",
-                        "PATH": f"{fake_bin}:{os.environ['PATH']}",
-                        "PERSIST_INTAKE_SNAPSHOT": "true",
-                        "WP_INTAKE_PR_TOKEN": "unused-test-token",
-                    },
-                    check=False,
-                    capture_output=True,
-                    text=True,
-                )
-                self.assertEqual(0, completed.returncode, completed.stderr)
-                self.assertIn("origin-approved", completed.stdout)
-
     def test_required_anchors_are_mutation_sensitive(self) -> None:
         required_fragments = (
-            "group: pull-wp-intake-persistence",
-            "queue: max",
+            "run-name: wp-intake-release-evidence.yml-${{ github.event.client_payload.producer_run_id }}-${{ github.event.client_payload.artifact_id }}",
+            "group: pull-wp-intake-${{ github.event.client_payload.producer_run_id }}",
+            "scripts/whitepaper_intake_producer_contract.py validate-dispatch",
+            "scripts/whitepaper_intake_producer_contract.py validate-authority",
             "python scripts/intake_anchor.py snapshot",
             "python scripts/validate_public_intake.py",
             'if ! run_json="$(gh api "repos/${PRODUCER_REPO}/actions/runs/${run_id}")"; then',
@@ -777,19 +255,20 @@ class PullWpIntakeContractTests(unittest.TestCase):
             ".head_repository.full_name == $producer_repo",
             'gh api "repos/${PRODUCER_REPO}/actions/artifacts/${artifact_id}/zip"',
             'downloaded_digest="sha256:$(sha256sum "$artifact_archive"',
+            'if [ "$PRODUCER_ARTIFACT" != "wp-intake-bundle-v4-${run_attempt}" ]; then',
+            'if [ "$PRODUCER_ARTIFACT_ID" != "$artifact_id" ]; then',
+            'if [ "$PRODUCER_ARTIFACT_DIGEST" != "$artifact_digest" ]; then',
             "rm -rf intake config",
-            'snapshot_tree="$(git write-tree)"',
-            'parent_args+=(-p "$remote_head")',
-            'git push origin "$anchor_commit:refs/heads/$branch"',
-            "already exists with a different tree; refusing nondeterministic identity drift",
-            "already exists with different content; refusing to rewrite it",
-            "record_pr_permission_soft_fail()",
-            "name: intake-pr-soft-fail-${{ github.run_attempt }}",
+            "name: whitepaper-intake-receipt-${{ github.run_attempt }}",
+            "name: Prepare exact release whitepaper",
+            "name: Upload exact release whitepaper",
         )
         for fragment in required_fragments:
             with self.subTest(fragment=fragment):
                 mutated = self.workflow.replace(fragment, "", 1)
-                with self.assertRaises(AssertionError):
+                with self.assertRaises(
+                    (AssertionError, KeyError, StopIteration, TypeError)
+                ):
                     self.assert_contract(mutated)
 
     def test_consumer_stamp_is_deterministic(self) -> None:
@@ -838,8 +317,11 @@ class PullWpIntakeContractTests(unittest.TestCase):
         self.assertIn(
             'run_conclusion="$(jq -r \'.conclusion // ""\' <<<"$run_json")"', download
         )
-        self.assertIn('if [ "$run_status" = "completed" ]; then', download)
+        self.assertIn('case "$run_status" in', download)
+        self.assertIn("completed)", download)
         self.assertIn('if [ "$run_conclusion" != "success" ]; then', download)
+        self.assertIn('producer_job_name="WP Evidence (release-grade)"', download)
+        self.assertIn('if [ "$producer_job_status" = "completed" ]; then', download)
         self.assertIn("sleep 15", download)
         self.assertIn('((.path // "") | split("@")[0]) == $workflow_path', download)
         self.assertIn(".head_branch == $branch", download)
@@ -871,7 +353,7 @@ class PullWpIntakeContractTests(unittest.TestCase):
         )["run"]
         predicate = download.split('--arg job_name "$producer_job_name" \'', 1)[
             1
-        ].split('\n        \' <<<"$producer_job_json"', 1)[0]
+        ].split('\n      \' <<<"$producer_job_json"', 1)[0]
         expected_predicate = """
             (.id | tostring | test("^[1-9][0-9]*$")) and
             (.run_id | tostring) == $run_id and
@@ -1252,8 +734,8 @@ class PullWpIntakeContractTests(unittest.TestCase):
                 "SELECTED_BUNDLE_SHA256": "c" * 64,
                 "SELECTED_BUNDLE_FILENAME": "WhitePaper_Intake_Bundle_v4.zip",
                 "SELECTED_PRODUCER_REPO": "equilens-labs/fl-bsa",
-                "SELECTED_PRODUCER_WORKFLOW": "wp-evidence-nightly.yml",
-                "SELECTED_PRODUCER_ARTIFACT": "wp-intake-bundle-v4",
+                "SELECTED_PRODUCER_WORKFLOW": "release-evidence.yml",
+                "SELECTED_PRODUCER_ARTIFACT": "wp-intake-bundle-v4-1",
                 "SELECTED_PRODUCER_ARTIFACT_ID": "456",
                 "SELECTED_PRODUCER_ARTIFACT_DIGEST": "sha256:" + "d" * 64,
                 "SELECTED_PRODUCER_CONTRACT_SHA256": "e" * 64,
@@ -1302,138 +784,3 @@ class PullWpIntakeContractTests(unittest.TestCase):
                 text=True,
             )
             self.assertEqual(0, generated.returncode, generated.stderr)
-
-    def test_same_snapshot_identity_with_different_tree_fails_in_all_modes(
-        self,
-    ) -> None:
-        workflow = yaml.safe_load(self.workflow)
-        persist = next(
-            item
-            for item in workflow["jobs"]["fetch-build"]["steps"]
-            if item.get("name") == "Persist intake snapshot"
-        )["run"]
-
-        for mode, branch in (
-            ("rolling_history", "chore/wp-intake-nightly"),
-            ("workflow_write_once_release_snapshot", "chore/wp-intake-release-123"),
-        ):
-            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as tmp:
-                root = Path(tmp)
-                remote = root / "remote.git"
-                work = root / "work"
-                subprocess.run(["git", "init", "--bare", str(remote)], check=True)
-                subprocess.run(["git", "init", "-b", "main", str(work)], check=True)
-                subprocess.run(
-                    ["git", "-C", str(work), "config", "user.name", "Test"], check=True
-                )
-                subprocess.run(
-                    [
-                        "git",
-                        "-C",
-                        str(work),
-                        "config",
-                        "user.email",
-                        "test@example.invalid",
-                    ],
-                    check=True,
-                )
-                for directory in ("intake", "config", "includes", "figures"):
-                    (work / directory).mkdir()
-                snapshot_id = "snapshot-identity"
-                snapshot = {
-                    "snapshot_id": snapshot_id,
-                    "producer": {"product_sha": "a" * 40},
-                }
-                (work / "intake" / "whitepaper_snapshot.json").write_text(
-                    json.dumps(snapshot) + "\n", encoding="utf-8"
-                )
-                (work / "config" / "sap.yaml").write_text(
-                    "version: 1\n", encoding="utf-8"
-                )
-                (work / "includes" / "generated.tex").write_text(
-                    "old\n", encoding="utf-8"
-                )
-                (work / "figures" / "generated.txt").write_text(
-                    "same\n", encoding="utf-8"
-                )
-                subprocess.run(["git", "-C", str(work), "add", "."], check=True)
-                subprocess.run(
-                    ["git", "-C", str(work), "commit", "-m", "base"], check=True
-                )
-                base_sha = subprocess.check_output(
-                    ["git", "-C", str(work), "rev-parse", "HEAD"], text=True
-                ).strip()
-                subprocess.run(
-                    ["git", "-C", str(work), "remote", "add", "origin", str(remote)],
-                    check=True,
-                )
-                subprocess.run(
-                    [
-                        "git",
-                        "-C",
-                        str(work),
-                        "push",
-                        "origin",
-                        f"HEAD:refs/heads/{branch}",
-                    ],
-                    check=True,
-                )
-                (work / "config" / "sap.yaml").write_text(
-                    "version: 2\n", encoding="utf-8"
-                )
-
-                env = {
-                    **os.environ,
-                    "GITHUB_SHA": base_sha,
-                    "GITHUB_REF_NAME": "main",
-                    "GITHUB_REPOSITORY": "equilens-labs/fl-bsa-whitepaper",
-                    "GITHUB_RUN_ID": "999",
-                    "SELECTED_PRODUCER_REPO": "equilens-labs/fl-bsa",
-                    "SELECTED_PRODUCER_WORKFLOW": "wp-evidence-nightly.yml",
-                    "SELECTED_PRODUCER_BRANCH": "main",
-                    "SELECTED_PRODUCER_RUN_ID": "123",
-                    "SELECTED_PRODUCER_RUN_ATTEMPT": "1",
-                    "SELECTED_PRODUCER_HEAD_SHA": "a" * 40,
-                    "SELECTED_PRODUCER_ARTIFACT": "wp-intake-bundle-v4",
-                    "SELECTED_PRODUCER_ARTIFACT_ID": "456",
-                    "SELECTED_PRODUCER_ARTIFACT_DIGEST": "sha256:" + "d" * 64,
-                    "SELECTED_BUNDLE_SHA256": "b" * 64,
-                    "INTAKE_SNAPSHOT_BRANCH": branch,
-                    "INTAKE_SNAPSHOT_MODE": mode,
-                    "INTAKE_SNAPSHOT_ID": snapshot_id,
-                    "PERSIST_INTAKE_SNAPSHOT": "true",
-                    "GITHUB_ACTIONS": "false",
-                    "GH_TOKEN": "unused",
-                    "WP_INTAKE_PR_TOKEN": "unused-test-token",
-                }
-                completed = subprocess.run(
-                    ["bash", "-c", persist],
-                    cwd=work,
-                    env=env,
-                    check=False,
-                    capture_output=True,
-                    text=True,
-                )
-                self.assertNotEqual(0, completed.returncode)
-                self.assertIn("different tree", completed.stderr)
-                remote_head = subprocess.check_output(
-                    ["git", "--git-dir", str(remote), "rev-parse", branch], text=True
-                ).strip()
-                self.assertEqual(base_sha, remote_head)
-
-    def test_rejects_unconditional_pr_soft_success(self) -> None:
-        for operation in ("creation", "update"):
-            with self.subTest(operation=operation):
-                original = (
-                    f'record_pr_permission_soft_fail "{operation}" "$branch" "$pr_output"\n'
-                    "              exit $?"
-                )
-                mutated = self.workflow.replace(
-                    original, 'echo "$pr_output"\n              exit 0'
-                )
-                with self.assertRaises(AssertionError):
-                    self.assert_contract(mutated)
-
-
-if __name__ == "__main__":
-    unittest.main()

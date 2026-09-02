@@ -1,28 +1,19 @@
 name: pull-wp-intake
-run-name: wp-intake-${{ github.event.client_payload.workflow_file || 'schedule' }}-${{ github.event.client_payload.producer_run_id || github.run_id }}-${{ github.event.client_payload.artifact_id || github.run_attempt }}
+run-name: wp-intake-release-evidence.yml-${{ github.event.client_payload.producer_run_id }}-${{ github.event.client_payload.artifact_id }}
 
 on:
-  # Cross-repo automation strategies:
-  # 1) repository_dispatch from fl-bsa (preferred) — see docs/ci_intake.md
-  # 2) scheduled pull (daily)
-  # 3) on-demand repository_dispatch with explicit payload
+  # Release Evidence is the sole reviewed producer. See docs/ci_intake.md.
   repository_dispatch:
     types: [wp-intake-ready]
-  schedule:
-    - cron: '0 6 * * *'
 
 permissions:
   contents: read
   actions: read
   attestations: read
-  pull-requests: read
 
 concurrency:
-  # All persistence targets are serialized. This is required for the append-only
-  # nightly history branch and also makes exact-run replays idempotent.
-  group: pull-wp-intake-persistence
+  group: pull-wp-intake-${{ github.event.client_payload.producer_run_id }}
   cancel-in-progress: false
-  queue: max
 
 jobs:
   fetch-build:
@@ -45,14 +36,14 @@ jobs:
 
       - name: Download intake bundle from producer
         env:
-          PRODUCER_REPO: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.producer_repo || 'equilens-labs/fl-bsa' }}
-          PRODUCER_WORKFLOW: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file || 'wp-evidence-nightly.yml' }}
-          PRODUCER_ARTIFACT: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_name || '' }}
-          PRODUCER_BRANCH: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.branch || 'main' }}
-          PRODUCER_RUN_ID: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.producer_run_id || '' }}
-          PRODUCER_RUN_ATTEMPT: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.producer_run_attempt || '' }}
-          PRODUCER_ARTIFACT_ID: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_id || '' }}
-          PRODUCER_ARTIFACT_DIGEST: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.artifact_digest || '' }}
+          PRODUCER_REPO: ${{ github.event.client_payload.producer_repo }}
+          PRODUCER_WORKFLOW: ${{ github.event.client_payload.workflow_file }}
+          PRODUCER_ARTIFACT: ${{ github.event.client_payload.artifact_name }}
+          PRODUCER_BRANCH: ${{ github.event.client_payload.branch }}
+          PRODUCER_RUN_ID: ${{ github.event.client_payload.producer_run_id }}
+          PRODUCER_RUN_ATTEMPT: ${{ github.event.client_payload.producer_run_attempt }}
+          PRODUCER_ARTIFACT_ID: ${{ github.event.client_payload.artifact_id }}
+          PRODUCER_ARTIFACT_DIGEST: ${{ github.event.client_payload.artifact_digest }}
           DISPATCH_PAYLOAD_JSON: ${{ toJSON(github.event.client_payload) }}
           PRODUCER_TOKEN: ${{ secrets.PRODUCER_TOKEN }}
           GH_TOKEN: ${{ github.token }}
@@ -61,29 +52,12 @@ jobs:
           mkdir -p wp-bundle
 
           producer_contract="contracts/whitepaper-intake-producer-contract.v1.json"
-          if [ "$GITHUB_EVENT_NAME" = "repository_dispatch" ]; then
-            producer_contract_sha256="$(
-              python scripts/whitepaper_intake_producer_contract.py validate-dispatch \
-                --contract "$producer_contract" \
-                --payload-env DISPATCH_PAYLOAD_JSON
-            )"
-          else
-            producer_contract_sha256="$(
-              python scripts/whitepaper_intake_producer_contract.py validate-selector \
-                --contract "$producer_contract" \
-                --producer-repo "$PRODUCER_REPO" \
-                --workflow "$PRODUCER_WORKFLOW" \
-                --branch "$PRODUCER_BRANCH"
-            )"
-          fi
+          producer_contract_sha256="$(
+            python scripts/whitepaper_intake_producer_contract.py validate-dispatch \
+              --contract "$producer_contract" \
+              --payload-env DISPATCH_PAYLOAD_JSON
+          )"
           case "$PRODUCER_ARTIFACT" in
-            '')
-              if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
-                echo "repository_dispatch must select an exact producer artifact name." >&2
-                exit 1
-              fi
-              ;;
-            wp-intake-bundle-v4|wp-reviewer-pack-v4) ;;
             wp-intake-bundle-v4-*)
               if [[ ! "$PRODUCER_ARTIFACT" =~ ^wp-intake-bundle-v4-[1-9][0-9]*$ ]]; then
                 echo "Malformed run-attempt-qualified artifact_name=${PRODUCER_ARTIFACT}." >&2
@@ -91,7 +65,7 @@ jobs:
               fi
               ;;
             *)
-              echo "Unsupported artifact_name=${PRODUCER_ARTIFACT}; expected wp-intake-bundle-v4, its run-attempt-qualified form, or explicit wp-reviewer-pack-v4 compatibility input." >&2
+              echo "Unsupported artifact_name=${PRODUCER_ARTIFACT}; expected the run-attempt-qualified release bundle." >&2
               exit 1
               ;;
           esac
@@ -105,120 +79,16 @@ jobs:
             export GH_TOKEN="$token"
           fi
 
-          resolve_producer_branch_sha() {
-            local ref_json
-            if ! ref_json="$(gh api "repos/${PRODUCER_REPO}/git/ref/heads/${PRODUCER_BRANCH}")"; then
-              echo "Unable to resolve ${PRODUCER_REPO} branch ${PRODUCER_BRANCH}." >&2
-              return 1
-            fi
-            if ! jq -e \
-              --arg expected_ref "refs/heads/${PRODUCER_BRANCH}" \
-              '.ref == $expected_ref and
-               .object.type == "commit" and
-               ((.object.sha // "") | test("^[0-9a-f]{40}$"))' \
-              <<<"$ref_json" >/dev/null; then
-              jq '{ref, object}' <<<"$ref_json" >&2
-              echo "Producer branch ${PRODUCER_BRANCH} has an invalid authority response." >&2
-              return 1
-            fi
-            jq -r '.object.sha' <<<"$ref_json"
-          }
-
-          resolve_latest_producer_run() {
-            local runs_json
-            if ! runs_json="$(gh run list \
-              -R "$PRODUCER_REPO" \
-              --workflow "$PRODUCER_WORKFLOW" \
-              --branch "$PRODUCER_BRANCH" \
-              --limit 1 \
-              --json databaseId,headSha)"; then
-              echo "Unable to list ${PRODUCER_REPO}/${PRODUCER_WORKFLOW}@${PRODUCER_BRANCH} runs." >&2
-              return 1
-            fi
-            if ! jq -e \
-              'length == 1 and
-               ((.[0].databaseId | tostring) | test("^[1-9][0-9]*$")) and
-               ((.[0].headSha // "") | test("^[0-9a-f]{40}$"))' \
-              <<<"$runs_json" >/dev/null; then
-              jq '[.[] | {databaseId, headSha}]' <<<"$runs_json" >&2
-              echo "No unambiguous newest producer run is available." >&2
-              return 1
-            fi
-            jq -r '.[0] | [(.databaseId | tostring), .headSha] | @tsv' <<<"$runs_json"
-          }
-
-          verify_scheduled_producer_contract() (
-            set -euo pipefail
-            local producer_sha="$1"
-            local contract_path="$2"
-            local expected_sha256="$3"
-            local contract_bytes contract_size actual_sha256
-
-            if [[ ! "$producer_sha" =~ ^[0-9a-f]{40}$ ]]; then
-              echo "Cannot verify producer contract at malformed commit ${producer_sha@Q}." >&2
-              return 1
-            fi
-            contract_bytes="$(mktemp "${RUNNER_TEMP}/producer-contract.XXXXXX.json")"
-            trap 'rm -f "$contract_bytes"' EXIT
-            if ! gh api \
-              -H "Accept: application/vnd.github.raw+json" \
-              "repos/${PRODUCER_REPO}/contents/${contract_path}?ref=${producer_sha}" \
-              > "$contract_bytes"; then
-              echo "Unable to read ${contract_path} from exact producer commit ${producer_sha}." >&2
-              return 1
-            fi
-            contract_size="$(stat -c '%s' "$contract_bytes")"
-            if [[ ! "$contract_size" =~ ^[1-9][0-9]*$ ]] || [ "$contract_size" -gt 65536 ]; then
-              echo "Producer contract at ${producer_sha} has an unsafe size." >&2
-              return 1
-            fi
-            actual_sha256="$(sha256sum "$contract_bytes" | cut -d' ' -f1)"
-            if [ "$actual_sha256" != "$expected_sha256" ]; then
-              echo "Producer contract at ${producer_sha} does not match the reviewed consumer contract." >&2
-              echo "expected=${expected_sha256} actual=${actual_sha256}" >&2
-              return 1
-            fi
-            echo "Verified shared producer contract ${actual_sha256} at exact producer commit ${producer_sha}."
-          )
-
-          scheduled_authority_sha=""
           run_id="$PRODUCER_RUN_ID"
-          if [ -z "$run_id" ]; then
-            if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
-              scheduled_authority_sha="$(resolve_producer_branch_sha)"
-              IFS=$'\t' read -r run_id scheduled_run_head_sha \
-                <<<"$(resolve_latest_producer_run)"
-              if [ "$scheduled_run_head_sha" != "$scheduled_authority_sha" ]; then
-                echo "Newest scheduled producer run ${run_id} is for ${scheduled_run_head_sha}, not current ${PRODUCER_REPO}/${PRODUCER_BRANCH} authority ${scheduled_authority_sha}." >&2
-                echo "Refusing to fall back to an older successful run." >&2
-                exit 1
-              fi
-              echo "Scheduled intake bound to newest producer run ${run_id} at current branch authority ${scheduled_authority_sha}."
-            fi
-          fi
-          if [ -z "$run_id" ]; then
-            if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
-              echo "No newest ${PRODUCER_REPO}/${PRODUCER_WORKFLOW}@${PRODUCER_BRANCH} run authority found." >&2
-            else
-              echo "No successful ${PRODUCER_REPO}/${PRODUCER_WORKFLOW}@${PRODUCER_BRANCH} run found." >&2
-            fi
-            exit 1
-          fi
-
           if [[ ! "$run_id" =~ ^[1-9][0-9]*$ ]]; then
             echo "Producer run ID must be a positive numeric GitHub Actions run ID; got ${run_id@Q}." >&2
             exit 1
           fi
 
           expected_workflow_path=".github/workflows/${PRODUCER_WORKFLOW}"
-          release_active_mode="false"
-          if [ "$GITHUB_EVENT_NAME" = "repository_dispatch" ] && \
-             [ "$PRODUCER_WORKFLOW" = "release-evidence.yml" ]; then
-            release_active_mode="true"
-            if [[ ! "$PRODUCER_RUN_ATTEMPT" =~ ^[1-9][0-9]*$ ]]; then
-              echo "Release dispatch must bind a positive producer run attempt." >&2
-              exit 1
-            fi
+          if [[ ! "$PRODUCER_RUN_ATTEMPT" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Release dispatch must bind a positive producer run attempt." >&2
+            exit 1
           fi
           run_json=""
           for ((attempt=1; attempt<=81; attempt++)); do
@@ -241,13 +111,6 @@ jobs:
               echo "Producer run ${run_id} does not match the required workflow, branch, and head-SHA contract." >&2
               exit 1
             fi
-            if [ "$GITHUB_EVENT_NAME" = "schedule" ] && \
-               [ "$(jq -r '.head_sha' <<<"$run_json")" != "$scheduled_authority_sha" ]; then
-              jq '{id, status, conclusion, path, head_branch, head_sha}' <<<"$run_json" >&2
-              echo "Scheduled producer run ${run_id} is no longer bound to authority ${scheduled_authority_sha}." >&2
-              exit 1
-            fi
-
             run_event="$(jq -r '.event // ""' <<<"$run_json")"
             if ! python scripts/whitepaper_intake_producer_contract.py validate-authority \
               --contract "$producer_contract" \
@@ -267,113 +130,89 @@ jobs:
               exit 1
             fi
 
-            if [ "$release_active_mode" = "true" ]; then
-              if [ "$PRODUCER_RUN_ATTEMPT" != "$run_attempt" ]; then
-                echo "Dispatched producer run attempt ${PRODUCER_RUN_ATTEMPT} does not match API attempt ${run_attempt}." >&2
-                exit 1
-              fi
-              case "$run_status" in
-                completed)
-                  if [ "$run_conclusion" != "success" ]; then
-                    echo "Release producer run ${run_id} completed without success." >&2
-                    exit 1
-                  fi
-                  ;;
-                queued|in_progress|requested|waiting|pending) ;;
-                *)
-                  echo "Release producer run ${run_id} has unsupported status ${run_status@Q}." >&2
-                  exit 1
-                  ;;
-              esac
-
-              if ! jobs_json="$(gh api --paginate --slurp \
-                "repos/${PRODUCER_REPO}/actions/runs/${run_id}/attempts/${run_attempt}/jobs?per_page=100")"; then
-                echo "Unable to resolve exact-attempt producer jobs for run ${run_id}/${run_attempt}." >&2
-                exit 1
-              fi
-              producer_job_name="WP Evidence (release-grade)"
-              producer_job_count="$(jq --arg name "$producer_job_name" \
-                '[.[].jobs[] | select(.name == $name)] | length' <<<"$jobs_json")"
-              if [ "$producer_job_count" -gt 1 ]; then
-                echo "Producer run ${run_id}/${run_attempt} has duplicate ${producer_job_name@Q} jobs." >&2
-                exit 1
-              fi
-              if [ "$producer_job_count" -eq 1 ]; then
-                producer_job_json="$(jq -c --arg name "$producer_job_name" \
-                  '[.[].jobs[] | select(.name == $name)][0]' <<<"$jobs_json")"
-                if ! jq -e \
-                  --arg run_id "$run_id" \
-                  --arg run_attempt "$run_attempt" \
-                  --arg head_sha "$(jq -r '.head_sha' <<<"$run_json")" \
-                  --arg job_name "$producer_job_name" '
-                    (.id | tostring | test("^[1-9][0-9]*$")) and
-                    (.run_id | tostring) == $run_id and
-                    (.run_attempt | tostring) == $run_attempt and
-                    .head_sha == $head_sha and
-                    .name == $job_name and
-                    (
-                      (.status == "completed" and .conclusion == "success") or
-                      (
-                        (.status == "queued" or .status == "in_progress" or
-                         .status == "requested" or .status == "waiting" or
-                         .status == "pending") and
-                        .conclusion == null
-                      )
-                    )
-                  ' <<<"$producer_job_json" >/dev/null; then
-                  jq '{id, run_id, run_attempt, head_sha, name, status, conclusion}' \
-                    <<<"$producer_job_json" >&2
-                  echo "Release producer job identity does not match the exact dispatched run." >&2
-                  exit 1
-                fi
-                producer_job_status="$(jq -r '.status' <<<"$producer_job_json")"
-                producer_job_conclusion="$(jq -r '.conclusion // ""' <<<"$producer_job_json")"
-                if [ "$producer_job_status" = "completed" ]; then
-                  if [ "$producer_job_conclusion" != "success" ]; then
-                    echo "Exact release producer job completed without success." >&2
-                    exit 1
-                  fi
-                  echo "Release intake authorized by completed ${producer_job_name} job in active run ${run_id}/${run_attempt}."
-                  break
-                fi
-                case "$producer_job_status" in
-                  queued|in_progress|requested|waiting|pending) ;;
-                  *)
-                    echo "Release producer job has unsupported status ${producer_job_status@Q}." >&2
-                    exit 1
-                    ;;
-                esac
-              fi
-              if [ "$attempt" -eq 81 ]; then
-                echo "Exact release producer job did not complete successfully within the 20-minute bounded wait." >&2
-                exit 1
-              fi
-              echo "Waiting for exact release producer job completion (${attempt}/81)."
-              sleep 15
-              continue
-            fi
-
-            if [ "$run_status" = "completed" ]; then
-              if [ "$run_conclusion" != "success" ]; then
-                jq '{id, status, conclusion, path, head_branch, head_sha}' <<<"$run_json" >&2
-                echo "Producer run ${run_id} completed without success; refusing its artifact." >&2
-                exit 1
-              fi
-              break
+            if [ "$PRODUCER_RUN_ATTEMPT" != "$run_attempt" ]; then
+              echo "Dispatched producer run attempt ${PRODUCER_RUN_ATTEMPT} does not match API attempt ${run_attempt}." >&2
+              exit 1
             fi
             case "$run_status" in
+              completed)
+                if [ "$run_conclusion" != "success" ]; then
+                  echo "Release producer run ${run_id} completed without success." >&2
+                  exit 1
+                fi
+                ;;
               queued|in_progress|requested|waiting|pending) ;;
               *)
-                echo "Producer run ${run_id} has unsupported status ${run_status@Q}." >&2
+                echo "Release producer run ${run_id} has unsupported status ${run_status@Q}." >&2
                 exit 1
                 ;;
             esac
-            if [ "$attempt" -eq 81 ]; then
-              echo "Producer run ${run_id} did not complete successfully within the 20-minute bounded wait." >&2
+
+            if ! jobs_json="$(gh api --paginate --slurp \
+              "repos/${PRODUCER_REPO}/actions/runs/${run_id}/attempts/${run_attempt}/jobs?per_page=100")"; then
+              echo "Unable to resolve exact-attempt producer jobs for run ${run_id}/${run_attempt}." >&2
               exit 1
             fi
-            echo "Producer run ${run_id} is ${run_status}; waiting for exact-run completion (${attempt}/81)."
+            producer_job_name="WP Evidence (release-grade)"
+            producer_job_count="$(jq --arg name "$producer_job_name" \
+              '[.[].jobs[] | select(.name == $name)] | length' <<<"$jobs_json")"
+            if [ "$producer_job_count" -gt 1 ]; then
+              echo "Producer run ${run_id}/${run_attempt} has duplicate ${producer_job_name@Q} jobs." >&2
+              exit 1
+            fi
+            if [ "$producer_job_count" -eq 1 ]; then
+              producer_job_json="$(jq -c --arg name "$producer_job_name" \
+                '[.[].jobs[] | select(.name == $name)][0]' <<<"$jobs_json")"
+              if ! jq -e \
+                --arg run_id "$run_id" \
+                --arg run_attempt "$run_attempt" \
+                --arg head_sha "$(jq -r '.head_sha' <<<"$run_json")" \
+                --arg job_name "$producer_job_name" '
+                  (.id | tostring | test("^[1-9][0-9]*$")) and
+                  (.run_id | tostring) == $run_id and
+                  (.run_attempt | tostring) == $run_attempt and
+                  .head_sha == $head_sha and
+                  .name == $job_name and
+                  (
+                    (.status == "completed" and .conclusion == "success") or
+                    (
+                      (.status == "queued" or .status == "in_progress" or
+                       .status == "requested" or .status == "waiting" or
+                       .status == "pending") and
+                      .conclusion == null
+                    )
+                  )
+                ' <<<"$producer_job_json" >/dev/null; then
+                jq '{id, run_id, run_attempt, head_sha, name, status, conclusion}' \
+                  <<<"$producer_job_json" >&2
+                echo "Release producer job identity does not match the exact dispatched run." >&2
+                exit 1
+              fi
+              producer_job_status="$(jq -r '.status' <<<"$producer_job_json")"
+              producer_job_conclusion="$(jq -r '.conclusion // ""' <<<"$producer_job_json")"
+              if [ "$producer_job_status" = "completed" ]; then
+                if [ "$producer_job_conclusion" != "success" ]; then
+                  echo "Exact release producer job completed without success." >&2
+                  exit 1
+                fi
+                echo "Release intake authorized by completed ${producer_job_name} job in active run ${run_id}/${run_attempt}."
+                break
+              fi
+              case "$producer_job_status" in
+                queued|in_progress|requested|waiting|pending) ;;
+                *)
+                  echo "Release producer job has unsupported status ${producer_job_status@Q}." >&2
+                  exit 1
+                  ;;
+              esac
+            fi
+            if [ "$attempt" -eq 81 ]; then
+              echo "Exact release producer job did not complete successfully within the 20-minute bounded wait." >&2
+              exit 1
+            fi
+            echo "Waiting for exact release producer job completion (${attempt}/81)."
             sleep 15
+            continue
           done
           run_head_sha="$(jq -r '.head_sha' <<<"$run_json")"
           run_attempt="$(jq -r '.run_attempt | tostring' <<<"$run_json")"
@@ -386,37 +225,11 @@ jobs:
             echo "Producer run ${run_id} has malformed run_started_at=${run_started_at@Q}." >&2
             exit 1
           fi
-          if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
-            verify_scheduled_producer_contract \
-              "$run_head_sha" \
-              "$producer_contract" \
-              "$producer_contract_sha256"
+          if [ "$PRODUCER_ARTIFACT" != "wp-intake-bundle-v4-${run_attempt}" ]; then
+            echo "Artifact ${PRODUCER_ARTIFACT} is not qualified for verified run attempt ${run_attempt}." >&2
+            exit 1
           fi
-          if [ -z "$PRODUCER_ARTIFACT" ]; then
-            PRODUCER_ARTIFACT="wp-intake-bundle-v4-${run_attempt}"
-            echo "Scheduled intake derived exact artifact ${PRODUCER_ARTIFACT} from verified run attempt ${run_attempt}."
-          fi
-          case "$PRODUCER_ARTIFACT" in
-            wp-intake-bundle-v4)
-              if [ "$run_attempt" != "1" ]; then
-                echo "Unqualified primary artifacts are accepted only for first-attempt legacy runs; attempt ${run_attempt} requires wp-intake-bundle-v4-${run_attempt}." >&2
-                exit 1
-              fi
-              ;;
-            wp-intake-bundle-v4-*)
-              if [ "$PRODUCER_ARTIFACT" != "wp-intake-bundle-v4-${run_attempt}" ]; then
-                echo "Artifact ${PRODUCER_ARTIFACT} is not qualified for verified run attempt ${run_attempt}." >&2
-                exit 1
-              fi
-              ;;
-            wp-reviewer-pack-v4)
-              if [ "$run_attempt" != "1" ]; then
-                echo "Legacy reviewer-pack compatibility is restricted to first-attempt runs." >&2
-                exit 1
-              fi
-              ;;
-          esac
-          if [ -n "$PRODUCER_RUN_ATTEMPT" ] && [ "$PRODUCER_RUN_ATTEMPT" != "$run_attempt" ]; then
+          if [ "$PRODUCER_RUN_ATTEMPT" != "$run_attempt" ]; then
             echo "Dispatched producer run attempt ${PRODUCER_RUN_ATTEMPT} does not match API attempt ${run_attempt}." >&2
             exit 1
           fi
@@ -427,17 +240,6 @@ jobs:
             exit 1
           fi
 
-          if [ "$GITHUB_EVENT_NAME" = "schedule" ] && \
-             [ "$run_attempt" = "1" ] && \
-             [ "$PRODUCER_ARTIFACT" = "wp-intake-bundle-v4-1" ]; then
-            qualified_count="$(jq '[.[].artifacts[] | select(.name == "wp-intake-bundle-v4-1")] | length' <<<"$artifacts_json")"
-            unqualified_count="$(jq '[.[].artifacts[] | select(.name == "wp-intake-bundle-v4")] | length' <<<"$artifacts_json")"
-            if [ "$qualified_count" -eq 0 ] && [ "$unqualified_count" -gt 0 ]; then
-              PRODUCER_ARTIFACT="wp-intake-bundle-v4"
-              echo "Scheduled intake selected the attested first-attempt transition artifact wp-intake-bundle-v4; reviewer-pack fallback remains forbidden."
-            fi
-          fi
-
           artifact_match_count="$(jq --arg name "$PRODUCER_ARTIFACT" '[.[].artifacts[] | select(.name == $name)] | length' <<<"$artifacts_json")"
           if [ "$artifact_match_count" -gt 1 ]; then
             echo "Producer run ${run_id} has duplicate ${PRODUCER_ARTIFACT} artifacts; refusing ambiguous intake." >&2
@@ -445,9 +247,6 @@ jobs:
           fi
           if [ "$artifact_match_count" -eq 0 ]; then
             echo "Requested producer artifact ${PRODUCER_ARTIFACT} is not present in ${PRODUCER_REPO} run ${run_id}." >&2
-            if [ "$PRODUCER_ARTIFACT" = "wp-intake-bundle-v4" ]; then
-              echo "The unattested wp-reviewer-pack-v4 compatibility path must be requested explicitly; it is never an automatic fallback." >&2
-            fi
             exit 1
           fi
           artifact_json="$(jq -c --arg name "$PRODUCER_ARTIFACT" '[.[].artifacts[] | select(.name == $name)][0]' <<<"$artifacts_json")"
@@ -484,50 +283,13 @@ jobs:
             echo "Selected artifact metadata is not bound to the verified producer run." >&2
             exit 1
           fi
-          if [ -n "$PRODUCER_ARTIFACT_ID" ] && [ "$PRODUCER_ARTIFACT_ID" != "$artifact_id" ]; then
+          if [ "$PRODUCER_ARTIFACT_ID" != "$artifact_id" ]; then
             echo "Dispatched artifact ID ${PRODUCER_ARTIFACT_ID} does not match API artifact ${artifact_id}." >&2
             exit 1
           fi
-          if [ -n "$PRODUCER_ARTIFACT_DIGEST" ] && [ "$PRODUCER_ARTIFACT_DIGEST" != "$artifact_digest" ]; then
+          if [ "$PRODUCER_ARTIFACT_DIGEST" != "$artifact_digest" ]; then
             echo "Dispatched artifact digest ${PRODUCER_ARTIFACT_DIGEST} does not match API digest ${artifact_digest}." >&2
             exit 1
-          fi
-          if [ "$PRODUCER_ARTIFACT" = "wp-reviewer-pack-v4" ]; then
-            echo "::warning title=Explicit legacy compatibility path::wp-reviewer-pack-v4 is unattested and is accepted only because this exact legacy artifact name was requested."
-          fi
-
-          if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
-            current_authority_sha_before="$(resolve_producer_branch_sha)"
-            IFS=$'\t' read -r current_latest_run_id current_latest_run_head_sha \
-              <<<"$(resolve_latest_producer_run)"
-            if ! current_run_json="$(gh api "repos/${PRODUCER_REPO}/actions/runs/${run_id}")"; then
-              echo "Unable to re-resolve scheduled producer run ${run_id} before artifact consumption." >&2
-              exit 1
-            fi
-            current_authority_sha_after="$(resolve_producer_branch_sha)"
-            if [ "$current_authority_sha_before" != "$scheduled_authority_sha" ] || \
-               [ "$current_authority_sha_after" != "$scheduled_authority_sha" ] || \
-               [ "$current_latest_run_id" != "$run_id" ] || \
-               [ "$current_latest_run_head_sha" != "$scheduled_authority_sha" ]; then
-              echo "Scheduled producer authority changed before artifact consumption." >&2
-              echo "selected=${run_id}/${scheduled_authority_sha} current=${current_latest_run_id}/${current_latest_run_head_sha} branch_before=${current_authority_sha_before} branch_after=${current_authority_sha_after}" >&2
-              echo "Refusing stale intake; the next schedule must select and wait on the new exact authority." >&2
-              exit 1
-            fi
-            if ! jq -e \
-              --arg run_id "$run_id" \
-              --arg run_attempt "$run_attempt" \
-              --arg authority_sha "$scheduled_authority_sha" \
-              '(.id | tostring) == $run_id and
-               (.run_attempt | tostring) == $run_attempt and
-               .head_sha == $authority_sha and
-               .status == "completed" and
-               .conclusion == "success"' \
-              <<<"$current_run_json" >/dev/null; then
-              jq '{id, run_attempt, status, conclusion, head_sha}' <<<"$current_run_json" >&2
-              echo "Scheduled producer run identity changed before artifact consumption." >&2
-              exit 1
-            fi
           fi
 
           echo "Downloading artifact ${artifact_id} (${PRODUCER_ARTIFACT}) from ${PRODUCER_REPO} run ${run_id} attempt ${run_attempt}"
@@ -539,11 +301,7 @@ jobs:
             echo "Downloaded artifact bytes do not match API identity: expected=${artifact_digest}/${artifact_size} actual=${downloaded_digest}/${downloaded_size}." >&2
             exit 1
           fi
-          if [ "$PRODUCER_ARTIFACT" = "wp-reviewer-pack-v4" ]; then
-            expected_bundle_filename="WhitePaper_Reviewer_Pack_v4.zip"
-          else
-            expected_bundle_filename="WhitePaper_Intake_Bundle_v4.zip"
-          fi
+          expected_bundle_filename="WhitePaper_Intake_Bundle_v4.zip"
           export ARTIFACT_ARCHIVE="$artifact_archive"
           export EXPECTED_BUNDLE_FILENAME="$expected_bundle_filename"
           python - <<'PY'
@@ -594,7 +352,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          bundle_path="$(find wp-bundle -maxdepth 5 \( -name 'WhitePaper_Intake_Bundle_v4.zip' -o -name 'WhitePaper_Reviewer_Pack_v4.zip' \) -print -quit || true)"
+          bundle_path="$(find wp-bundle -maxdepth 5 -name 'WhitePaper_Intake_Bundle_v4.zip' -print -quit || true)"
           if [ -z "$bundle_path" ]; then
             echo "Bundle zip not found under wp-bundle/" >&2
             exit 1
@@ -607,25 +365,11 @@ jobs:
           if [ -n "${PRODUCER_TOKEN:-}" ]; then
             export GH_TOKEN="$PRODUCER_TOKEN"
           fi
-          case "${SELECTED_PRODUCER_ARTIFACT:-}" in
-            wp-intake-bundle-v4)
-              gh attestation verify "$bundle_path" --repo "${SELECTED_PRODUCER_REPO:-equilens-labs/fl-bsa}"
-              ;;
-            wp-intake-bundle-v4-*)
-              if [[ ! "${SELECTED_PRODUCER_ARTIFACT:-}" =~ ^wp-intake-bundle-v4-[1-9][0-9]*$ ]]; then
-                echo "Malformed selected producer artifact ${SELECTED_PRODUCER_ARTIFACT:-missing}." >&2
-                exit 1
-              fi
-              gh attestation verify "$bundle_path" --repo "${SELECTED_PRODUCER_REPO:-equilens-labs/fl-bsa}"
-              ;;
-            wp-reviewer-pack-v4)
-              echo "::warning title=Legacy intake bundle::${bundle_filename} predates WP intake attestations; replaying for archive compatibility only."
-              ;;
-            *)
-              echo "Unexpected selected producer artifact ${SELECTED_PRODUCER_ARTIFACT:-missing}." >&2
-              exit 1
-              ;;
-          esac
+          if [[ ! "${SELECTED_PRODUCER_ARTIFACT:-}" =~ ^wp-intake-bundle-v4-[1-9][0-9]*$ ]]; then
+            echo "Malformed selected producer artifact ${SELECTED_PRODUCER_ARTIFACT:-missing}." >&2
+            exit 1
+          fi
+          gh attestation verify "$bundle_path" --repo "${SELECTED_PRODUCER_REPO:-equilens-labs/fl-bsa}"
 
           export BUNDLE_PATH="$bundle_path"
           python - <<'PY'
@@ -930,7 +674,6 @@ jobs:
           retention-days: 90
 
       - name: Prepare exact release whitepaper
-        if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file == 'release-evidence.yml' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -952,7 +695,6 @@ jobs:
           echo "TZ=UTC" >> "$GITHUB_ENV"
 
       - name: Install PDF text tooling for release paper
-        if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file == 'release-evidence.yml' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -962,7 +704,6 @@ jobs:
           test "$(/usr/bin/mutool -v 2>&1)" = "mutool version 1.23.10"
 
       - name: Compile exact release whitepaper
-        if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file == 'release-evidence.yml' }}
         uses: xu-cheng/latex-action@e2f99d4b3685b0da93f97e1b86ad8fab81105098 # v3.3.0
         with:
           root_file: release/main.tex
@@ -977,19 +718,15 @@ jobs:
             test "$TZ" = UTC
 
       - name: Canonicalize exact release whitepaper bytes
-        if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file == 'release-evidence.yml' }}
         run: python3 scripts/canonicalize_release_pdf.py main.pdf
 
       - name: Verify exact release whitepaper layout
-        if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file == 'release-evidence.yml' }}
         run: python3 scripts/check_release_layout.py main.log --max-overfull-pt 2
 
       - name: Verify exact release whitepaper is passive
-        if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file == 'release-evidence.yml' }}
         run: python3 scripts/check_release_pdf_passive.py main.pdf
 
       - name: Finalize exact release whitepaper manifest
-        if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file == 'release-evidence.yml' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -1003,7 +740,6 @@ jobs:
           test "$(find dist/release-whitepaper -mindepth 1 -maxdepth 1 -type f | wc -l)" -eq 2
 
       - name: Upload exact release whitepaper
-        if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.workflow_file == 'release-evidence.yml' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: release-whitepaper-${{ github.run_attempt }}
@@ -1012,253 +748,3 @@ jobs:
             dist/release-whitepaper/whitepaper_release.json
           if-no-files-found: error
           retention-days: 90
-
-      - name: Persist intake snapshot
-        env:
-          WP_INTAKE_PR_TOKEN: ${{ secrets.WP_INTAKE_PR_TOKEN }}
-          PERSIST_INTAKE_SNAPSHOT: ${{ github.event_name == 'repository_dispatch' && format('{0}', github.event.client_payload.persist_intake_pr) || 'false' }}
-        run: |
-          set -euo pipefail
-
-          persist="$(printf '%s' "$PERSIST_INTAKE_SNAPSHOT" | tr '[:upper:]' '[:lower:]')"
-          case "$persist" in
-            false)
-              echo "Skipping intake snapshot persistence because persist_intake_pr=${PERSIST_INTAKE_SNAPSHOT}."
-              exit 0
-              ;;
-            true) ;;
-            *)
-              echo "Invalid persist_intake_pr value ${PERSIST_INTAKE_SNAPSHOT@Q}; expected literal true or false." >&2
-              exit 1
-              ;;
-          esac
-
-          if [ -z "${WP_INTAKE_PR_TOKEN:-}" ]; then
-            echo "Explicit public intake persistence requires WP_INTAKE_PR_TOKEN; no Git mutation was attempted." >&2
-            exit 1
-          fi
-          export GH_TOKEN="$WP_INTAKE_PR_TOKEN"
-          mapfile -t origin_fetch_urls < <(git remote get-url --all origin)
-          mapfile -t origin_push_urls < <(git remote get-url --push --all origin)
-          if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
-            canonical_origin="https://github.com/${GITHUB_REPOSITORY}"
-            if [ "${#origin_fetch_urls[@]}" -ne 1 ] || [ "${#origin_push_urls[@]}" -ne 1 ]; then
-              echo "Refusing public persistence: origin must have exactly one fetch URL and one push URL." >&2
-              exit 1
-            fi
-            fetch_url="${origin_fetch_urls[0]}"
-            push_url="${origin_push_urls[0]}"
-            case "$fetch_url" in
-              "$canonical_origin"|"${canonical_origin}.git") ;;
-              *)
-                echo "Refusing public persistence through an unexpected Actions fetch origin." >&2
-                exit 1
-                ;;
-            esac
-            case "$push_url" in
-              "$canonical_origin"|"${canonical_origin}.git") ;;
-              *)
-                echo "Refusing public persistence through an unexpected Actions push origin." >&2
-                exit 1
-                ;;
-            esac
-            gh auth setup-git
-          else
-            echo "Non-GitHub local test remote; skipping GitHub credential-helper setup."
-          fi
-
-          branch="$INTAKE_SNAPSHOT_BRANCH"
-          mode="$INTAKE_SNAPSHOT_MODE"
-          producer_sha="$(jq -r '.producer.product_sha' intake/whitepaper_snapshot.json)"
-          short_sha="${producer_sha:0:12}"
-          title="chore(intake): sync FL-BSA evidence ${short_sha}"
-          body_file="$(mktemp)"
-          cat > "$body_file" <<EOF
-          ## Summary
-          - sync intake/config artifacts from ${SELECTED_PRODUCER_REPO} ${SELECTED_PRODUCER_WORKFLOW}
-          - preserve the exact validated intake snapshot used by pull-wp-intake run ${GITHUB_RUN_ID}
-          - do not compile the fixed archival v5.0.1 paper from this rolling intake
-
-          ## Provenance
-          - producer repo: ${SELECTED_PRODUCER_REPO}
-          - producer workflow: ${SELECTED_PRODUCER_WORKFLOW}
-          - producer branch: ${SELECTED_PRODUCER_BRANCH}
-          - producer run id: ${SELECTED_PRODUCER_RUN_ID}
-          - producer run attempt: ${SELECTED_PRODUCER_RUN_ATTEMPT}
-          - producer run head: ${SELECTED_PRODUCER_HEAD_SHA}
-          - producer artifact: ${SELECTED_PRODUCER_ARTIFACT:-not_available}
-          - producer artifact id: ${SELECTED_PRODUCER_ARTIFACT_ID}
-          - producer artifact digest: ${SELECTED_PRODUCER_ARTIFACT_DIGEST}
-          - producer commit: ${producer_sha}
-          - bundle sha256: ${SELECTED_BUNDLE_SHA256}
-          - snapshot id: ${INTAKE_SNAPSHOT_ID}
-          - persistence mode: ${mode}
-
-          ## Claim boundary
-          - customer_evidence_eligible: false
-          - customer_evidence_disposition: characterization_only
-          - publication status: candidate_not_published
-
-          ## Validation
-          - bundle schema versions checked by pull-wp-intake
-          - exact producer run, commit, artifact, digest, and shared contract checked
-          - disclosure allowlist and public intake schema checked
-          - the fixed archival v5.0.1 paper is never compiled from rolling intake; any release-scoped paper remains a separate exact-run artifact
-          EOF
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add intake config
-          snapshot_tree="$(git write-tree)"
-
-          remote_ref="refs/remotes/origin/${branch}"
-          remote_head=""
-          set +e
-          remote_line="$(git ls-remote --exit-code --heads origin "refs/heads/${branch}" 2>&1)"
-          remote_status=$?
-          set -e
-          case "$remote_status" in
-            0)
-              git fetch origin "+refs/heads/${branch}:${remote_ref}"
-              remote_head="$(git rev-parse "$remote_ref")"
-              ;;
-            2)
-              ;;
-            *)
-              echo "$remote_line" >&2
-              echo "Unable to resolve persistence branch ${branch}." >&2
-              exit "$remote_status"
-              ;;
-          esac
-
-          remote_snapshot_id=""
-          remote_tree=""
-          if [ -n "$remote_head" ]; then
-            remote_snapshot_id="$(git show "${remote_ref}:intake/whitepaper_snapshot.json" 2>/dev/null | jq -r '.snapshot_id // empty' || true)"
-            remote_tree="$(git rev-parse "${remote_ref}^{tree}")"
-          fi
-
-          anchor_commit=""
-          if [ "$remote_snapshot_id" = "$INTAKE_SNAPSHOT_ID" ] && [ "$remote_tree" = "$snapshot_tree" ]; then
-            echo "Snapshot ${INTAKE_SNAPSHOT_ID} is already anchored at ${remote_head}."
-            anchor_commit="$remote_head"
-          elif [ "$remote_snapshot_id" = "$INTAKE_SNAPSHOT_ID" ]; then
-            echo "Snapshot identity ${INTAKE_SNAPSHOT_ID} already exists with a different tree; refusing nondeterministic identity drift." >&2
-            echo "remote tree=${remote_tree:-missing} current tree=${snapshot_tree}" >&2
-            exit 1
-          elif [ "$mode" = "workflow_write_once_release_snapshot" ] && [ -n "$remote_head" ]; then
-            echo "Workflow write-once intake branch ${branch} already exists with different content; refusing to rewrite it." >&2
-            echo "remote snapshot=${remote_snapshot_id:-missing} current snapshot=${INTAKE_SNAPSHOT_ID}" >&2
-            exit 1
-          else
-            commit_message="$(mktemp)"
-            {
-              printf '%s\n\n' "$title"
-              cat "$body_file"
-            } > "$commit_message"
-            parent_args=(-p "$GITHUB_SHA")
-            if [ "$mode" = "rolling_history" ] && [ -n "$remote_head" ]; then
-              # The previous rolling head is an explicit parent, so every prior
-              # nightly source tree remains reachable without per-run branches.
-              parent_args+=(-p "$remote_head")
-            fi
-            anchor_commit="$(git commit-tree "$snapshot_tree" "${parent_args[@]}" -F "$commit_message")"
-            git push origin "$anchor_commit:refs/heads/$branch"
-          fi
-
-          {
-            echo "### Intake snapshot anchored"
-            echo ""
-            echo "- mode: \`${mode}\`"
-            echo "- branch: \`${branch}\`"
-            echo "- commit: \`${anchor_commit}\`"
-            echo "- snapshot id: \`${INTAKE_SNAPSHOT_ID}\`"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          if [ "$mode" = "rolling_history" ]; then
-            echo "Routine nightly snapshot retained in append-only history; no per-run branch or PR created."
-            exit 0
-          fi
-
-          soft_fail_dir="dist/intake-pr-soft-fail"
-          soft_fail_sentinel="${soft_fail_dir}/intake_pr_soft_fail.json"
-          permission_guard="GitHub Actions is not permitted to create or approve pull requests"
-
-          record_pr_permission_soft_fail() {
-            local operation="$1"
-            local branch_name="$2"
-            local pr_output="$3"
-
-            if ! printf '%s\n' "$pr_output" | grep -Fq "$permission_guard"; then
-              printf '%s\n' "$pr_output" >&2
-              return 1
-            fi
-
-            mkdir -p "$soft_fail_dir"
-            SOFT_FAIL_SENTINEL="$soft_fail_sentinel" \
-            SOFT_FAIL_OPERATION="$operation" \
-            SOFT_FAIL_BRANCH="$branch_name" \
-            SOFT_FAIL_OUTPUT="$pr_output" \
-            python - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          sentinel = Path(os.environ["SOFT_FAIL_SENTINEL"])
-          payload = {
-              "status": "intake_pr_permission_soft_failed",
-              "operation": os.environ["SOFT_FAIL_OPERATION"],
-              "branch": os.environ["SOFT_FAIL_BRANCH"],
-              "repository": os.environ.get("GITHUB_REPOSITORY"),
-              "run_id": os.environ.get("GITHUB_RUN_ID"),
-              "run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
-              "producer_repo": os.environ.get("SELECTED_PRODUCER_REPO"),
-              "producer_workflow": os.environ.get("SELECTED_PRODUCER_WORKFLOW"),
-              "producer_branch": os.environ.get("SELECTED_PRODUCER_BRANCH"),
-              "producer_head_sha": os.environ.get("SELECTED_PRODUCER_HEAD_SHA"),
-              "reason": "GitHub Actions token is not permitted to create or approve pull requests.",
-              "stderr": os.environ["SOFT_FAIL_OUTPUT"],
-          }
-          sentinel.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-          PY
-
-            {
-              echo "### Intake snapshot PR permission soft-fail"
-              echo ""
-              echo "- operation: \`${operation}\`"
-              echo "- branch: \`${branch_name}\`"
-              echo "- sentinel: \`${soft_fail_sentinel}\`"
-              echo "- reason: GitHub Actions token is not permitted to create or approve pull requests."
-              echo ""
-              echo "The intake branch was pushed successfully and remains the canonical audit anchor."
-            } >> "$GITHUB_STEP_SUMMARY"
-
-            echo "::warning title=Intake PR ${operation} skipped::The branch ${branch_name} was pushed successfully, but github.token cannot create or approve pull requests. Configure WP_INTAKE_PR_TOKEN or enable Actions PR creation."
-            printf '%s\n' "$pr_output" >&2
-            return 0
-          }
-
-          if gh pr view "$branch" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            if ! pr_output="$(gh pr edit "$branch" --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$body_file" 2>&1)"; then
-              record_pr_permission_soft_fail "update" "$branch" "$pr_output"
-              exit $?
-            fi
-          else
-            if ! pr_output="$(gh pr create \
-              --repo "$GITHUB_REPOSITORY" \
-              --base "${GITHUB_REF_NAME:-main}" \
-              --head "$branch" \
-              --title "$title" \
-              --body-file "$body_file" 2>&1)"; then
-              record_pr_permission_soft_fail "creation" "$branch" "$pr_output"
-              exit $?
-            fi
-          fi
-
-      - name: Upload intake PR soft-fail sentinel
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: intake-pr-soft-fail-${{ github.run_attempt }}
-          path: dist/intake-pr-soft-fail/intake_pr_soft_fail.json
-          if-no-files-found: ignore

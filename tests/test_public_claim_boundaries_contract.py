@@ -3,7 +3,6 @@ import json
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -21,7 +20,8 @@ class PublicClaimBoundariesContractTests(unittest.TestCase):
             encoding="utf-8"
         )
         architecture = pipeline_spec.split("```", maxsplit=2)[1]
-        self.assertIn("uploads intake/whitepaper_snapshot.json only", architecture)
+        self.assertIn("uploads intake/whitepaper_snapshot.json", architecture)
+        self.assertIn("builds the exact version-bound release paper", architecture)
         self.assertNotIn("make pdf", architecture)
         self.assertNotIn("dist/whitepaper.pdf", architecture)
 

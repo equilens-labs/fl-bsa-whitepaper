@@ -15,7 +15,7 @@ SCHEMA_VERSION = "flbsa.whitepaper_intake_producer_contract.v1"
 PRODUCER_REPOSITORY = "equilens-labs/fl-bsa"
 DISPATCH_EVENT_TYPE = "wp-intake-ready"
 PRIMARY_ARTIFACT_TEMPLATE = "wp-intake-bundle-v4-{run_attempt}"
-ALLOWED_EVENTS = frozenset({"repository_dispatch", "schedule"})
+ALLOWED_EVENTS = frozenset({"repository_dispatch"})
 EXPECTED_CONTRACT_KEYS = frozenset(
     {
         "allowed_persistence_values",
@@ -139,10 +139,6 @@ def load_contract(path: Path) -> tuple[dict[str, Any], str]:
 
     expected_authorities = {
         ("release-evidence.yml", "main"): {"repository_dispatch"},
-        ("wp-evidence-nightly.yml", "main"): {
-            "repository_dispatch",
-            "schedule",
-        },
     }
     actual_authorities = {
         (authority["workflow"], authority["branch"]): set(authority["events"])

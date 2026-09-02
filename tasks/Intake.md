@@ -23,7 +23,7 @@ The producer repo (`fl-bsa`) exports a compact bundle via `make gate-wp` with al
 **Bundle locations:**
 - Local (after a run): `artifacts/WhitePaper_Intake_Bundle_v4.zip` or `output/<pipeline_id>/intake/`
 - Legacy local path: `artifacts/WhitePaper_Reviewer_Pack_v4.zip`
-- CI artifact: downloadable from fl-bsa CI runs as `wp-intake-bundle-v4` (legacy: `wp-reviewer-pack-v4`)
+- CI artifact: exact Release Evidence artifact `wp-intake-bundle-v4-<run-attempt>`
 
 ---
 
@@ -61,11 +61,12 @@ Never copy an arbitrary or current producer bundle into this checkout and run `m
 paper is fixed to v5.0.1. A successor paper needs its own version-bound source and evidence.
 
 ### CI Pull
-The `.github/workflows/pull-wp-intake.yml` workflow can be configured to:
-- Trigger on producer CI completion, schedule, or trusted on-demand `repository_dispatch`
-- Download the intake bundle artifact from the producer repo, falling back to the legacy reviewer bundle name for archive replay
-- Copy files to `intake/`, write a receipt, and optionally open a PR preserving the exact intake snapshot; it deliberately does not compile the fixed v5.0.1 paper
-- Use trusted default selectors for scheduled runs; exact-run selectors should come from trusted `wp-intake-ready` repository dispatch payloads, not ad-hoc manual artifact inputs.
+The `.github/workflows/pull-wp-intake.yml` workflow:
+- accepts only the contract-bound `wp-intake-ready` dispatch from product `release-evidence.yml`;
+- downloads the exact attempt-qualified, attested intake bundle;
+- validates and stages the managed intake surface, writes a receipt, and builds the version-bound
+  release paper without changing the fixed v5.0.1 archival paper; and
+- has no timer, arbitrary artifact selector, compatibility fallback, or Git/PR persistence path.
 
 ---
 

@@ -1,167 +1,70 @@
 # Intake Pull CI — Cross-Repo Automation
 
-This repository consumes the whitepaper intake bundle produced by
-`equilens-labs/fl-bsa`. The daily schedule validates the bundle and emits a JSON receipt only. An
-exact `release-evidence.yml` dispatch additionally builds a separate version-bound release paper
-and manifest; it never recompiles or rewrites the fixed archival v5.0.1 paper. Public Git
-persistence is a separate, explicit publication mutation and remains disabled for both reviewed
-product producers. When that mutation is approved, the workflow can preserve the exact source
-state under the bounded branch contracts below. Transient Actions artifacts are review outputs,
-not durable publication.
+This repository consumes one release-bound whitepaper intake bundle from
+`equilens-labs/fl-bsa`. The product's `release-evidence.yml` workflow is the sole reviewed
+producer, and `wp-intake-ready` repository dispatch is the sole trigger. There is no daily timer,
+latest-run search, arbitrary manual selector, compatibility artifact fallback, or Git/PR persistence
+path.
 
-## Persistence contract
+The consumer uploads an exact JSON receipt and builds the version-bound release paper. It never
+rewrites the fixed archival v5.0.1 paper, publishes a paper, or widens the
+`customer_evidence_eligible=false` claim boundary.
 
-The workflow writes a `flbsa.whitepaper_intake_snapshot.v3` record to
-`intake/whitepaper_snapshot.json` before it persists a source tree. The record binds the producer
-repository, workflow, branch, run ID/attempt, artifact name/ID/API digest, product commit,
-bundle filename and SHA-256 to the whitepaper base commit. It also fixes the public claim
-boundary to:
+## Trigger and authority
 
-- `customer_evidence_eligible=false`
-- `customer_evidence_disposition=characterization_only`
-- `publication_status=candidate_not_published`
+After uploading and attesting its attempt-qualified intake artifact, Release Evidence sends this
+shape:
 
-All intake persistence runs share the `pull-wp-intake-persistence` concurrency group and do
-not cancel an in-progress predecessor. This serializes reads and writes to the rolling branch.
-
-The current producer contract requires `persist_intake_pr=false`, so neither reviewed product
-workflow can write a public intake branch. The rolling-history implementation remains fail-closed
-behind that contract for a separately reviewed future publishing route.
-
-The dormant release persistence implementation uses workflow-write-once branches named
-`chore/wp-intake-<producer-sha12>-<producer-run-id>`. An exact replay is a no-op. If that branch
-already exists with different content, the workflow fails instead of rewriting it. A release
-snapshot PR is best-effort reviewer convenience; the write-once branch is the durable workflow
-anchor. These branches currently have no branch-protection/ruleset guarantee: a repository
-administrator can move or delete them. The snapshot ID, source-tree comparison, and workflow's
-no-rewrite rule detect ordinary replay drift but do not turn the branch into an immutable Git
-object or policy boundary.
-Only the specific GitHub policy error that prevents Actions from creating or approving PRs is
-soft-failed and recorded in the job summary plus the `intake-pr-soft-fail` artifact. Other
-branch, push, or PR failures remain hard failures.
-
-The workflow never force-pushes a persistence branch. This migration also does not delete or
-rewrite historical `chore/wp-intake-*` branches.
-
-## Triggers
-
-### Producer dispatch (preferred)
-
-After uploading an intake artifact, trusted producer automation dispatches the exact producer
-run:
-
-```bash
-curl -X POST \
-  -H "Accept: application/vnd.github+json" \
-  -H "Authorization: Bearer ${GH_TOKEN}" \
-  https://api.github.com/repos/equilens-labs/fl-bsa-whitepaper/dispatches \
-  -d '{
-        "event_type":"wp-intake-ready",
-        "client_payload":{
-          "producer_repo":"equilens-labs/fl-bsa",
-          "workflow_file":"wp-evidence-nightly.yml",
-          "branch":"main",
-          "artifact_name":"wp-intake-bundle-v4-<run-attempt>",
-          "producer_run_id":"<exact-run-id>",
-          "producer_run_attempt":"<exact-run-attempt>",
-          "artifact_id":"<exact-actions-artifact-id>",
-          "artifact_digest":"sha256:<exact-actions-artifact-digest>",
-          "producer_contract_sha256":"<exact-shared-contract-sha256>",
-          "persist_intake_pr":"false"
-        }
-      }'
+```json
+{
+  "event_type": "wp-intake-ready",
+  "client_payload": {
+    "producer_repo": "equilens-labs/fl-bsa",
+    "workflow_file": "release-evidence.yml",
+    "branch": "main",
+    "artifact_name": "wp-intake-bundle-v4-<run-attempt>",
+    "producer_run_id": "<exact-run-id>",
+    "producer_run_attempt": "<exact-run-attempt>",
+    "artifact_id": "<exact-actions-artifact-id>",
+    "artifact_digest": "sha256:<exact-actions-artifact-digest>",
+    "producer_contract_sha256": "<exact-shared-contract-sha256>",
+    "persist_intake_pr": "false"
+  }
+}
 ```
 
-The accepted producers are deliberately narrow:
-
-- repository: `equilens-labs/fl-bsa`
-- workflows: `wp-evidence-nightly.yml` or `release-evidence.yml`
-- artifacts: on-demand dispatch requires the attempt-qualified, attested
-  `wp-intake-bundle-v4-<run-attempt>`; scheduled transition compatibility may accept the historical
-  unqualified first-attempt artifact, but never silently falls back to the reviewer pack
-
 `contracts/whitepaper-intake-producer-contract.v1.json` is copied byte-for-byte into both
-repositories. Both producer workflows build their payload through the matching contract helper,
-and this consumer validates the same fields and contract SHA-256 before it queries or downloads
-anything. A missing field, extra field, stale event, stale release branch, contract mismatch, or
-anything other than literal `persist_intake_pr=false` fails. Changing this boundary requires a
-reviewed contract change in both repositories.
+repositories. Both sides require the exact repository, `release-evidence.yml`, `main`,
+`repository_dispatch`, payload fields, attempt-qualified artifact name, contract digest, and
+literal `persist_intake_pr=false`. A missing or extra field, retired workflow, timer event, branch
+drift, malformed identity, or contract mismatch fails before the consumer queries producer state.
 
-Every on-demand producer dispatch must provide the run ID, run attempt, artifact ID, and API
-digest. The consumer rejects an incomplete dispatch instead of searching for a recent successful
-run. It independently resolves all four values, verifies the outer Actions ZIP against the API
-digest/size, and records them in the snapshot.
-
-### Scheduled pull
-
-The daily `0 6 * * *` schedule resolves the current `equilens-labs/fl-bsa@main` commit and the
-newest `wp-evidence-nightly.yml` run on `main` without filtering by run status. The newest run must
-be for that exact current commit. The consumer then waits only on that run: queued or in-progress
-authority is polled, while a failed, cancelled, timed-out, stale-head, or otherwise unsuccessful
-authority fails the pull. It never searches backward for an older successful run.
-
-After the selected run succeeds, the consumer reads the producer contract from that exact immutable
-product commit, hashes its raw bytes, and requires equality with the reviewed contract in this
-repository. A missing file, inaccessible commit, oversized file, or byte drift fails before any
-artifact is selected or downloaded. The receipt therefore records a contract hash proven on both
-sides of the scheduled handoff.
-
-Immediately before downloading artifact bytes, the consumer re-resolves `fl-bsa@main`, the newest
-matching producer run, and the selected run attempt/status. Any branch, run, attempt, or conclusion
-drift fails closed so a run that became stale during the bounded wait cannot be consumed. Once the
-authority remains exact, the workflow derives `wp-intake-bundle-v4-<run-attempt>` and applies the
-same validation with public persistence disabled.
-
-For transition compatibility only, an attempt-1 run with no qualified artifact may select one
-unique attested `wp-intake-bundle-v4`. There is no scheduled fallback for later attempts or to
-the unattested reviewer pack.
-
-The consuming workflow has no `workflow_dispatch` input for arbitrary producer artifacts. Exact
-on-demand rebuilds use the contract-bound `wp-intake-ready` dispatch instead.
+The consumer does not search workflow history. It resolves only the dispatched run ID and attempt,
+checks the exact workflow path/repository/branch/head/event through the Actions API, and polls only
+the exact-attempt `WP Evidence (release-grade)` job. That job must complete successfully. This
+bounded active-run rule breaks the product/whitepaper dependency cycle without treating the whole
+still-running Release Evidence workflow as successful. A failed completed run or job, duplicate job,
+wrong attempt, unsupported pending state, or timeout fails closed.
 
 ## Authentication
 
-For a private producer, configure `PRODUCER_TOKEN` as a GitHub App installation token or
-fine-grained PAT scoped only to `equilens-labs/fl-bsa` with Actions read, Contents read, and
-Attestations read. The last permission is required to verify the downloaded bundle's GitHub
-attestation. The workflow fails if cross-repository authorization is absent; it does not silently
-substitute the whitepaper repository's token. Do not grant Packages, administration, or write
-access to this read-only producer credential.
-
-`WP_INTAKE_PR_TOKEN` is required only when public persistence is explicitly approved. Scope it to
-`equilens-labs/fl-bsa-whitepaper` with Contents write and Pull requests write. Scheduled and
-ordinary validation/build runs receive a read-only default Actions token; checkout does not persist
-that credential. The write token is exposed only to the guarded persistence step, which configures
-the Git credential helper after validating literal `true` and fails before Git mutation when the
-token is absent. In GitHub Actions, persistence also requires the exact canonical HTTPS origin for
-`equilens-labs/fl-bsa-whitepaper`: exactly one effective fetch URL and one effective push URL,
-allowing only the optional `.git` suffix. A different repository, an SSH origin, a separate or
-multiple `pushurl`, or a Git URL rewrite is rejected.
-
-Rotate both credentials on the normal CI credential cadence. Never put a token or its contents
-in a dispatch payload, artifact, snapshot record, or tracked file.
+`PRODUCER_TOKEN` must be a GitHub App installation token or fine-grained PAT scoped to
+`equilens-labs/fl-bsa` with Actions read, Contents read, and Attestations read. The consumer fails
+when cross-repository authorization is absent; it does not substitute the whitepaper repository's
+token. Do not grant Packages, administration, or write access, and never put a token in a dispatch
+payload, artifact, receipt, or tracked file.
 
 ## Consumption and validation
 
 The workflow downloads `WhitePaper_Intake_Bundle_v4.zip` and verifies its GitHub artifact
-attestation against `equilens-labs/fl-bsa`. Current scheduled and contract-bound dispatches can
-select only the attested primary bundle; the historical reviewer-pack compatibility code is
-dormant, and there is no automatic fallback. Duplicate same-named artifacts fail as ambiguous.
-It validates the `wp-intake.v1`
-provenance schema and `fairness_uncertainty.v1` metrics schema. Before download, every selected
-run ID (discovered or dispatched) is resolved through the Actions API and must be numeric and match
-the exact workflow path, approved event, source repository, branch, SHA, and attempt policy.
-Scheduled and nightly intake requires the whole producer workflow to reach `completed/success`
-within the bounded poll. The release-only dispatch instead requires the exact-attempt
-`WP Evidence (release-grade)` job to complete successfully and admits only the matching active
-producer run while the downstream paper is being built. This narrowly bounded exception avoids a
-cycle in which the product waits for the paper while the paper waits for the whole product workflow;
-a failed job, failed completed run, wrong attempt, wrong SHA, duplicate job name, or unsupported
-pending state fails closed. Both reviewed producer workflows run from `main`:
-`wp-evidence-nightly.yml` may use `schedule` or `repository_dispatch`, while
-`release-evidence.yml` must use `repository_dispatch`. Scheduled discovery additionally binds the
-newest run, regardless of status, to the current `fl-bsa@main` ref and repeats that authority check
-immediately before artifact consumption; it never substitutes an older green run.
+attestation against `equilens-labs/fl-bsa`. Only the exact attempt-qualified primary bundle is
+accepted; duplicate or missing artifacts fail closed. It validates the `wp-intake.v1` provenance
+schema and `fairness_uncertainty.v1` metrics schema. Before download, the dispatched run ID is
+resolved through the Actions API and must match the exact workflow path, approved event, source
+repository, branch, SHA, and attempt policy. The exact-attempt `WP Evidence (release-grade)` job
+must complete successfully; a failed job, failed completed run, wrong attempt, wrong SHA, duplicate
+job name, or unsupported pending state fails closed.
+
 After unpacking, the bundle product commit and every recorded commit alias must equal that
 API-verified run head SHA.
 
@@ -235,9 +138,8 @@ stamp records the whitepaper base commit plus the exact producer selectors and b
 It also records the API-verified run head SHA, which must equal the bundle product commit. This
 prevents timestamp-only Git churn and lets an exact replay compare both snapshot ID and tree.
 
-Every live intake run uploads `intake/whitepaper_snapshot.json`. Scheduled nightly intake stops at
-that receipt and never builds a PDF or arXiv source. For an exact `release-evidence.yml` dispatch,
-the same workflow also validates the release tag, product commit, producer run/attempt and artifact
+Every intake run uploads `intake/whitepaper_snapshot.json` and validates the release tag, product
+commit, producer run/attempt and artifact
 identity, intake snapshot, generator backend, and non-customer-evidence claim boundary. It then
 generates the regulatory appendix from every escaped row and column of the exact
 `intake/regulatory_matrix.csv`, compiles `release/main.tex` with the digest-pinned TeX image, and
@@ -264,9 +166,8 @@ The release paper remains a demo/evaluation characterization artifact; it is not
 or a published paper.
 
 This separation is deliberate: the repository's archival document is fixed to v5.0.1, so compiling
-it with arbitrary newer or rolling intake would create a mixed-version artifact. The Git snapshot
-remains the long-lived intake reproducibility surface, while each current release paper is generated
-only from its own exact release-evidence run.
+it with arbitrary newer intake would create a mixed-version artifact. Each current release paper is
+generated only from its own exact Release Evidence run and retained as an Actions artifact.
 
 ## Stable-v5 compatibility anchor
 

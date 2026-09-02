@@ -22,18 +22,13 @@ from typing import Any, Iterable
 
 from stable_v5_export import StableExportError, build_archive, validate_entries
 
-
 ANCHOR_SCHEMA = "flbsa.whitepaper_intake_anchor.v1"
-SNAPSHOT_SCHEMA = "flbsa.whitepaper_intake_snapshot.v3"
+SNAPSHOT_SCHEMA = "flbsa.whitepaper_intake_snapshot.v4"
 PRODUCER_REPO = "equilens-labs/fl-bsa"
 WHITEPAPER_REPO = "equilens-labs/fl-bsa-whitepaper"
-NIGHTLY_WORKFLOW = "wp-evidence-nightly.yml"
 RELEASE_WORKFLOW = "release-evidence.yml"
 PRIMARY_ARTIFACT = "wp-intake-bundle-v4"
-LEGACY_ARTIFACT = "wp-reviewer-pack-v4"
 PRIMARY_BUNDLE = "WhitePaper_Intake_Bundle_v4.zip"
-LEGACY_BUNDLE = "WhitePaper_Reviewer_Pack_v4.zip"
-ROLLING_BRANCH = "chore/wp-intake-nightly"
 STABLE_ANCHOR_ID = "stable-v5-characterization"
 STABLE_RELEASE_TAG = "v5.0.1"
 PUBLICATION_PROJECTION_ALGORITHM = "git-object-projection-sha256.v1"
@@ -125,44 +120,26 @@ def build_snapshot_record(
     whitepaper_repo: str,
     whitepaper_commit: str,
 ) -> dict[str, Any]:
-    """Return an idempotent snapshot record and persistence policy."""
+    """Return an idempotent release-intake snapshot record."""
 
     _require_exact(producer_repo, PRODUCER_REPO, "producer.repo")
-    if producer_workflow not in {NIGHTLY_WORKFLOW, RELEASE_WORKFLOW}:
-        raise AnchorError(f"unsupported producer workflow: {producer_workflow!r}")
-    primary_artifact = producer_artifact == PRIMARY_ARTIFACT or bool(
-        re.fullmatch(rf"{re.escape(PRIMARY_ARTIFACT)}-[1-9][0-9]*", producer_artifact)
-    )
-    if not primary_artifact and producer_artifact != LEGACY_ARTIFACT:
+    _require_exact(producer_workflow, RELEASE_WORKFLOW, "producer workflow")
+    if not re.fullmatch(
+        rf"{re.escape(PRIMARY_ARTIFACT)}-[1-9][0-9]*", producer_artifact
+    ):
         raise AnchorError(f"unsupported producer artifact: {producer_artifact!r}")
-    if bundle_filename not in {PRIMARY_BUNDLE, LEGACY_BUNDLE}:
-        raise AnchorError(f"unsupported bundle filename: {bundle_filename!r}")
-    expected_bundle = PRIMARY_BUNDLE if primary_artifact else LEGACY_BUNDLE
-    _require_exact(
-        bundle_filename, expected_bundle, "producer artifact bundle filename"
-    )
+    _require_exact(bundle_filename, PRIMARY_BUNDLE, "producer artifact bundle filename")
     _require_exact(whitepaper_repo, WHITEPAPER_REPO, "whitepaper.repo")
 
     producer_run_id = _require_match(producer_run_id, _RUN_ID_RE, "producer run ID")
     producer_run_attempt = _require_match(
         producer_run_attempt, _RUN_ID_RE, "producer run attempt"
     )
-    if producer_artifact == PRIMARY_ARTIFACT:
-        if producer_run_attempt != "1":
-            raise AnchorError(
-                "unqualified primary artifacts are restricted to producer run attempt 1"
-            )
-    elif producer_artifact == LEGACY_ARTIFACT:
-        if producer_run_attempt != "1":
-            raise AnchorError(
-                "legacy reviewer-pack artifacts are restricted to producer run attempt 1"
-            )
-    else:
-        _require_exact(
-            producer_artifact,
-            f"{PRIMARY_ARTIFACT}-{producer_run_attempt}",
-            "producer artifact run-attempt qualification",
-        )
+    _require_exact(
+        producer_artifact,
+        f"{PRIMARY_ARTIFACT}-{producer_run_attempt}",
+        "producer artifact run-attempt qualification",
+    )
     producer_artifact_id = _require_match(
         producer_artifact_id, _RUN_ID_RE, "producer artifact ID"
     )
@@ -242,15 +219,6 @@ def build_snapshot_record(
         "pack certificate_signing_expected",
     )
 
-    if producer_workflow == NIGHTLY_WORKFLOW:
-        mode = "rolling_history"
-        branch = ROLLING_BRANCH
-        workflow_rewrite_allowed = True
-    else:
-        mode = "workflow_write_once_release_snapshot"
-        branch = f"chore/wp-intake-{product_sha[:12]}-{producer_run_id}"
-        workflow_rewrite_allowed = False
-
     identity = {
         "producer_repo": producer_repo,
         "producer_workflow": producer_workflow,
@@ -298,12 +266,6 @@ def build_snapshot_record(
             "base_commit": whitepaper_commit,
             "manifest_sha256": _sha256_file(manifest_path),
             "pack_intent_sha256": _sha256_file(pack_intent_path),
-        },
-        "persistence": {
-            "mode": mode,
-            "branch": branch,
-            "workflow_rewrite_allowed": workflow_rewrite_allowed,
-            "repository_admin_mutable": True,
         },
     }
 
@@ -649,12 +611,7 @@ def export_anchor(anchor_path: Path, repo_root: Path, output_path: Path) -> str:
 
 
 def _append_github_env(path: Path, record: dict[str, Any]) -> None:
-    persistence = record["persistence"]
-    values = {
-        "INTAKE_SNAPSHOT_ID": record["snapshot_id"],
-        "INTAKE_SNAPSHOT_MODE": persistence["mode"],
-        "INTAKE_SNAPSHOT_BRANCH": persistence["branch"],
-    }
+    values = {"INTAKE_SNAPSHOT_ID": record["snapshot_id"]}
     with path.open("a", encoding="utf-8") as handle:
         for key, value in values.items():
             handle.write(f"{key}={value}\n")
@@ -688,11 +645,7 @@ def _snapshot_command(args: argparse.Namespace) -> int:
         _append_github_env(Path(args.github_env), record)
     print(
         json.dumps(
-            {
-                "snapshot_id": record["snapshot_id"],
-                "mode": record["persistence"]["mode"],
-                "branch": record["persistence"]["branch"],
-            },
+            {"snapshot_id": record["snapshot_id"]},
             sort_keys=True,
         )
     )

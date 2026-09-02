@@ -83,7 +83,6 @@
 
 ### Remaining high-impact TODOs
 - Align `config/sap.yaml` wording with v4 deterministic SoT (currently still describes bootstrap/BH; paper does not).
-- Fix cross-repo CI intake automation (`pull-wp-intake.yml`) to pull the reviewer ZIP that is actually produced.
 
 ---
 
@@ -406,19 +405,12 @@ The paper sources were updated to match v4 decisions:
 
 ---
 
-### 3.5 Fix cross-repo automation (optional for v4 ship; required for long-term)
+### 3.5 Cross-repo automation (superseded)
 
-**Current state**
-- `fl-bsa-whitepaper/.github/workflows/pull-wp-intake.yml` has an `if:` that prevents `schedule` and `repository_dispatch` from running.
-- It expects a `wp-intake` artifact + `index.json`, but the producer workflow publishes a reviewer ZIP.
-
-**Action**
-- Update automation to download and import the actual reviewer ZIP produced by `fl-bsa`:
-  - Producer: `fl-bsa/.github/workflows/wp-evidence-nightly.yml` uploads `WhitePaper_Reviewer_Pack_v4.zip`.
-  - Consumer should download that ZIP (from artifacts or from a release) and unpack into `intake/`.
-
-**Acceptance**
-- Scheduled pull updates intake and rebuilds PDF without manual steps.
+The duplicate scheduled producer/pull chain is retired. The only active route is the exact
+`wp-intake-ready` dispatch from product `release-evidence.yml`; the consumer accepts only its
+attempt-qualified, attested intake artifact and builds the version-bound release paper. No daily
+pull, reviewer-ZIP compatibility path, or public intake persistence is active.
 
 ---
 

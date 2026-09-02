@@ -9,14 +9,6 @@
         "repository_dispatch"
       ],
       "workflow": "release-evidence.yml"
-    },
-    {
-      "branch": "main",
-      "events": [
-        "repository_dispatch",
-        "schedule"
-      ],
-      "workflow": "wp-evidence-nightly.yml"
     }
   ],
   "dispatch_event_type": "wp-intake-ready",

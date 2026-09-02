@@ -8,7 +8,6 @@ import unittest
 import zipfile
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "scripts" / "intake_anchor.py"
 sys.path.insert(0, str(MODULE_PATH.parent))
@@ -26,7 +25,7 @@ class IntakeAnchorTests(unittest.TestCase):
         base_commit = "b" * 40
         run_id = "123456789"
         bundle_sha = "c" * 64
-        artifact = ANCHOR.PRIMARY_ARTIFACT
+        artifact = f"{ANCHOR.PRIMARY_ARTIFACT}-1"
         bundle_filename = ANCHOR.PRIMARY_BUNDLE
         manifest = {
             "schema_version": "wp-intake.v1",
@@ -81,46 +80,33 @@ class IntakeAnchorTests(unittest.TestCase):
         }
         return manifest_path, pack_path, kwargs
 
-    def test_nightly_snapshot_is_deterministic_and_rolling(self) -> None:
+    def test_release_snapshot_is_deterministic(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            _, _, kwargs = self._fixture(Path(tmp), ANCHOR.NIGHTLY_WORKFLOW)
+            _, _, kwargs = self._fixture(Path(tmp), ANCHOR.RELEASE_WORKFLOW)
             first = ANCHOR.build_snapshot_record(**kwargs)
             second = ANCHOR.build_snapshot_record(**kwargs)
 
         self.assertEqual(first, second)
         self.assertEqual(
-            "flbsa.whitepaper_intake_snapshot.v3", first["schema_version"]
+            "flbsa.whitepaper_intake_snapshot.v4", first["schema_version"]
         )
         self.assertRegex(first["snapshot_id"], r"^[0-9a-f]{64}$")
-        self.assertEqual("rolling_history", first["persistence"]["mode"])
-        self.assertEqual(ANCHOR.ROLLING_BRANCH, first["persistence"]["branch"])
-        self.assertIs(first["persistence"]["workflow_rewrite_allowed"], True)
-        self.assertIs(first["persistence"]["repository_admin_mutable"], True)
+        self.assertNotIn("persistence", first)
         self.assertIs(first["claims"]["customer_evidence_eligible"], False)
         self.assertEqual("a" * 40, first["producer"]["head_sha"])
 
-    def test_release_snapshot_branch_is_workflow_write_once_and_run_specific(
-        self,
-    ) -> None:
+    def test_release_snapshot_has_no_git_persistence_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             _, _, kwargs = self._fixture(Path(tmp), ANCHOR.RELEASE_WORKFLOW)
             record = ANCHOR.build_snapshot_record(**kwargs)
 
-        self.assertEqual(
-            "workflow_write_once_release_snapshot", record["persistence"]["mode"]
-        )
-        self.assertEqual(
-            "chore/wp-intake-aaaaaaaaaaaa-123456789",
-            record["persistence"]["branch"],
-        )
-        self.assertIs(record["persistence"]["workflow_rewrite_allowed"], False)
-        self.assertIs(record["persistence"]["repository_admin_mutable"], True)
+        self.assertNotIn("persistence", record)
 
     def test_snapshot_rejects_weakened_or_inconsistent_input(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             manifest_path, pack_path, kwargs = self._fixture(
-                root, ANCHOR.NIGHTLY_WORKFLOW
+                root, ANCHOR.RELEASE_WORKFLOW
             )
 
             pack = json.loads(pack_path.read_text(encoding="utf-8"))
@@ -131,7 +117,10 @@ class IntakeAnchorTests(unittest.TestCase):
 
             pack["evidence_grade"] = False
             pack_path.write_text(json.dumps(pack), encoding="utf-8")
-            wrong_bundle = {**kwargs, "bundle_filename": ANCHOR.LEGACY_BUNDLE}
+            wrong_bundle = {
+                **kwargs,
+                "bundle_filename": "WhitePaper_Reviewer_Pack_v4.zip",
+            }
             with self.assertRaisesRegex(ANCHOR.AnchorError, "bundle filename"):
                 ANCHOR.build_snapshot_record(**wrong_bundle)
 
@@ -152,10 +141,10 @@ class IntakeAnchorTests(unittest.TestCase):
     def test_snapshot_enforces_artifact_run_attempt_identity(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            manifest_path, _, kwargs = self._fixture(root, ANCHOR.NIGHTLY_WORKFLOW)
+            manifest_path, _, kwargs = self._fixture(root, ANCHOR.RELEASE_WORKFLOW)
 
             unqualified_retry = {**kwargs, "producer_run_attempt": "2"}
-            with self.assertRaisesRegex(ANCHOR.AnchorError, "restricted.*attempt 1"):
+            with self.assertRaisesRegex(ANCHOR.AnchorError, "run-attempt qualification"):
                 ANCHOR.build_snapshot_record(**unqualified_retry)
 
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -172,6 +161,20 @@ class IntakeAnchorTests(unittest.TestCase):
                 ANCHOR.AnchorError, "run-attempt qualification"
             ):
                 ANCHOR.build_snapshot_record(**mismatched_qualification)
+
+    def test_snapshot_rejects_retired_nightly_workflow(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest_path, _, kwargs = self._fixture(
+                Path(tmp), ANCHOR.RELEASE_WORKFLOW
+            )
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["whitepaper_consumer"]["producer"]["workflow"] = (
+                "wp-evidence-nightly.yml"
+            )
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            kwargs["producer_workflow"] = "wp-evidence-nightly.yml"
+            with self.assertRaisesRegex(ANCHOR.AnchorError, "producer workflow"):
+                ANCHOR.build_snapshot_record(**kwargs)
 
     def test_checked_in_stable_anchor_validates_and_exports_deterministically(
         self,

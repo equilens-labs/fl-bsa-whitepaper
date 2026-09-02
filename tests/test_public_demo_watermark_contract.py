@@ -5,13 +5,10 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 
-RELEASE_CONDITION = (
-    "${{ github.event_name == 'repository_dispatch' && "
-    "github.event.client_payload.workflow_file == 'release-evidence.yml' }}"
-)
 RELEASE_GENERATION_MARKERS = (
     "scripts/release_whitepaper.py",
     "scripts/canonicalize_release_pdf.py",
+    "scripts/check_release_layout.py",
     "scripts/check_release_pdf_passive.py",
     "make release-",
     "release/main.tex",
@@ -25,40 +22,39 @@ RELEASE_GENERATION_MARKERS = (
     "arxiv_pack.sh",
     "publication_profile.local.tex",
 )
+RELEASE_GENERATION_STEPS = {
+    "Prepare exact release whitepaper",
+    "Install PDF text tooling for release paper",
+    "Compile exact release whitepaper",
+    "Canonicalize exact release whitepaper bytes",
+    "Verify exact release whitepaper layout",
+    "Verify exact release whitepaper is passive",
+    "Finalize exact release whitepaper manifest",
+    "Upload exact release whitepaper",
+}
 
 
 def _assert_release_generators_are_exactly_guarded(workflow: dict) -> None:
+    on_section = workflow.get(True, workflow.get("on"))
+    if on_section != {"repository_dispatch": {"types": ["wp-intake-ready"]}}:
+        raise AssertionError("intake workflow is not release-dispatch-only")
+
     steps = workflow["jobs"]["fetch-build"]["steps"]
-    guarded = []
+    release_steps = []
     for step in steps:
         rendered = str(step)
         if any(marker in rendered for marker in RELEASE_GENERATION_MARKERS):
-            if step.get("if") != RELEASE_CONDITION:
+            if step.get("name") not in RELEASE_GENERATION_STEPS:
                 raise AssertionError(
-                    f"release generator step lacks the exact release condition: {step.get('name')}"
+                    f"unexpected release generator step: {step.get('name')}"
                 )
-            guarded.append(step)
-    if not guarded:
-        raise AssertionError("no release generator steps found")
-
-    unguarded_runs = "\n".join(
-        str(step.get("run") or "")
-        for step in steps
-        if step.get("if") != RELEASE_CONDITION
-    )
-    for forbidden_command in (
-        "latexmk",
-        "pdflatex",
-        "pdftotext",
-        "gen_tex_",
-        "gen_plots_from_intake.py",
-        "arxiv_pack.sh",
-        "publication_profile.local.tex",
-    ):
-        if forbidden_command in unguarded_runs:
-            raise AssertionError(
-                f"unguarded intake step contains paper generator {forbidden_command!r}"
-            )
+            if "if" in step:
+                raise AssertionError(
+                    f"release-only generator keeps a redundant condition: {step.get('name')}"
+                )
+            release_steps.append(step)
+    if {step.get("name") for step in release_steps} != RELEASE_GENERATION_STEPS:
+        raise AssertionError("release generator inventory is incomplete")
 
 
 def _artifact_uploads(workflow: dict) -> list[tuple[str, str, str]]:
@@ -281,7 +277,9 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
 
         _assert_release_generators_are_exactly_guarded(workflow)
         release_steps = {
-            step["name"]: step for step in steps if step.get("if") == RELEASE_CONDITION
+            step["name"]: step
+            for step in steps
+            if step.get("name") in RELEASE_GENERATION_STEPS
         }
         self.assertTrue(
             {
@@ -348,11 +346,6 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
                     "dist/release-whitepaper/whitepaper.pdf\n"
                     "dist/release-whitepaper/whitepaper_release.json\n",
                 ),
-                (
-                    upload_action,
-                    "intake-pr-soft-fail-${{ github.run_attempt }}",
-                    "dist/intake-pr-soft-fail/intake_pr_soft_fail.json",
-                ),
             ],
             _artifact_uploads(workflow),
         )
@@ -369,9 +362,7 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
                 "run": "python scripts/release_whitepaper.py finalize",
             }
         )
-        with self.assertRaisesRegex(
-            AssertionError, "lacks the exact release condition"
-        ):
+        with self.assertRaisesRegex(AssertionError, "unexpected release generator step"):
             _assert_release_generators_are_exactly_guarded(workflow)
 
     def test_intake_upload_inventory_detects_a_differently_pinned_upload(self) -> None:
@@ -386,7 +377,7 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
                 "with": {"name": "forbidden", "path": "dist/current-paper.bin"},
             }
         )
-        self.assertEqual(4, len(_artifact_uploads(workflow)))
+        self.assertEqual(3, len(_artifact_uploads(workflow)))
 
     def test_local_watermark_override_is_not_committed_by_intake_pr(self) -> None:
         gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
@@ -395,8 +386,9 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
         )
 
         self.assertIn("includes/publication_profile.local.tex", gitignore)
-        self.assertIn("git add intake config", workflow)
-        self.assertNotIn("git add intake config includes", workflow)
+        self.assertNotIn("git add", workflow)
+        self.assertNotIn("WP_INTAKE_PR_TOKEN", workflow)
+        self.assertNotIn("Persist intake snapshot", workflow)
 
 
 if __name__ == "__main__":
