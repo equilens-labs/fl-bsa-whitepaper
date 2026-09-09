@@ -10,7 +10,15 @@
     "artifact_name": "gold-robustness-cc32b3a8d13cb75419b0dec1d4b9bdf5a3eb90c2-30765888408",
     "evidence_manifest_sha256": "353cd77907a5b5b0f64534ce6e5b00defeb872f5a8585aec43006ec24f96e073",
     "index_sha256": "9ffb2c04a95f428f068d471732c7d9ed1e27a16d553749c2ec828907fbe9166c",
-    "summary_sha256": "15bee5d51c6816e4bd8bffdde3bcb657e5a25932f9742f17496c7a53884858ce"
+    "source_summary_sha256": "15bee5d51c6816e4bd8bffdde3bcb657e5a25932f9742f17496c7a53884858ce",
+    "summary_projection": {
+      "algorithm": "remove-machine-local-path-fields.v1",
+      "removed_fields": {
+        "run_dir": 40,
+        "scenario_dir": 40
+      }
+    },
+    "summary_sha256": "4339828263ce4cb3b81353f1fdb3e11ae5c99aeaebe9b3477be18dfe5a436a63"
   },
   "primary_intake": {
     "artifact_api_digest": "sha256:7241da6013653e96337c540d3670bed69c04454002f3e7d315a95e9c8e197615",

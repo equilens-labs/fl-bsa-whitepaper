@@ -184,7 +184,7 @@ jobs:
             --expected-gold-index-sha256 \
             9ffb2c04a95f428f068d471732c7d9ed1e27a16d553749c2ec828907fbe9166c \
             --expected-gold-summary-sha256 \
-            15bee5d51c6816e4bd8bffdde3bcb657e5a25932f9742f17496c7a53884858ce \
+            4339828263ce4cb3b81353f1fdb3e11ae5c99aeaebe9b3477be18dfe5a436a63 \
             dist/fl-bsa-v5.0.1-companion-evidence.zip
           python scripts/gen_publication_identity.py \
             --require-clean \

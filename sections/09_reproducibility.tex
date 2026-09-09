@@ -19,7 +19,7 @@ python3 fl-bsa-v5.0.1-companion-evidence/verify_companion_bundle.py \
   --expected-gold-index-sha256 \
   9ffb2c04a95f428f068d471732c7d9ed1e27a16d553749c2ec828907fbe9166c \
   --expected-gold-summary-sha256 \
-  15bee5d51c6816e4bd8bffdde3bcb657e5a25932f9742f17496c7a53884858ce \
+  4339828263ce4cb3b81353f1fdb3e11ae5c99aeaebe9b3477be18dfe5a436a63 \
   fl-bsa-v5.0.1-companion-evidence.zip
 \end{verbatim}
 
@@ -31,8 +31,12 @@ product, workflow, and customer/publication identities; recomputes the displayed
 two-proportion, and Holm arithmetic; and traverses the complete certificate graph. The three Gold
 SHA-256 arguments and the utility SHA-256 argument must be copied from this trusted PDF; the
 verifier consumes the supplied values and does not read the PDF. Before interpreting robustness it
-requires the exact Gold evidence manifest, index, and merged summary bytes to match, then checks the
-seed set, per-seed statuses, and aggregates for all 40 runs. It requires
+requires the exact Gold evidence manifest and index plus the deterministic public merged-summary
+projection to match, then checks the seed set, per-seed statuses, and aggregates for all 40 runs.
+The projection removes only 40 \texttt{run\_dir} and 40 \texttt{scenario\_dir} fields; the exact
+upstream summary remains anchored by source SHA-256
+\IdentityText{15bee5d51c6816e4bd8bffdde3bcb657e5a25932f9742f17496c7a53884858ce}
+and the recorded Gold artifact identity. It requires
 \path{evidence/v5.0.1/utility/utility_summary.json} to match, then validates the ten-row structure,
 recomputes aggregates and skill retention, and cross-checks the paper-owned headline
 characterization. Coherent rewrites of either Gold or utility values, derived summaries, bundled
@@ -42,7 +46,7 @@ generator outputs or model predictions. For those remaining surfaces, the preced
 whole-ZIP digest comparison is the trust anchor; full utility reproduction still requires the exact
 product checkout and recorded dependencies.
 
-The externally anchored Gold bytes have these SHA-256 values:
+The disclosed Gold and public-projection bytes have these SHA-256 values:
 
 \begin{KeyBox}
   \small

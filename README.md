@@ -72,7 +72,7 @@ python3 /tmp/flbsa-wp-companion/verify_companion_bundle.py \
   --expected-gold-index-sha256 \
   9ffb2c04a95f428f068d471732c7d9ed1e27a16d553749c2ec828907fbe9166c \
   --expected-gold-summary-sha256 \
-  15bee5d51c6816e4bd8bffdde3bcb657e5a25932f9742f17496c7a53884858ce \
+  4339828263ce4cb3b81353f1fdb3e11ae5c99aeaebe9b3477be18dfe5a436a63 \
   dist/fl-bsa-v5.0.1-companion-evidence.zip
 ```
 
@@ -82,9 +82,13 @@ separate utility and three Gold digests from the PDF into the four `--expected-*
 verifier consumes those caller-supplied values; it does not read the PDF. It checks every member
 hash and size, source identities, bounded claim flags, corrected SRG method, race reference policy,
 certificate hashes and predecessor links, and exact robustness completeness and aggregates. The
-Gold manifest, index, and merged summary bytes must match their supplied digests before those
-aggregates are consumed. For utility, the paper-owned summary bytes must match its supplied digest
-before the verifier validates the ten-row structure and recomputes aggregates and skill retention.
+Gold manifest, index, and path-free merged-summary projection must match their supplied digests
+before those aggregates are consumed. The projection removes only 40 `run_dir` and 40
+`scenario_dir` fields from upstream summary SHA-256
+`15bee5d51c6816e4bd8bffdde3bcb657e5a25932f9742f17496c7a53884858ce`; the source artifact
+identity remains recorded separately. For utility, the paper-owned summary bytes must match its
+supplied digest before the verifier validates the ten-row structure and recomputes aggregates and
+skill retention.
 The headline characterization must be an exact projection of those anchored layers. The verifier
 does not regenerate utility model outputs or independently authenticate the remaining surfaces of a
 coherently rewritten ZIP. Certificate signature fields are checked for complete encoding only
@@ -94,7 +98,8 @@ linkage, not independent authentication.
 ## Evidence layers
 
 - `intake/`: exact producer-managed v5.0.1 whitepaper intake plus deterministic consumer stamp.
-- `evidence/v5.0.1/robustness/`: exact release Gold aggregate and index.
+- `evidence/v5.0.1/robustness/`: exact release Gold manifest/index plus a deterministic,
+  machine-path-free projection of the release Gold aggregate.
 - `evidence/v5.0.1/utility/`: generated fixture, source identity, reproducible TSTR script output.
 - `evidence/v5.0.1/publication/`: paper-owned current interpretation, identities, and derived
   characterization. These files do not rewrite producer metrics.

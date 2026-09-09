@@ -12,6 +12,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest import mock
 
 import yaml
 
@@ -57,6 +58,9 @@ GOLD_INDEX_SHA256 = (
     "9ffb2c04a95f428f068d471732c7d9ed1e27a16d553749c2ec828907fbe9166c"
 )
 GOLD_SUMMARY_SHA256 = (
+    "4339828263ce4cb3b81353f1fdb3e11ae5c99aeaebe9b3477be18dfe5a436a63"
+)
+GOLD_SOURCE_SUMMARY_SHA256 = (
     "15bee5d51c6816e4bd8bffdde3bcb657e5a25932f9742f17496c7a53884858ce"
 )
 GOLD_VERIFY_KWARGS = {
@@ -162,6 +166,16 @@ class V501CharacterizationContractTests(unittest.TestCase):
         )
         self.assertEqual(
             GOLD_ARTIFACT_API_DIGEST, gold["artifact_api_digest"]
+        )
+        self.assertEqual(
+            GOLD_SOURCE_SUMMARY_SHA256, gold["source_summary_sha256"]
+        )
+        self.assertEqual(
+            {
+                "algorithm": "remove-machine-local-path-fields.v1",
+                "removed_fields": {"run_dir": 40, "scenario_dir": 40},
+            },
+            gold["summary_projection"],
         )
         for field, relative in (
             (
@@ -472,6 +486,16 @@ class V501CharacterizationContractTests(unittest.TestCase):
         self.assertEqual(INTERNAL_AIR_SCREEN, contract.INTERNAL_AIR_SCREEN)
         self.assertEqual(UTILITY_SUMMARY_PATH, contract.UTILITY_SUMMARY_PATH)
         self.assertEqual(UTILITY_SUMMARY_SHA256, contract.UTILITY_SUMMARY_SHA256)
+        self.assertEqual(
+            GOLD_SOURCE_SUMMARY_SHA256, contract.GOLD_SOURCE_SUMMARY_SHA256
+        )
+        self.assertEqual(
+            {
+                "algorithm": "remove-machine-local-path-fields.v1",
+                "removed_fields": {"run_dir": 40, "scenario_dir": 40},
+            },
+            contract.GOLD_SUMMARY_PROJECTION,
+        )
         for path, digest, contract_path, contract_digest in (
             (
                 GOLD_EVIDENCE_MANIFEST_PATH,
@@ -718,6 +742,38 @@ class V501CharacterizationContractTests(unittest.TestCase):
             second_result = builder.build(ROOT, second)
             self.assertEqual(first.read_bytes(), second.read_bytes())
             self.assertEqual(first_result["sha256"], second_result["sha256"])
+            with self.assertRaisesRegex(builder.CompanionError, "machine-local path"):
+                builder._assert_public_safe_members(
+                    {"evidence/example.json": b'{"run_dir":"/mnt/ci-work/private"}'}
+                )
+            with mock.patch.object(
+                builder,
+                "_collect",
+                return_value={"evidence/private.log": b"future unclassified format\n"},
+            ):
+                with self.assertRaisesRegex(
+                    builder.CompanionError, "unsupported public companion member format"
+                ):
+                    builder.build(ROOT, Path(tmp) / "bypass.zip")
+            with self.assertRaisesRegex(builder.CompanionError, "machine-local path"):
+                builder._assert_public_safe_members(
+                    {
+                        "evidence/v5.0.1/utility/balanced_fixture.csv.gz": gzip.compress(
+                            b"worker_path,/home/ci/actions-runner/private\n"
+                        )
+                    }
+                )
+            nested_zip = io.BytesIO()
+            with zipfile.ZipFile(
+                nested_zip, "w", compression=zipfile.ZIP_DEFLATED
+            ) as archive:
+                archive.writestr(
+                    "intake/private.json", b'{"run_dir":"/mnt/ci-work/private"}'
+                )
+            with self.assertRaisesRegex(builder.CompanionError, "machine-local path"):
+                builder._assert_public_safe_members(
+                    {builder.PRODUCER_BUNDLE_MEMBER: nested_zip.getvalue()}
+                )
             verified = verifier.verify(
                 first,
                 expected_utility_sha256=UTILITY_SUMMARY_SHA256,

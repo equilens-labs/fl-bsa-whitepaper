@@ -19,6 +19,8 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from characterization_contract import (
+    GOLD_SOURCE_SUMMARY_SHA256,
+    GOLD_SUMMARY_PROJECTION,
     INTERNAL_AIR_SCREEN,
     UTILITY_SUMMARY_PATH,
 )
@@ -399,7 +401,7 @@ def _verify_identity(bundle: Bundle, manifest: dict[str, Any]) -> None:
     _require(product.get("tag_object") == PRODUCT_TAG_OBJECT, "wrong product tag object")
     paper = manifest.get("whitepaper") or {}
     _require(HEX_40.fullmatch(str(paper.get("commit") or "")) is not None, "bad paper commit")
-    _require(paper.get("document_version") == "WP-5.0.1-candidate.2", "bad document version")
+    _require(paper.get("document_version") == "WP-5.0.1-candidate.3", "bad document version")
     _require(paper.get("publication_status") == "candidate_not_published", "bad publication status")
     evidence = manifest.get("evidence") or {}
     _require(
@@ -495,6 +497,15 @@ def _verify_identity(bundle: Bundle, manifest: dict[str, Any]) -> None:
             gold_identity.get(field) == _sha256(bundle.read(path)),
             f"Gold artifact identity {field} mismatch",
         )
+    _require(
+        gold_identity.get("source_summary_sha256")
+        == GOLD_SOURCE_SUMMARY_SHA256,
+        "Gold source summary identity mismatch",
+    )
+    _require(
+        gold_identity.get("summary_projection") == GOLD_SUMMARY_PROJECTION,
+        "Gold summary projection identity mismatch",
+    )
     identity_claims = identity.get("claim_boundary") or {}
     _require(
         identity_claims
@@ -1473,7 +1484,7 @@ def _expected_characterization_summary(
 
     return {
         "schema_version": "flbsa.whitepaper_characterization.v2",
-        "document_version": "WP-5.0.1-candidate.2",
+        "document_version": "WP-5.0.1-candidate.3",
         "as_of": "2026-08-05",
         "publication_status": "candidate_not_published",
         "product": {

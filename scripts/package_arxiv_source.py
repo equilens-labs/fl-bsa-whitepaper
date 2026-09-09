@@ -102,7 +102,7 @@ def _assert_publication_identity(repo_root: Path, path: Path) -> None:
         raise PackageError("generated publication identity requires the companion ZIP")
     companion_bytes = companion.read_bytes()
     expected = {
-        "DocumentVersion": "WP-5.0.1-candidate.2",
+        "DocumentVersion": "WP-5.0.1-candidate.3",
         "PublicationStatus": "CANDIDATE — NOT PUBLISHED",
         "PublicationAsOf": "6 August 2026",
         "ProductReleaseTag": "v5.0.1",
