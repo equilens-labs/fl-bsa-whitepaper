@@ -119,7 +119,7 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
         }
 
     @staticmethod
-    def _race_disclosure_updates() -> tuple[tuple[str, str, dict], ...]:
+    def _race_disclosure_updates() -> tuple[tuple[str, tuple[str, ...], dict], ...]:
         suppression = [
             {
                 "group": "hispanic",
@@ -131,7 +131,7 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
         return (
             (
                 "intake/metrics_uncertainty.json",
-                "fairness_uncertainty",
+                ("fairness_uncertainty", "race"),
                 {
                     "configured_protected_groups": [
                         "black",
@@ -146,7 +146,19 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
             ),
             (
                 "intake/air_status.json",
-                "per_attribute",
+                ("per_attribute", "race"),
+                {
+                    "suppressed_groups": suppression,
+                    "verdict_scope": "display_policy_conditional",
+                    "status_caveat": (
+                        "Race AIR status is display-policy conditional; suppressed groups "
+                        "are listed and must not be read as an unconditional race verdict."
+                    ),
+                },
+            ),
+            (
+                "intake/run_summary.json",
+                ("air_details", "per_attribute", "race"),
                 {
                     "suppressed_groups": suppression,
                     "verdict_scope": "display_policy_conditional",
@@ -165,32 +177,37 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
     def test_reviewed_race_suppression_disclosure_extensions_pass(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             bundle = self._bundle(Path(tmp))
-            for relative, parent_key, fields in self._race_disclosure_updates():
+            for relative, object_path, fields in self._race_disclosure_updates():
                 path = bundle / relative
                 payload = json.loads(path.read_text(encoding="utf-8"))
-                payload[parent_key]["race"].update(fields)
+                target = payload
+                for key in object_path:
+                    target = target[key]
+                target.update(fields)
                 path.write_text(json.dumps(payload), encoding="utf-8")
             DISCLOSURE.validate_bundle(bundle, ROOT)
 
     def test_race_disclosure_extensions_reject_dotted_key_aliases(self) -> None:
-        for relative, parent_key, fields in self._race_disclosure_updates():
+        for relative, object_path, fields in self._race_disclosure_updates():
             for field, value in fields.items():
-                for alias_level in ("root", "intermediate"):
+                for alias_depth in range(len(object_path)):
                     with (
                         self.subTest(
                             relative=relative,
                             field=field,
-                            alias_level=alias_level,
+                            alias_depth=alias_depth,
                         ),
                         tempfile.TemporaryDirectory() as tmp,
                     ):
                         bundle = self._bundle(Path(tmp))
                         path = bundle / relative
                         payload = json.loads(path.read_text(encoding="utf-8"))
-                        if alias_level == "root":
-                            payload[f"{parent_key}.race.{field}"] = value
-                        else:
-                            payload[parent_key][f"race.{field}"] = value
+                        alias_parent = payload
+                        for key in object_path[:alias_depth]:
+                            alias_parent = alias_parent[key]
+                        alias_parent[".".join((*object_path[alias_depth:], field))] = (
+                            value
+                        )
                         path.write_text(json.dumps(payload), encoding="utf-8")
 
                         with self.assertRaisesRegex(

@@ -187,6 +187,12 @@ _METRICS_RACE_SCHEMA_PATH = (
     "race",
 )
 _AIR_RACE_SCHEMA_PATH = ("intake/air_status.json", "per_attribute", "race")
+_RUN_SUMMARY_AIR_RACE_SCHEMA_PATH = (
+    "intake/run_summary.json",
+    "air_details",
+    "per_attribute",
+    "race",
+)
 _REVIEWED_SCHEMA_EXTENSIONS = {
     (*_METRICS_RACE_SCHEMA_PATH, "configured_protected_groups"): [""],
     (*_METRICS_RACE_SCHEMA_PATH, "unknown_treatment"): "",
@@ -196,6 +202,10 @@ _REVIEWED_SCHEMA_EXTENSIONS = {
     (*_METRICS_RACE_SCHEMA_PATH, "verdict_scope"): "",
     (*_AIR_RACE_SCHEMA_PATH, "suppressed_groups"): [_RACE_SUPPRESSION_ITEM_SCHEMA],
     (*_AIR_RACE_SCHEMA_PATH, "status_caveat"): "",
+    (*_RUN_SUMMARY_AIR_RACE_SCHEMA_PATH, "suppressed_groups"): [
+        _RACE_SUPPRESSION_ITEM_SCHEMA
+    ],
+    (*_RUN_SUMMARY_AIR_RACE_SCHEMA_PATH, "status_caveat"): "",
 }
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
