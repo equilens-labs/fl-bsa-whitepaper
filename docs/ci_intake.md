@@ -95,8 +95,9 @@ correlation rows and range-violation rows may reference only column names alread
 the tracked certificate, the SRG correction history may appear only on the two reviewed
 SRG-bearing artifacts, and the count-derived race fields `configured_protected_groups`,
 `unknown_treatment`, `suppressed_groups`, `verdict_scope`, and `status_caveat` may appear only at
-their reviewed metrics/AIR paths with their exact structural shapes. The product-side race
-evidence contract remains the semantic and source-binding authority for those fields.
+their reviewed metrics, AIR-status, and run-summary AIR paths with their exact structural shapes.
+The product-side race evidence contract remains the semantic and source-binding authority for
+those fields.
 `ci_runtime_provenance` may appear in either manifest only with the exact
 `wp.ci_runtime_provenance.v2` bounded product-CI
 run/artifact/runtime-digest/projection shape. Version 2 is the first producer-consumer shape that
