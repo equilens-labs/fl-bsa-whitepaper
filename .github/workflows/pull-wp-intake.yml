@@ -529,10 +529,10 @@ jobs:
           mu_path = Path("bundle/intake/metrics_uncertainty.json")
           mu = json.loads(mu_path.read_text(encoding="utf-8"))
           mu_schema = str(mu.get("schema_version") or "")
-          if mu_schema != "fairness_uncertainty.v1":
+          if mu_schema != "fairness_uncertainty.v2":
               raise SystemExit(
                   "Unexpected bundle metrics_uncertainty.schema_version="
-                  f"{mu_schema!r}; expected 'fairness_uncertainty.v1'"
+                  f"{mu_schema!r}; expected 'fairness_uncertainty.v2'"
               )
 
           print("Bundle schema versions OK")

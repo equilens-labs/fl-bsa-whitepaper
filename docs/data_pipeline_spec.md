@@ -156,7 +156,7 @@ And generates:
 
 ### metrics_uncertainty.json (v4 SoT)
 
-- **Format:** JSON (schema version `fairness_uncertainty.v1`)
+- **Format:** JSON (current release schema `fairness_uncertainty.v2`; the checked-in v1 intake is a historical baseline)
 - **Meaning:** Deterministic fairness uncertainty surface (AIR + approval-rate gap) with race pairwise vs reference, p-values, and visibility gating signals.
 
 ### metrics_long.csv

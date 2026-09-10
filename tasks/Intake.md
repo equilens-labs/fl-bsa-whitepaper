@@ -105,7 +105,7 @@ WhitePaper_Intake_Bundle_v4.zip
 - **Meaning:** Per `(split, attribute, group)`; `selected` is count of `loan_approved=1`; `n` is group size (0 ≤ selected ≤ n).
 
 ### metrics_uncertainty.json (v4 SoT)
-- **Format:** JSON (schema version `fairness_uncertainty.v1`)
+- **Format:** JSON (current release schema `fairness_uncertainty.v2`; the checked-in v1 intake is a historical baseline)
 - **Meaning:** Deterministic fairness uncertainty surface (AIR + approval-rate gap), including race multi-class pairwise vs reference.
 
 ### metrics_long.csv

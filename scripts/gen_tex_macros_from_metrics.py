@@ -30,6 +30,10 @@ import yaml
 
 
 _SRG_METHOD = "conservative_wilson_endpoint_difference"
+_SUPPORTED_UNCERTAINTY_SCHEMAS = {
+    "fairness_uncertainty.v1",  # tracked historical intake
+    "fairness_uncertainty.v2",  # current release intake
+}
 
 
 def _strict_load_json(path: Path, label: str) -> dict[str, Any]:
@@ -91,8 +95,11 @@ def _strict_metric_block(value: Any, location: str) -> None:
 
 
 def _strict_validate_uncertainty(payload: dict[str, Any]) -> None:
-    if payload.get("schema_version") != "fairness_uncertainty.v1":
-        raise ValueError("uncertainty.schema_version must be fairness_uncertainty.v1")
+    if payload.get("schema_version") not in _SUPPORTED_UNCERTAINTY_SCHEMAS:
+        raise ValueError(
+            "uncertainty.schema_version must be fairness_uncertainty.v1 or "
+            "fairness_uncertainty.v2"
+        )
     uncertainty = payload.get("fairness_uncertainty")
     if not isinstance(uncertainty, dict):
         raise ValueError("uncertainty.fairness_uncertainty must be an object")

@@ -341,6 +341,9 @@ class PullWpIntakeContractTests(unittest.TestCase):
             'for field in ("code_commit", "source_commit", "software_commit")',
             schema,
         )
+        self.assertIn('if mu_schema != "fairness_uncertainty.v2":', schema)
+        self.assertIn("expected 'fairness_uncertainty.v2'", schema)
+        self.assertNotIn('if mu_schema != "fairness_uncertainty.v1":', schema)
 
     def test_release_dispatch_accepts_only_the_exact_successful_producer_job(
         self,
