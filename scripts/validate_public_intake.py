@@ -4,8 +4,9 @@
 The archive-member allowlist in ``pull-wp-intake.yml`` controls filenames. This
 validator controls the disclosed structure and high-confidence sensitive content
 inside those files. Incoming JSON/YAML fields and CSV columns must already exist
-in the reviewed, tracked public baseline. A producer schema expansion therefore
-requires an ordinary repository review before the new data can be ingested.
+in the reviewed, tracked public baseline or an explicit reviewed extension schema.
+A producer schema expansion therefore requires an ordinary repository review
+before the new data can be ingested.
 """
 
 from __future__ import annotations
@@ -174,6 +175,28 @@ _SRG_CORRECTION_ITEM_SCHEMA = {
     "scope": "",
     "interval_values_changed": False,
 }
+_RACE_SUPPRESSION_ITEM_SCHEMA = {
+    "group": "",
+    "n": 0,
+    "pct": 0.0,
+    "reasons": [""],
+}
+_METRICS_RACE_SCHEMA_PATH = (
+    "intake/metrics_uncertainty.json",
+    "fairness_uncertainty",
+    "race",
+)
+_AIR_RACE_SCHEMA_PATH = ("intake/air_status.json", "per_attribute", "race")
+_REVIEWED_SCHEMA_EXTENSIONS = {
+    (*_METRICS_RACE_SCHEMA_PATH, "configured_protected_groups"): [""],
+    (*_METRICS_RACE_SCHEMA_PATH, "unknown_treatment"): "",
+    (*_METRICS_RACE_SCHEMA_PATH, "suppressed_groups"): [
+        _RACE_SUPPRESSION_ITEM_SCHEMA
+    ],
+    (*_METRICS_RACE_SCHEMA_PATH, "verdict_scope"): "",
+    (*_AIR_RACE_SCHEMA_PATH, "suppressed_groups"): [_RACE_SUPPRESSION_ITEM_SCHEMA],
+    (*_AIR_RACE_SCHEMA_PATH, "status_caveat"): "",
+}
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
@@ -292,8 +315,15 @@ def _is_certificate_root_location(location: str) -> bool:
 
 
 def _validate_structure(
-    candidate: Any, baseline: Any, location: str, *, depth: int = 0
+    candidate: Any,
+    baseline: Any,
+    location: str,
+    *,
+    schema_path: tuple[str | int, ...] | None = None,
+    depth: int = 0,
 ) -> None:
+    if schema_path is None:
+        schema_path = (location,)
     if depth > 64:
         raise DisclosureError(f"{location} exceeds the reviewed nesting-depth limit")
     # A producer may redact or omit a reviewed value by setting it to null. This
@@ -323,6 +353,7 @@ def _validate_structure(
                     value,
                     _RANGE_VIOLATION_ITEM_SCHEMA,
                     f"{location}.[reviewed-column]",
+                    schema_path=(*schema_path, key),
                     depth=depth + 1,
                 )
             return
@@ -331,6 +362,7 @@ def _validate_structure(
                 raise DisclosureError(
                     f"{location} contains a forbidden sensitive field; key redacted"
                 )
+            field_location = f"{location}.{key}"
             if (
                 _is_certificate_root_location(location)
                 and key in _CERTIFICATE_SIGNATURE_SCHEMA
@@ -339,6 +371,7 @@ def _validate_structure(
                     value,
                     _CERTIFICATE_SIGNATURE_SCHEMA[key],
                     f"{location}.{key}",
+                    schema_path=(*schema_path, key),
                     depth=depth + 1,
                 )
                 continue
@@ -354,6 +387,7 @@ def _validate_structure(
                     value,
                     _CI_RUNTIME_PROVENANCE_SCHEMA,
                     f"{location}.ci_runtime_provenance",
+                    schema_path=(*schema_path, key),
                     depth=depth + 1,
                 )
                 _validate_ci_runtime_provenance(
@@ -372,6 +406,19 @@ def _validate_structure(
                     value,
                     [_SRG_CORRECTION_ITEM_SCHEMA],
                     f"{location}.method_label_corrections",
+                    schema_path=(*schema_path, key),
+                    depth=depth + 1,
+                )
+                continue
+            field_schema_path = (*schema_path, key)
+            if field_schema_path in _REVIEWED_SCHEMA_EXTENSIONS:
+                # Product-side evidence may add these reviewed race-disclosure
+                # fields without rewriting the historical public baseline.
+                _validate_structure(
+                    value,
+                    _REVIEWED_SCHEMA_EXTENSIONS[field_schema_path],
+                    field_location,
+                    schema_path=field_schema_path,
                     depth=depth + 1,
                 )
                 continue
@@ -381,7 +428,11 @@ def _validate_structure(
                     "key redacted"
                 )
             _validate_structure(
-                value, baseline[key], f"{location}.{key}", depth=depth + 1
+                value,
+                baseline[key],
+                field_location,
+                schema_path=field_schema_path,
+                depth=depth + 1,
             )
         return
 
@@ -412,6 +463,7 @@ def _validate_structure(
                         value,
                         baseline_item,
                         f"{location}[{index}]",
+                        schema_path=(*schema_path, index),
                         depth=depth + 1,
                     )
                     break
