@@ -35,6 +35,7 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
     def _bundle(self, root: Path) -> Path:
         bundle = root / "bundle"
         for path in (
+            "intake/air_status.json",
             "intake/fairness_slices.json",
             "intake/metrics_uncertainty.json",
             "intake/metrics_long.csv",
@@ -117,9 +118,86 @@ class PublicIntakeDisclosureTests(unittest.TestCase):
             },
         }
 
+    @staticmethod
+    def _race_disclosure_updates() -> tuple[tuple[str, str, dict], ...]:
+        suppression = [
+            {
+                "group": "hispanic",
+                "n": 273,
+                "pct": 0.0273,
+                "reasons": ["below_min_group_n", "below_min_group_pct"],
+            }
+        ]
+        return (
+            (
+                "intake/metrics_uncertainty.json",
+                "fairness_uncertainty",
+                {
+                    "configured_protected_groups": [
+                        "black",
+                        "asian",
+                        "hispanic",
+                        "other",
+                    ],
+                    "unknown_treatment": "exclude",
+                    "suppressed_groups": suppression,
+                    "verdict_scope": "display_policy_conditional",
+                },
+            ),
+            (
+                "intake/air_status.json",
+                "per_attribute",
+                {
+                    "suppressed_groups": suppression,
+                    "verdict_scope": "display_policy_conditional",
+                    "status_caveat": (
+                        "Race AIR status is display-policy conditional; suppressed groups "
+                        "are listed and must not be read as an unconditional race verdict."
+                    ),
+                },
+            ),
+        )
+
     def test_reviewed_tracked_shapes_pass(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             DISCLOSURE.validate_bundle(self._bundle(Path(tmp)), ROOT)
+
+    def test_reviewed_race_suppression_disclosure_extensions_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = self._bundle(Path(tmp))
+            for relative, parent_key, fields in self._race_disclosure_updates():
+                path = bundle / relative
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                payload[parent_key]["race"].update(fields)
+                path.write_text(json.dumps(payload), encoding="utf-8")
+            DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_race_disclosure_extensions_reject_dotted_key_aliases(self) -> None:
+        for relative, parent_key, fields in self._race_disclosure_updates():
+            for field, value in fields.items():
+                for alias_level in ("root", "intermediate"):
+                    with (
+                        self.subTest(
+                            relative=relative,
+                            field=field,
+                            alias_level=alias_level,
+                        ),
+                        tempfile.TemporaryDirectory() as tmp,
+                    ):
+                        bundle = self._bundle(Path(tmp))
+                        path = bundle / relative
+                        payload = json.loads(path.read_text(encoding="utf-8"))
+                        if alias_level == "root":
+                            payload[f"{parent_key}.race.{field}"] = value
+                        else:
+                            payload[parent_key][f"race.{field}"] = value
+                        path.write_text(json.dumps(payload), encoding="utf-8")
+
+                        with self.assertRaisesRegex(
+                            DISCLOSURE.DisclosureError,
+                            "outside the reviewed public schema",
+                        ):
+                            DISCLOSURE.validate_bundle(bundle, ROOT)
 
     def test_regulatory_matrix_rejects_unsupported_pdflatex_unicode(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

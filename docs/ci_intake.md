@@ -79,8 +79,9 @@ disclosure boundary. JSON/YAML keys and types must be a subset of the reviewed t
 files; CSV headers must match their tracked public counterparts exactly. Duplicate structured
 keys, new fields/columns, high-confidence credentials, email addresses, user-home paths, private
 IP addresses, sensitive identity fields, control characters, and oversized values fail closed.
-A legitimate producer schema expansion therefore requires a reviewed public baseline change in
-this repository before the corresponding private data can cross the boundary.
+A legitimate producer schema expansion therefore requires either a reviewed public baseline
+change or a narrow explicit extension schema in this repository before the corresponding private
+data can cross the boundary.
 The same validator requires every SRG-bearing uncertainty and slice block to name
 `conservative_wilson_endpoint_difference`, requires finite protected/reference selection rates,
 recomputes the SRG point as protected minus reference, recomputes its bounds from the protected and
@@ -89,11 +90,15 @@ producer may carry a legacy-label correction history only with the exact reviewe
 contract, `interval_values_changed=false`, and a pointer to a validated current-method SRG block.
 Legacy, unknown, arithmetically inconsistent, duplicate, malformed, or unbound corrections fail
 closed.
-The validator itself carries five narrow reviewed empty-baseline/additive schemas: broken
+The validator itself carries narrow reviewed empty-baseline/additive schemas: broken
 correlation rows and range-violation rows may reference only column names already disclosed by
 the tracked certificate, the SRG correction history may appear only on the two reviewed
-SRG-bearing artifacts, and `ci_runtime_provenance` may appear in either manifest only with the
-exact `wp.ci_runtime_provenance.v2` bounded product-CI
+SRG-bearing artifacts, and the count-derived race fields `configured_protected_groups`,
+`unknown_treatment`, `suppressed_groups`, `verdict_scope`, and `status_caveat` may appear only at
+their reviewed metrics/AIR paths with their exact structural shapes. The product-side race
+evidence contract remains the semantic and source-binding authority for those fields.
+`ci_runtime_provenance` may appear in either manifest only with the exact
+`wp.ci_runtime_provenance.v2` bounded product-CI
 run/artifact/runtime-digest/projection shape. Version 2 is the first producer-consumer shape that
 persists runtime build-source identity; the incomplete pre-producer version-1 shape is not
 accepted. Its `runtime_image` object
@@ -111,10 +116,10 @@ Missing, malformed, duplicate, or unknown fields and incoherent SHA/disposition 
 closed. This records which already-verified runtime image was exercised; it does not make an
 equivalent-input image the same source build. The CI block must keep `full_ci_proven=false`; it
 cannot be used to widen the evidence or publication claim boundary.
-The fifth schema permits the product's four public ECDSA certificate-signing fields only at a
-certificate document's top level and only as a complete set. The validator requires a 128-character
-lowercase-hex signature, a 16-character lowercase-hex public-key fingerprint, the exact
-`ECDSA-P256-SHA256` algorithm label, and the product signer's UTC ISO timestamp form. Partial,
+A separate reviewed schema permits the product's four public ECDSA certificate-signing fields only
+at a certificate document's top level and only as a complete set. The validator requires a
+128-character lowercase-hex signature, a 16-character lowercase-hex public-key fingerprint, the
+exact `ECDSA-P256-SHA256` algorithm label, and the product signer's UTC ISO timestamp form. Partial,
 nested, malformed, or differently labelled signature metadata fails closed.
 This is a disclosure-format and bounded-value check, not cryptographic verification. Signature
 authenticity and trust-root membership remain the responsibility of the product's release
