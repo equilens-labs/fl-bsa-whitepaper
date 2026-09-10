@@ -59,7 +59,8 @@ payload, artifact, receipt, or tracked file.
 The workflow downloads `WhitePaper_Intake_Bundle_v4.zip` and verifies its GitHub artifact
 attestation against `equilens-labs/fl-bsa`. Only the exact attempt-qualified primary bundle is
 accepted; duplicate or missing artifacts fail closed. It validates the `wp-intake.v1` provenance
-schema and `fairness_uncertainty.v1` metrics schema. Before download, the dispatched run ID is
+schema and current-release `fairness_uncertainty.v2` metrics schema; the checked-in v1 intake
+remains a historical baseline. Before download, the dispatched run ID is
 resolved through the Actions API and must match the exact workflow path, approved event, source
 repository, branch, SHA, and attempt policy. The exact-attempt `WP Evidence (release-grade)` job
 must complete successfully; a failed job, failed completed run, wrong attempt, wrong SHA, duplicate

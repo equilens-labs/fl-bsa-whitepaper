@@ -20,7 +20,7 @@ Consumer (Whitepaper):
 The v4 paper is driven by these artifacts (all present in the bundle):
 - `intake/manifest.json` — provenance + deterministic group orientation (`fairness_reference_groups`, `fairness_protected_groups`)
 - `intake/run_summary.json` — run metadata + headline outcomes, including inference config
-- `intake/metrics_uncertainty.json` — deterministic fairness uncertainty SoT (`fairness_uncertainty.v1`)
+- `intake/metrics_uncertainty.json` — deterministic fairness uncertainty SoT (`fairness_uncertainty.v2` for current release intake; the tracked v1 baseline remains historical)
 - `intake/fairness_slices.json` — three-slice narrative guardrail (historical / amplification / intrinsic)
 
 The consumer repo ingests:
@@ -89,4 +89,4 @@ Evidence / schema:
 - Decide whether to lower race display thresholds (or adjust the scenario demographics) to surface race in the main PDF, or keep race in annex with a clear notice.
 
 Automation:
-- Keep the intake pull workflow pinned to schema versions (`wp-intake.v1`, `fairness_uncertainty.v1`) so producer changes fail loudly.
+- Keep the intake pull workflow pinned to schema versions (`wp-intake.v1`, `fairness_uncertainty.v2`) so producer changes fail loudly.

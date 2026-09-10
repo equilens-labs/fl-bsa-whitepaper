@@ -1,4 +1,5 @@
 import csv
+import json
 import subprocess
 import sys
 import tempfile
@@ -157,6 +158,45 @@ class StrictMacroGenerationTests(unittest.TestCase):
             command = self._metrics_command(outdir, sap=wrong_shape)
             self._assert_failure_without_output(
                 command, outdir / "metrics_macros.tex"
+            )
+
+    def test_metrics_strict_accepts_current_v2_schema(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            uncertainty = root / "metrics_uncertainty.json"
+            payload = json.loads(
+                (ROOT / "intake" / "metrics_uncertainty.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            payload["schema_version"] = "fairness_uncertainty.v2"
+            uncertainty.write_text(json.dumps(payload), encoding="utf-8")
+
+            outdir = root / "includes"
+            completed = self._run(
+                self._metrics_command(outdir, uncertainty=uncertainty)
+            )
+            self.assertEqual(
+                0, completed.returncode, completed.stdout + completed.stderr
+            )
+            self.assertTrue((outdir / "metrics_macros.tex").is_file())
+
+    def test_metrics_strict_rejects_unknown_uncertainty_schema(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            uncertainty = root / "metrics_uncertainty.json"
+            payload = json.loads(
+                (ROOT / "intake" / "metrics_uncertainty.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            payload["schema_version"] = "fairness_uncertainty.v3"
+            uncertainty.write_text(json.dumps(payload), encoding="utf-8")
+
+            outdir = root / "includes"
+            self._assert_failure_without_output(
+                self._metrics_command(outdir, uncertainty=uncertainty),
+                outdir / "metrics_macros.tex",
             )
 
     def test_metrics_tex_table_escapes_all_csv_text_cells(self) -> None:
