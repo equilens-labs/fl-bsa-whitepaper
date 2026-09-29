@@ -348,13 +348,26 @@ def render_regulatory_table(matrix_path: Path) -> str:
 
     lines = [
         "% Generated from the exact release intake by scripts/release_whitepaper.py; do not edit.",
-        r"\begin{table}[htbp]",
-        r"\centering",
+        r"\begingroup",
         r"\small",
-        r"\begin{tabular}{@{}p{0.16\linewidth}p{0.13\linewidth}p{0.28\linewidth}p{0.28\linewidth}@{}}",
+        r"\setlength{\LTpre}{0pt}",
+        r"\setlength{\LTpost}{0pt}",
+        r"\begin{longtable}{@{}>{\RaggedRight\arraybackslash}p{0.22\linewidth}>{\RaggedRight\arraybackslash}p{0.72\linewidth}@{}}",
+        r"\caption{Producer-supplied regulatory mapping metadata from the exact release intake. Labels and status text are retained for provenance and are not adopted as legal validation, compliance findings, or certification.}\label{tab:reg_matrix}\\",
         r"\toprule",
-        "Framework & Citation & Requirement & Producer-supplied mapping metadata \\\\",
+        r"Field & Producer-supplied metadata \\",
         r"\midrule",
+        r"\endfirsthead",
+        r"\multicolumn{2}{@{}l}{\small\itshape Regulatory mapping metadata (continued)}\\",
+        r"\toprule",
+        r"Field & Producer-supplied metadata \\",
+        r"\midrule",
+        r"\endhead",
+        r"\midrule",
+        r"\multicolumn{2}{r@{}}{\small\itshape Continued on next page}\\",
+        r"\endfoot",
+        r"\bottomrule",
+        r"\endlastfoot",
     ]
     for row_number, row in enumerate(rows, start=2):
         if tuple(row) != _REGULATORY_COLUMNS:
@@ -367,23 +380,22 @@ def render_regulatory_table(matrix_path: Path) -> str:
             )
             for column in _REGULATORY_COLUMNS
         }
-        controls = (
-            f"{cells['control_assurance']} "
-            rf"\newline \textit{{Evidence artifacts:}} {cells['evidence_artifact']} "
-            rf"\newline \textit{{Source owner/status:}} {cells['owner']} / {cells['status']} "
-            rf"\newline \textit{{Notes:}} {cells['notes']}"
-        )
-        lines.append(
-            f"{cells['framework']} & {cells['citation']} & "
-            f"{cells['requirement_text']} & {controls} " + r"\\"
+        lines.extend(
+            [
+                rf"\textbf{{Framework}} & \textbf{{{cells['framework']}}} \\",
+                rf"Citation & {cells['citation']} \\",
+                rf"Requirement & {cells['requirement_text']} \\",
+                rf"Producer-supplied mapping & {cells['control_assurance']} \\",
+                rf"Evidence artifacts & {cells['evidence_artifact']} \\",
+                rf"Source owner / status & {cells['owner']} / {cells['status']} \\",
+                rf"Notes & {cells['notes']} \\",
+                r"\addlinespace[0.8em]",
+            ]
         )
     lines.extend(
         [
-            r"\bottomrule",
-            r"\end{tabular}",
-            r"\caption{Producer-supplied regulatory mapping metadata from the exact release intake. Labels and status text are retained for provenance and are not adopted as legal validation, compliance findings, or certification.}",
-            r"\label{tab:reg_matrix}",
-            r"\end{table}",
+            r"\end{longtable}",
+            r"\endgroup",
         ]
     )
     return "\n".join(lines) + "\n"

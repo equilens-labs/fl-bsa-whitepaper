@@ -15,6 +15,51 @@ SPEC.loader.exec_module(LAYOUT)
 
 
 class ReleaseLayoutTests(unittest.TestCase):
+    def test_footer_bbox_accepts_only_expected_footer_blocks(self) -> None:
+        xml = """<?xml version="1.0"?>
+        <html xmlns="http://www.w3.org/1999/xhtml"><body><doc>
+          <page width="595.28" height="841.89">
+            <flow><block xMin="70" yMin="740" xMax="500" yMax="752">
+              <line><word>Body</word></line></block></flow>
+            <flow><block xMin="72" yMin="800.2" xMax="110" yMax="810.5">
+              <line><word>Equilens</word></line></block></flow>
+            <flow><block xMin="250" yMin="802.2" xMax="350" yMax="809.3">
+              <line><word>DEMO</word><word>/</word><word>EVALUATION</word><word>ONLY</word></line>
+            </block></flow>
+            <flow><block xMin="500" yMin="800.2" xMax="530" yMax="810.5">
+              <line><word>page</word><word>1</word></line></block></flow>
+          </page>
+        </doc></body></html>"""
+        self.assertEqual([], LAYOUT.footer_intrusions_from_bbox_xml(xml))
+
+    def test_footer_bbox_rejects_caption_collision(self) -> None:
+        xml = """<?xml version="1.0"?>
+        <html xmlns="http://www.w3.org/1999/xhtml"><body><doc>
+          <page width="595.28" height="841.89">
+            <flow><block xMin="70" yMin="796.98" xMax="480" yMax="805.77">
+              <line><word>certification.</word></line></block></flow>
+            <flow><block xMin="72" yMin="800.2" xMax="110" yMax="810.5">
+              <line><word>Equilens</word></line></block></flow>
+          </page>
+        </doc></body></html>"""
+        self.assertEqual(
+            ["page=1 yMin=796.98 text='certification.'"],
+            LAYOUT.footer_intrusions_from_bbox_xml(xml),
+        )
+
+    def test_footer_bbox_rejects_block_that_straddles_reserved_boundary(self) -> None:
+        xml = """<?xml version="1.0"?>
+        <html xmlns="http://www.w3.org/1999/xhtml"><body><doc>
+          <page width="595.28" height="841.89">
+            <flow><block xMin="70" yMin="780.00" xMax="480" yMax="790.00">
+              <line><word>straddling</word><word>caption</word></line></block></flow>
+          </page>
+        </doc></body></html>"""
+        self.assertEqual(
+            ["page=1 yMin=780.00 text='straddling caption'"],
+            LAYOUT.footer_intrusions_from_bbox_xml(xml),
+        )
+
     def test_accepts_clean_and_sub_tolerance_layout(self) -> None:
         log = "\n".join(
             (

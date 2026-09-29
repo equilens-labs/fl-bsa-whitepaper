@@ -94,7 +94,7 @@ class PullWpIntakeContractTests(unittest.TestCase):
             "name: Canonicalize exact release whitepaper bytes",
             "python3 scripts/canonicalize_release_pdf.py main.pdf",
             "name: Verify exact release whitepaper layout",
-            "python3 scripts/check_release_layout.py main.log --max-overfull-pt 2",
+            "python3 scripts/check_release_layout.py main.log --pdf main.pdf --max-overfull-pt 2",
             "name: Verify exact release whitepaper is passive",
             "python3 scripts/check_release_pdf_passive.py main.pdf",
             "name: Finalize exact release whitepaper manifest",

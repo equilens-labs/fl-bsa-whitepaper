@@ -260,6 +260,12 @@ class ReleaseWhitepaperTests(unittest.TestCase):
 
         write_rows()
         rendered = release_wp.render_regulatory_table(matrix)
+        self.assertIn(r"\begin{longtable}", rendered)
+        self.assertIn(r"\RaggedRight\arraybackslash", rendered)
+        self.assertNotIn(r"\begin{table}", rendered)
+        self.assertNotIn(r"\begin{tabular}", rendered)
+        self.assertLess(rendered.index(r"\caption{"), rendered.index("Framework A"))
+        self.assertEqual(rendered.count(r"\textbf{Framework}"), 2)
         for expected in (
             r"Framework A \& Co.",
             r"Citation A \#1",
@@ -357,6 +363,12 @@ class ReleaseWhitepaperTests(unittest.TestCase):
     def test_release_assets_compile_only_the_generated_regulatory_table(self) -> None:
         root = Path(__file__).resolve().parents[1]
         makefile = (root / "Makefile").read_text(encoding="utf-8")
+        release_workflow = (root / ".github/workflows/pull-wp-intake.yml").read_text(
+            encoding="utf-8"
+        )
+        latex_workflow = (root / ".github/workflows/latex.yml").read_text(
+            encoding="utf-8"
+        )
         appendix = (
             root / "release" / "sections" / "appendix_d_regulatory_matrix.tex"
         ).read_text(encoding="utf-8")
@@ -366,6 +378,13 @@ class ReleaseWhitepaperTests(unittest.TestCase):
             makefile,
         )
         self.assertIn("scripts/lint_release_claims.py", makefile)
+        layout_command = (
+            "python3 scripts/check_release_layout.py main.log "
+            "--pdf main.pdf --max-overfull-pt 2"
+        )
+        self.assertIn(layout_command, makefile)
+        self.assertIn(layout_command, release_workflow)
+        self.assertIn(layout_command, latex_workflow)
         self.assertIn("--matrix intake/regulatory_matrix.csv", makefile)
         self.assertIn(r"\input{release/includes/table_regulatory_matrix}", appendix)
         self.assertIn("are not adopted by this paper", appendix)
