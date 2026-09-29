@@ -198,7 +198,7 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
             if step.get("name") == "Verify release template layout"
         )
         self.assertEqual(
-            "python3 scripts/check_release_layout.py main.log --max-overfull-pt 2",
+            "python3 scripts/check_release_layout.py main.log --pdf main.pdf --max-overfull-pt 2",
             layout["run"],
         )
         self.assertLess(smoke_steps.index(canonical), smoke_steps.index(layout))
@@ -244,7 +244,7 @@ class PublicDemoWatermarkContractTests(unittest.TestCase):
             "companion: assets", 1
         )[0]
         self.assertIn(
-            "python3 scripts/check_release_layout.py main.log --max-overfull-pt 2",
+            "python3 scripts/check_release_layout.py main.log --pdf main.pdf --max-overfull-pt 2",
             release_pdf,
         )
         self.assertIn(
