@@ -1,0 +1,59 @@
+\section{Limitations and Monitoring}
+
+\subsection{Evidence limitations}
+
+\begin{itemize}
+  \item The primary data are generated fixtures, not a lender's live applicants, decisions, or
+    outcomes. External validity is not established.
+  \item The release disposition is \texttt{characterization\_only}; customer evidence eligibility
+    is false.
+  \item AIR and SRG are descriptive association measures. The paper makes no causal inference.
+  \item AOD and EOD are unavailable; equalized odds is not informative; ECE is not evaluated.
+  \item The race surface is display-policy conditional because one group misses the predeclared
+    count and share floors.
+  \item LC11 covers only the configured gender and race fields, per attribute. It does not establish
+    absence of bias for color, religion, national origin, marital status, age, receipt of public
+    assistance, exercise of consumer-credit rights, or intersectional combinations. The paper's
+    intersectional comparisons are diagnostic review surfaces, not evidence of intersectional
+    absence of bias. Multi-level race encodings also require declared schema support.
+  \item Quality scores describe selected diagnostic components. They do not establish predictive
+    utility, privacy, full-distribution fidelity, or suitability for a decision process.
+  \item The amplification advisory utility diagnostic is generally below its configured floor, and
+    intrinsic utility is absent.
+  \item The exact-output wall covers exact matches only. No formal differential privacy,
+    membership-inference, linkage, or near-duplicate guarantee is provided.
+  \item Forty robustness runs cover four configured scenarios and ten seeds. They do not exhaust
+    datasets, configuration changes, dependencies, hardware, or attacks.
+  \item No current native customer sizing, capacity, latency SLA, or production reliability claim
+    is established by this paper.
+\end{itemize}
+
+\subsection{Deployment-specific validation}
+
+A production evaluation should use the institution's governed data and intended configuration in a
+controlled environment. It should predeclare outcomes, score provenance, protected-group handling,
+reference policies, missingness treatment, minimum cell sizes, uncertainty, multiple testing,
+utility and calibration endpoints, privacy tests, security controls, and escalation actions. Legal,
+model-risk, information-security, privacy, and business owners should approve the plan before its
+results are used for decisions.
+
+\subsection{Monitoring triggers}
+
+Revalidation should be triggered by a product or generator version change; a data schema,
+population, target, policy, or protected-group change; drift beyond declared tolerances; dependency
+or runtime-image change; evidence-schema change; failed signature/hash verification; missing
+critical metric surfaces; or a change in the intended regulatory or operational use.
+
+Recommended monitoring separates: data and population drift; branch quality; disparity and
+intersectional screens; utility/calibration when enabled; privacy and exact-output controls;
+evidence integrity; runtime health; and reviewer dispositions. Missing or non-informative metrics
+must remain explicit states rather than being converted to passing zeros.
+
+\subsection{Interpretive conclusion}
+
+The v5.0.8 evidence demonstrates an auditable native dual-branch simulation pipeline, accurate
+preservation of the configured gender disparity in amplification, a mechanically distinct intrinsic
+policy control, deterministic provenance, and stable execution across the declared robustness plan.
+It also demonstrates material limits: incomplete outcome-conditioned metrics, no calibration
+surface, generally sub-floor advisory utility, and no formal privacy guarantee. Those strengths and
+limits define the technical result together.

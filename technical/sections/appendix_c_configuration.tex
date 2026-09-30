@@ -1,0 +1,58 @@
+\section{Selected Configuration}
+\label{app:configuration}
+
+\begin{table}[htbp]
+\centering
+\small
+\AccessibleTableHeaderRow
+\begin{tabular}{@{}>{\RaggedRight\arraybackslash}p{0.28\linewidth}
+                    >{\RaggedRight\arraybackslash}p{0.62\linewidth}@{}}
+\toprule
+Parameter & Exact release setting \\
+\midrule
+Backend & \texttt{first\_party\_evidence\_native} 0.1.0 \\
+Backend family & \texttt{evidence\_native\_tabular} \\
+Dependency posture & \texttt{commercial\_no\_datacebo}; direct runtime packages NumPy 1.26.4 and pandas 2.3.3 \\
+Training fixture & 3,000 generated records \\
+Branch output & 10,000 rows per branch \\
+Generation seed & 42 \\
+Bootstrap annex & BCa, 2,000 replicates, alpha 0.05, seed 42 \\
+Headline intervals & Wilson selection rates; delta log-ratio AIR; conservative Wilson-endpoint SRG \\
+Gender policy & Female protected group; male reference; AIR screen 0.80 \\
+Race display floor & At least 300 rows and 5\% representation \\
+EO screens & Absolute TPR and FPR gap maximum 0.05 when informative \\
+ECE screen & 0.02 when score/calibration capability is enabled \\
+Quality threshold & 0.80 equal-weight composite \\
+Robustness seeds & 7, 11, 23, 42, 101, 1337, 2025, 4096, 8191, 314159 \\
+Utility floor & ROC AUC 0.70, advisory, amplification only \\
+\bottomrule
+\end{tabular}
+\caption{Selected settings required to interpret the exact v5.0.8 evidence.}
+\label{tab:selected-config}
+\end{table}
+
+\subsection*{Branch difference register}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\AccessibleTableHeaderRow
+\begin{tabular}{@{}>{\RaggedRight\arraybackslash}p{0.23\linewidth}
+                    >{\RaggedRight\arraybackslash}p{0.33\linewidth}
+                    >{\RaggedRight\arraybackslash}p{0.34\linewidth}@{}}
+\toprule
+Surface & Amplification & Intrinsic control \\
+\midrule
+Profile fitting & Includes configured decision/protected strata & Excludes decision and aliases before fitting \\
+Sampling & Independent branch-profile sampling & Protected-anchor profile resampling stratified by gender and race \\
+Decision outcome & Retains sampled status-quo signal & Equal-rate policy applied after feature generation \\
+Headline purpose & Preservation of configured disparity & Mechanical branch-separation and policy control \\
+Single-run utility & Not evaluated & Not evaluated \\
+Robustness utility & Amplification AUC diagnostic & Not evaluated \\
+Exact-row wall & Zero exact matches over declared columns & Zero exact matches over declared columns \\
+Causal interpretation & None & None \\
+\bottomrule
+\end{tabular}
+\caption{Auditable differences between the separately fitted branch profiles.}
+\label{tab:branch-register}
+\end{table}

@@ -1,0 +1,46 @@
+\section{Reproducibility and Offline Verification}
+
+\subsection{Exact identities}
+
+The paper is bound to product commit \IdentityText{\ProductCommitRaw}, annotated tag object
+\IdentityText{\ProductTagObjectRaw}, runtime image \IdentityText{\RuntimeImageDigestRaw}, intake
+bundle SHA-256 \IdentityText{\IntakeBundleShaRaw}, and companion SHA-256
+\IdentityText{\CompanionShaRaw}. The full evidence register appears in Appendix~\ref{app:evidence}.
+
+\subsection{Companion contents}
+
+The companion includes the exact reviewed intake ZIP, the resolved build/correction record, a
+consumer source record, a canonical evidence summary, a sanitized 40-row robustness CSV, the
+offline verifier, and a hash manifest. It intentionally excludes generated row data, customer data,
+full Gold artifacts, private logs, private runner paths, secrets, and per-seed worktrees.
+
+An evaluator can verify the ZIP with a standard Python 3 installation:
+
+\begin{verbatim}
+python3 verify_public_technical_companion.py \
+  fl-bsa-v5.0.8-technical-companion.zip
+\end{verbatim}
+
+The verifier checks ZIP safety, exact membership and SHA-256, the product/tag/run/attempt lineage,
+claim boundaries, the exact producer intake, all 40 scenario/seed rows, unavailable AOD/EOD
+semantics, and the advisory utility disposition. It returns a compact JSON receipt or exits
+non-zero.
+
+\subsection{Rebuilding the paper}
+
+A full rebuild additionally requires the exact release-evidence artifacts named by the reviewed
+source lock. The build performs these steps:
+
+\begin{enumerate}
+  \item resolve the product-owned source decision at its pinned commit;
+  \item download the exact attempt-1 intake and robustness artifacts by ID;
+  \item validate API digest, archive size, producer job identity, attempt lineage, and inner hashes;
+  \item derive canonical JSON, LaTeX macros, tables, figures, and the sanitized projection;
+  \item build and verify the deterministic companion;
+  \item compile and canonicalize the tagged PDF;
+  \item run passive-content, layout, structure, claim, and accessibility preflight checks; and
+  \item emit a sidecar and publication manifest binding the final bytes.
+\end{enumerate}
+
+The official workflow builds from whitepaper \texttt{main} and accepts only the fixed v5.0.8
+selector. It does not discover ``latest'' evidence or accept caller-supplied artifact coordinates.

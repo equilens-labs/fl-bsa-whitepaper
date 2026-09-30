@@ -16,10 +16,11 @@ _FOOTER_RESERVED_PT = 55.0
 _OVERFULL_HBOX_RE = re.compile(
     r"Overfull \\hbox \((?P<points>[0-9]+(?:\.[0-9]+)?)pt too wide\)"
 )
-_OUTPUT_RE = re.compile(
-    r"^Output written on main\.pdf \([1-9][0-9]* pages?, [1-9][0-9]* bytes\)\.$",
-    re.MULTILINE,
+_TECHNICAL_FOOTER_RE = re.compile(
+    r"WP-[0-9]+\.[0-9]+\.[0-9]+-public\.[1-9][0-9]* "
+    r"\| PUBLIC TECHNICAL CHARACTERIZATION"
 )
+_BARE_PAGE_NUMBER_RE = re.compile(r"(?:[1-9][0-9]*|[ivxlcdm]+)")
 
 
 class ReleaseLayoutError(ValueError):
@@ -36,10 +37,14 @@ def footer_intrusions_from_bbox_xml(
     try:
         root = ET.fromstring(xml_text)
     except ET.ParseError as exc:
-        raise ReleaseLayoutError(f"unable to parse PDF bounding-box XML: {exc}") from exc
+        raise ReleaseLayoutError(
+            f"unable to parse PDF bounding-box XML: {exc}"
+        ) from exc
 
     intrusions: list[str] = []
-    pages = [element for element in root.iter() if element.tag.rsplit("}", 1)[-1] == "page"]
+    pages = [
+        element for element in root.iter() if element.tag.rsplit("}", 1)[-1] == "page"
+    ]
     if not pages:
         raise ReleaseLayoutError("PDF bounding-box XML contains no pages")
     for page_number, page in enumerate(pages, start=1):
@@ -57,12 +62,10 @@ def footer_intrusions_from_bbox_xml(
                 y_min = float(block.attrib["yMin"])
                 y_max = float(block.attrib["yMax"])
             except (KeyError, TypeError, ValueError) as exc:
-                raise ReleaseLayoutError("PDF bounding-box block position is invalid") from exc
-            if (
-                not math.isfinite(y_min)
-                or not math.isfinite(y_max)
-                or y_min > y_max
-            ):
+                raise ReleaseLayoutError(
+                    "PDF bounding-box block position is invalid"
+                ) from exc
+            if not math.isfinite(y_min) or not math.isfinite(y_max) or y_min > y_max:
                 raise ReleaseLayoutError("PDF bounding-box block position is invalid")
             if y_max <= footer_start:
                 continue
@@ -72,7 +75,16 @@ def footer_intrusions_from_bbox_xml(
                 if word.tag.rsplit("}", 1)[-1] == "word" and (word.text or "").strip()
             ]
             text = " ".join(words)
-            if text in {"Equilens", "DEMO / EVALUATION ONLY", f"page {page_number}"}:
+            if (
+                text
+                in {
+                    "Equilens",
+                    "DEMO / EVALUATION ONLY",
+                    f"page {page_number}",
+                }
+                or _TECHNICAL_FOOTER_RE.fullmatch(text)
+                or _BARE_PAGE_NUMBER_RE.fullmatch(text)
+            ):
                 continue
             intrusions.append(f"page={page_number} yMin={y_min:.2f} text={text!r}")
     return intrusions
@@ -98,13 +110,16 @@ def validate_release_pdf_footer(
             timeout=60,
         )
     except (OSError, subprocess.SubprocessError) as exc:
-        raise ReleaseLayoutError(f"unable to extract release PDF layout: {exc}") from exc
+        raise ReleaseLayoutError(
+            f"unable to extract release PDF layout: {exc}"
+        ) from exc
     intrusions = footer_intrusions_from_bbox_xml(
         result.stdout, reserved_footer_pt=reserved_footer_pt
     )
     if intrusions:
         raise ReleaseLayoutError(
-            "release PDF content enters the reserved footer area: " + "; ".join(intrusions)
+            "release PDF content enters the reserved footer area: "
+            + "; ".join(intrusions)
         )
 
 
@@ -122,7 +137,9 @@ def overfull_hboxes(log_text: str, *, max_overfull_pt: float) -> list[float]:
     ]
 
 
-def validate_release_layout(log_path: Path, *, max_overfull_pt: float) -> None:
+def validate_release_layout(
+    log_path: Path, *, max_overfull_pt: float, expected_pdf: Path = Path("main.pdf")
+) -> None:
     """Require one bounded TeX log with no material horizontal overflow."""
 
     try:
@@ -135,8 +152,16 @@ def validate_release_layout(log_path: Path, *, max_overfull_pt: float) -> None:
     except (OSError, UnicodeError) as exc:
         raise ReleaseLayoutError(f"unable to read release TeX log: {exc}") from exc
 
-    if _OUTPUT_RE.search(log_text) is None:
-        raise ReleaseLayoutError("release TeX log does not record a completed main.pdf")
+    expected_output = expected_pdf.as_posix()
+    completed_output_re = re.compile(
+        rf"^Output written on {re.escape(expected_output)} "
+        r"\([1-9][0-9]* pages?, [1-9][0-9]*(?:\n[0-9]+)* bytes\)\.$",
+        re.MULTILINE,
+    )
+    if completed_output_re.search(log_text) is None:
+        raise ReleaseLayoutError(
+            f"release TeX log does not record a completed {expected_output}"
+        )
     overflows = overfull_hboxes(log_text, max_overfull_pt=max_overfull_pt)
     if overflows:
         raise ReleaseLayoutError(
@@ -153,7 +178,11 @@ def main() -> int:
     parser.add_argument("--max-overfull-pt", type=float, default=2.0)
     args = parser.parse_args()
     try:
-        validate_release_layout(args.log, max_overfull_pt=args.max_overfull_pt)
+        validate_release_layout(
+            args.log,
+            max_overfull_pt=args.max_overfull_pt,
+            expected_pdf=args.pdf or Path("main.pdf"),
+        )
         if args.pdf is not None:
             validate_release_pdf_footer(args.pdf)
     except ReleaseLayoutError as exc:

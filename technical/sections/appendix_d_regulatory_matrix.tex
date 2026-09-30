@@ -1,0 +1,28 @@
+\section{Governance Mapping}
+\label{app:regulatory}
+
+This matrix is an engineering crosswalk. It identifies how evidence may assist review; it does not
+assert legal sufficiency or compliance.
+
+\begin{table}[htbp]
+\centering
+\scriptsize
+\AccessibleTableHeaderRow
+\begin{tabular}{@{}>{\RaggedRight\arraybackslash}p{0.18\linewidth}
+                    >{\RaggedRight\arraybackslash}p{0.29\linewidth}
+                    >{\RaggedRight\arraybackslash}p{0.43\linewidth}@{}}
+\toprule
+Framework & Relevant technical surface & Required interpretation or follow-up \\
+\midrule
+ECOA / Regulation B & Selection rates, AIR/SRG, intersectional comparisons, retention & Institution-specific legal review, lawful data, causal and business-justification analysis; 0.80 is not a safe harbor \\
+CFPB fair-lending governance & Repeatable metrics, provenance, exceptions, reviewer status & Map evidence to actual policies, models, populations, complaints, monitoring, and remediation \\
+Model risk management & Code/runtime identity, branch logic, validation, limitations & Independent validation, effective challenge, change control, inventory, issue ownership, monitoring \\
+EU AI Act & Documentation, traceability, data governance, robustness, oversight & Determine classification, actor roles, obligations, conformity route, and jurisdiction-specific timing \\
+FCA Consumer Duty & Outcome-disparity screens, slicing, monitoring, retention & Link to actual customer outcomes, foreseeable harm, product governance, support, and accountable action \\
+Privacy / data protection & Self-hosted processing, exact-output wall, retention controls & Complete DPIA or equivalent, minimize data, assess inference/linkage, define access and deletion \\
+Information security & Runtime digest, hashes, signatures, encryption, passive PDF & Operate perimeter controls, TLS, IAM, secrets, patching, logging, backup, and incident response \\
+\bottomrule
+\end{tabular}
+\caption{Non-determinative governance crosswalk.}
+\label{tab:regulatory-matrix}
+\end{table}

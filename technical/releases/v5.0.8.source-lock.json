@@ -1,0 +1,110 @@
+{
+  "artifact_profile": "technical_whitepaper_v1",
+  "claims": {
+    "claim_expansion_authorized": false,
+    "customer_evidence_disposition": "characterization_only",
+    "customer_evidence_eligible": false,
+    "demo_evaluation_only": true,
+    "legal_or_compliance_certification": false,
+    "marketplace_or_ga_authorization": false,
+    "production_utility_established": false,
+    "promotion_evidence_eligible": false,
+    "regulator_approval": false
+  },
+  "product_source_record": {
+    "commit": "a853b62b42005477250c08edfe9f1e18f2e2cb50",
+    "path": "config/public-technical-whitepaper-build-sources.v1.json",
+    "repository": "equilens-labs/fl-bsa",
+    "sha256": "d07937394ce74e9588c97b883a7c2284a55948668afce86877a8d028246633fb",
+    "size_bytes": 3945
+  },
+  "product": {
+    "commit": "97356e5f65e0032e8363190c47104c96294f8f2a",
+    "tag": "v5.0.8",
+    "tag_object": "81a60b5df9057f8e3f9d7648f2f8e620510d314f"
+  },
+  "proposed_public_release_tag": "v5.0.8-technical-whitepaper-20260930",
+  "release_evidence": {
+    "branch": "main",
+    "current_attempt": 2,
+    "current_attempt_conclusion": "success",
+    "current_attempt_started_at": "2026-09-25T16:36:42Z",
+    "event": "repository_dispatch",
+    "run_id": 36152873675,
+    "source_attempt": 1,
+    "source_attempt_conclusion": "failure",
+    "source_attempt_started_at": "2026-09-25T15:14:53Z",
+    "source_attempt_updated_at": "2026-09-25T16:30:29Z",
+    "workflow_path": ".github/workflows/release-evidence.yml"
+  },
+  "signed_release": {
+    "release_artifact_manifest_sha256": "fb86343c696ec3479144e9874ea2d2f8961c59f3fdc64c6be59da9814b8cab6f",
+    "release_trust_root_record_sha256": "938ee7f6b436abc40412cf7ad9e6aa6c9d058c00865ec17776a619472ce9c613",
+    "vendor_release_attestation_sha256": "b2b76971fbc47ca3ced20f496ab05d1099f252bf98a63876406b7da6fdd50867"
+  },
+  "sources": {
+    "intake": {
+      "actions_archive": {
+        "created_at": "2026-09-25T15:24:04Z",
+        "digest": "sha256:97f4dc962d82ba2c5c9cc325c373c807bf8271c8718524915c6b1c178b9cc68d",
+        "expires_at": "2026-12-24T15:14:53Z",
+        "id": 10872328152,
+        "name": "wp-intake-bundle-v4-1",
+        "size_bytes": 81145
+      },
+      "inner_bundle": {
+        "filename": "WhitePaper_Intake_Bundle_v4.zip",
+        "sha256": "68246ce7aaeb571363cdc2bdbc25892ec3d3b438849661e06653fcd985c59e6c",
+        "size_bytes": 89914
+      },
+      "manifest_sha256": "92185d69001e90fbe4bfd29714443febbb8556cf9161584a9d2375b779a9b906",
+      "producer_job": {
+        "completed_at": "2026-09-25T15:24:16Z",
+        "conclusion": "success",
+        "id": 108132655967,
+        "name": "WP Evidence (release-grade)",
+        "started_at": "2026-09-25T15:21:24Z"
+      }
+    },
+    "robustness": {
+      "actions_archive": {
+        "created_at": "2026-09-25T15:46:39Z",
+        "digest": "sha256:3b3ea3043f0376606e20828ef2854d46abbac30ac64887d2aa399d5b11fcae13",
+        "expires_at": "2026-12-24T15:14:53Z",
+        "id": 10873891925,
+        "name": "gold-robustness-97356e5f65e0032e8363190c47104c96294f8f2a-36152873675",
+        "size_bytes": 6974934
+      },
+      "producer_job": {
+        "completed_at": "2026-09-25T15:46:42Z",
+        "conclusion": "success",
+        "id": 108141668944,
+        "name": "GOLD Robustness (aggregate)",
+        "started_at": "2026-09-25T15:45:39Z"
+      },
+      "reviewed_files": {
+        "gold/robustness_index.csv": {
+          "sha256": "7bff15048fbf9174b31215208e78565f07f3ac4c97605931b469f367adcadcc8",
+          "size_bytes": 22692
+        },
+        "gold_robustness/evidence_manifest.json": {
+          "sha256": "f4b68f2603b15cc5baaa1fc16370fd5034168ecdf56f4a804d8cd2a376f39873",
+          "size_bytes": 3370
+        },
+        "gold_robustness/robustness_gate_disposition.json": {
+          "sha256": "00b51423185999bc1e88957c8b88509463b194fc37967f51e2e2e0f49d00cce5",
+          "size_bytes": 1726
+        },
+        "gold_robustness/robustness_requirements.json": {
+          "sha256": "8e0d4dbb7ca89dfb51b1d714544d444ab8c4f97f3be10e118481ea94789a86a5",
+          "size_bytes": 1026
+        },
+        "gold_robustness/robustness_summary_merged.json": {
+          "sha256": "bc3e7f61ea6d1a1b17bc6d89773d16826cf5fcc07c7fd2a20a335ea3a38f6e78",
+          "size_bytes": 304014
+        }
+      }
+    }
+  },
+  "schema_version": "flbsa.public_technical_whitepaper_source_lock.v1"
+}

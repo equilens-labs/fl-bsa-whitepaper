@@ -1,0 +1,137 @@
+\section{Evaluation Design}
+
+\subsection{Source hierarchy}
+
+The paper follows a fail-closed hierarchy. The signed release inventory and reviewed source record
+select exact artifacts. Within the intake, \texttt{metrics\_uncertainty.json} is the source of truth
+for headline fairness intervals; \texttt{fairness\_slices.json} supplies branch comparisons;
+\texttt{run\_summary.json} supplies availability and review dispositions; branch certificates
+supply generation and quality facts. The robustness index and certificates supply the 40-run
+projection. Prose, tables, figures, and the companion are derived from this hierarchy.
+
+A historical immutable release index incorrectly copied product-level customer-evidence eligibility
+to the earlier whitepaper. The reviewed correction binds that index by SHA-256 and sets this
+whitepaper's eligibility to false, consistent with the paper's own characterization-only boundary.
+The correction changes only the whitepaper eligibility field.
+
+\subsection{Single-run design}
+
+The principal synthetic audit uses RNG seed 42 and a 3,000-row generated fixture. The amplification
+and intrinsic branches each generate 10,000 rows. Headline intervals use 95\% coverage. Gender uses
+male as reference and female as protected group. The race display policy requires at least 300 rows
+and 5\% representation for headline display; the Hispanic group has 273 rows and 2.73\%, so race is
+retained in machine-readable evidence but not promoted as a headline verdict.
+
+\subsection{Principal input fixture}
+
+The evidence driver requests the product's synthetic-data endpoint with 3,000 rows, seed 42,
+\texttt{inject\_bias=true}, \texttt{bias\_type=gender}, \texttt{bias\_level=0.15}, and
+\texttt{include\_ground\_truth=true}. It uses the production \texttt{eu\_uk} demographic profile:
+gender is configured as male 49\% and female 51\%. Race is configured as White 78\%, Black 5\%,
+Hispanic 3\%, Asian 9\%, and Other 5\%. Age is normally distributed with mean 39 and standard
+deviation 11, clipped to 18--75. The baseline generator samples
+demographics and credit features, then draws merit-linked stochastic approvals. Bias injection
+changes $\lfloor 0.15\times1.5\times n_{fa}\rfloor$ initially approved female rows to denials, where
+$n_{fa}$ is their pre-injection count.
+
+Financial features are generated as follows: income is log-normal with log mean 10.8 and log
+standard deviation 0.7, clipped to 20,000--300,000; credit score is
+$N(680,80)+25z_{\mathrm{income}}$, clipped to 300--850; loan-to-income is $N(0.3,0.1)$ clipped to
+0.1--0.6; and debt-to-income is $0.5\operatorname{Beta}(2,5)$. Let $I$ be income rescaled from
+30,000--100,000 and clipped to $[0,1]$, $C$ be credit rescaled from 500--800 and clipped, $D$ be
+$1-\operatorname{clip}(\mathrm{DTI}/0.5)$, and $L$ be the clipped loan-to-income ratio. The baseline
+approval draw is Bernoulli with probability
+\begin{equation}
+  \operatorname{clip}\!\left(0.3I+0.4C+0.2D+0.1(1-L)+\epsilon,0,1\right),
+  \qquad \epsilon\sim N(0,0.1).
+\end{equation}
+
+After injection, the endpoint copies the resulting \texttt{loan\_approved} values into
+\texttt{ground\_truth}. Ground truth is therefore not an independent outcome label in this fixture.
+That copied-label provenance directly explains the all-zero false-positive/false-negative counts
+and why AOD, EOD, and equalized-odds interpretations are unavailable or non-informative. The
+headline AIR characterizes this generated positive-control surface, not observed lending data.
+
+\subsection{Composite quality score}
+
+For branch $b$, the producer's quality score is the equal-weight mean
+\begin{equation}
+  Q_b=\frac{D_b+C_b+B_b+P_b}{4},
+\end{equation}
+where $D$ is marginal-distribution quality, $C$ correlation preservation, $B$ demographic-rate
+fidelity (the certificate's internal name is ``bias preservation''), and $P$ a bounded privacy
+quality proxy.
+
+For each numeric column, $D$ uses $(1-\mathrm{KS})(1-|\Delta m|)$; categorical columns replace KS
+with base-2 Jensen--Shannon distance. Here $\Delta m$ is the missingness-rate drift. The component is
+the mean over columns, with an empty comparison set defaulting to one. For numeric pairs,
+$C=\max(0,1-\operatorname{mean}|r_{\mathrm{input}}-r_{\mathrm{synthetic}}|)$ using Pearson
+correlations. Pairs undefined on both sides are excluded; a one-sided undefined value incurs a
+difference of one; no eligible pairs defaults to one.
+
+For each configured protected attribute, $B$ finds the largest group-level absolute difference
+between input and synthetic selection rates, averages those attribute maxima, and returns
+$\max(0,1-2\bar d)$. It measures preservation of demographic rates; a high value can preserve an
+unfavorable disparity and is not a fairness pass. When protected attributes or the outcome are
+absent from the certificate's comparison surface, the producer defaults $B$ to one. That edge case
+applies to the intrinsic certificate: its $B=1$ is included in $Q_b$ but was not evaluated from
+group selection rates.
+
+$P$ averages three coarse signals: one when there are zero exact duplicates and zero otherwise; a
+nearest-neighbor score of one when mean standardized numeric distance is above 1, one-half when it
+is above 0.5, and zero otherwise, using at most 1,000 synthetic rows; and one minus the overlap of
+unique combinations over only the first three synthetic columns. Near-duplicate risk is not
+computed. $P$ is neither an $\varepsilon$-differential-privacy guarantee nor an independent
+re-identification-risk study \citep{stadler2022synthetic}.
+
+The configured composite threshold is 0.80, but the certificate's overall gate also requires
+demographic alignment within 5 percentage points and
+\texttt{exact\_duplicate\_score\_count}=0. A high $Q_b$ does not
+establish predictive utility because utility is outside the formula.
+
+\subsection{Robustness plan}
+
+The release aggregate contains ten fixed seeds (7, 11, 23, 42, 101, 1337, 2025, 4096, 8191, and
+314159) across four 5,000-row generated input fixtures:
+
+\begin{itemize}
+  \item \textbf{Balanced} uses the declared representative demographic mix and deterministic label
+    changes until the gender selection-rate gap is at most 0.5 percentage points. Its technical
+    bands are headline ratio 0.98--1.02 and selection-rate-range magnitude 0--0.02.
+  \item \textbf{Gender-bias positive control} injects bias strength 0.35 against female rows and
+    deterministically calibrates the input gender ratio to 0.60--0.70, targeting 0.65.
+  \item \textbf{Outliers} changes 25 high-income rows: loan amount is multiplied by 1.35--2.25 and
+    capped at 0.85 of income, debt-to-income is clipped to 0.05--0.95, and 25 tail rows are replaced
+    by 25 head rows to test duplicate handling. It has no separate metric band.
+  \item \textbf{Security} reuses the balanced generator with a wider 0.90--1.10 ratio band and adds
+    the requirement that evidence be encrypted and its plaintext ZIP and hash verify.
+\end{itemize}
+
+The strict aggregate requires 10/10 balanced and security runs, at least 8/10 gender-bias runs, and
+at least 7/10 complete outlier runs. All four observed 10/10. The 40-row contract also checks
+PDF/metric parity, certificate chaining and signatures, evidence encryption, and the LC11 runtime
+contract. One producer implementation variable historically named \texttt{aod\_csv} is the
+unsigned selection-rate range $\max(s_g)-\min(s_g)$; it is not average odds difference. The public
+projection excludes that legacy name and correctly records AOD as unavailable.
+
+A robustness \emph{pass} means the scenario behaved as specified. In the gender-bias positive
+control, successful detection of a disparity and an associated review warning is the expected pass.
+It does not mean the fairness screen is within threshold.
+
+\subsection{Advisory utility diagnostic}
+
+Each robustness run records an amplification-only train-on-synthetic/test-on-original-fixture
+diagnostic \citep{esteban2017realvalued}. It trains scikit-learn's default-L2 logistic regression
+(LBFGS solver, $C=1.0$, maximum 1,000 iterations) on 10,000 amplification rows and evaluates ROC
+AUC and accuracy on the full 5,000-row generated input fixture. Missing targets are dropped;
+categoricals are jointly one-hot encoded with the test fixture using drop-first encoding; all other
+features, including the protected attributes, remain in the matrix. The input fixture is itself
+synthetic test data, not an unseen customer population or customer-data holdout. Its target is the
+constructed post-injection \texttt{loan\_approved} decision, so AUC measures recovery/ranking of
+that synthetic label rather than repayment, default, or an independently observed outcome.
+
+The configured 0.70 AUC floor is an advisory engineering screen without a demonstrated external
+validity or lending-safety basis. The paper summarizes its range, mean, and disposition counts.
+Intrinsic utility is not evaluated because its post-label policy changes the target construction.
+The diagnostic is not a production model validation and does not establish utility for lending
+\citep{fawcett2006roc}.

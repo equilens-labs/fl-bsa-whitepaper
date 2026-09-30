@@ -1,0 +1,63 @@
+\section{Integrity, Security, and Privacy}
+
+\subsection{Integrity controls}
+
+The release evidence uses hash-linked certificates, manifests, and optional ECDSA-P256-SHA256
+signatures. The runtime image is immutable by digest, the intake binds the product commit and
+configuration, and the release inventory binds artifact coordinates and member hashes. The paper
+build refuses a mismatched product SHA, bundle hash, artifact digest, backend identity, branch,
+quality disposition, robustness plan, or claim boundary.
+
+The public companion is deterministic: members are sorted, timestamps derive from the source
+commit epoch, paths are canonical, symbolic links and traversal paths are rejected, and
+\texttt{MANIFEST.json} records SHA-256 and size for every member. Its verifier rechecks exact
+membership and hashes before parsing evidence.
+
+\subsection{Application and deployment boundary}
+
+The product code forbids generic outbound HTTP clients under the application package, except for
+explicitly gated metering behavior. This is an application invariant, not a firewall. Operators must
+still enforce network egress policy, private subnets or equivalent isolation, TLS termination,
+identity and access management, secret storage, patching, monitoring, backup, and retention.
+
+Evidence can be encrypted at rest in the workflow and integrity checked through its sidecars.
+Encryption keys, signing keys, runner credentials, and private evidence are absent from this paper
+and companion. Public provenance includes only reviewed hashes and sanitized aggregate data.
+
+\subsection{Privacy interpretation}
+
+The native exact-output wall found zero exact matches to training rows over its declared comparison
+columns in both 10,000-row branch outputs. This is a useful deterministic control against exact tuple
+reproduction. It does not establish resistance to near-neighbor linkage, membership inference,
+attribute inference, or reconstruction.
+
+The quality certificate's privacy component is labelled a \emph{privacy quality heuristic}. No
+formal differential-privacy mechanism or $\varepsilon$ budget is claimed. The release backend
+explicitly declares \texttt{not\_differential\_privacy}. Any deployment handling personal data must
+perform its own privacy impact assessment, data-minimization review, access-control design, and
+retention decision.
+
+\subsection{Threats considered and residual risks}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\AccessibleTableHeaderRow
+\begin{tabular}{@{}>{\RaggedRight\arraybackslash}p{0.24\linewidth}
+                    >{\RaggedRight\arraybackslash}p{0.34\linewidth}
+                    >{\RaggedRight\arraybackslash}p{0.32\linewidth}@{}}
+\toprule
+Threat & Control represented in this evidence & Residual risk \\
+\midrule
+Artifact substitution & Exact tag, commit, run, attempt, artifact ID, digest, size, member hash & Compromise outside reviewed trust and custody boundaries \\
+Metric/report drift & Canonical metrics, PDF parity checks, companion projection & Unreviewed future renderer or schema changes \\
+Unsafe archive content & Canonical paths, no duplicates, no links, exact membership & Vulnerabilities in external ZIP/PDF consumers \\
+Private path or data disclosure & Sanitized robustness projection and content scan & Aggregate disclosure and inference require contextual review \\
+Exact training-row reproduction & Final exact-output wall & Near duplicates and inference attacks not measured here \\
+Application egress & Static no-generic-client gate & Deployment networking remains operator-controlled \\
+Misreading missing metrics & Explicit unavailable/not-informative states & Human readers may still overgeneralize from available screens \\
+\bottomrule
+\end{tabular}
+\caption{Selected threat controls and residual risks for the public technical artifact.}
+\label{tab:threats}
+\end{table}

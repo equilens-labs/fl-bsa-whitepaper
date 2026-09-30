@@ -1,0 +1,73 @@
+\section{Evidence and Digest Register}
+\label{app:evidence}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\AccessibleTableHeaderRow
+\begin{tabular}{@{}>{\RaggedRight\arraybackslash}p{0.25\linewidth}
+                    >{\RaggedRight\arraybackslash}p{0.65\linewidth}@{}}
+\toprule
+Item & Identity \\
+\midrule
+Product tag & \ProductReleaseTag \\
+Annotated tag object & \IdentityText{\ProductTagObjectRaw} \\
+Product commit & \IdentityText{\ProductCommitRaw} \\
+Whitepaper source commit & \IdentityText{\WhitepaperCommitRaw} \\
+Release evidence & Run \EvidenceRunRaw; source attempt \EvidenceSourceAttemptRaw; current successful attempt \EvidenceCurrentAttemptRaw \\
+Runtime image & \IdentityText{\RuntimeImageDigestRaw} \\
+Dataset hash & \IdentityText{\DatasetHashRaw} \\
+Configuration hash & \IdentityText{\ConfigHash} \\
+\bottomrule
+\end{tabular}
+\caption{Product, runtime, and build identities.}
+\label{tab:evidence-register}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\AccessibleTableHeaderRow
+\begin{tabular}{@{}>{\RaggedRight\arraybackslash}p{0.25\linewidth}
+                    >{\RaggedRight\arraybackslash}p{0.65\linewidth}@{}}
+\toprule
+Item & Identity \\
+\midrule
+Intake Actions artifact & ID \IntakeArtifactIdRaw; \IdentityText{\IntakeArtifactDigestRaw} \\
+Intake ZIP & \IdentityText{\IntakeBundleShaRaw} \\
+Intake manifest & \IdentityText{\IntakeManifestShaRaw} \\
+Robustness index & \IdentityText{7bff15048fbf9174b31215208e78565f07f3ac4c97605931b469f367adcadcc8} \\
+Robustness evidence manifest & \IdentityText{f4b68f2603b15cc5baaa1fc16370fd5034168ecdf56f4a804d8cd2a376f39873} \\
+Robustness gate disposition & \IdentityText{00b51423185999bc1e88957c8b88509463b194fc37967f51e2e2e0f49d00cce5} \\
+Robustness requirements & \IdentityText{8e0d4dbb7ca89dfb51b1d714544d444ab8c4f97f3be10e118481ea94789a86a5} \\
+Robustness merged summary & \IdentityText{bc3e7f61ea6d1a1b17bc6d89773d16826cf5fcc07c7fd2a20a335ea3a38f6e78} \\
+\bottomrule
+\end{tabular}
+\caption{Intake and robustness identities.}
+\label{tab:evidence-inputs}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\AccessibleTableHeaderRow
+\begin{tabular}{@{}>{\RaggedRight\arraybackslash}p{0.25\linewidth}
+                    >{\RaggedRight\arraybackslash}p{0.65\linewidth}@{}}
+\toprule
+Item & Identity \\
+\midrule
+Signed release manifest & \IdentityText{\ReleaseManifestShaRaw} \\
+Vendor release attestation & \IdentityText{\ReleaseAttestationShaRaw} \\
+Release trust-root record & \IdentityText{\ReleaseTrustRootShaRaw} \\
+Historical conflicting index & \IdentityText{\CorrectionIndexShaRaw} \\
+Build/correction record & \IdentityText{\AuthorizationShaRaw} \\
+Companion & \CompanionFilenameRaw; \CompanionSizeRaw{} bytes; SHA-256 \IdentityText{\CompanionShaRaw} \\
+\bottomrule
+\end{tabular}
+\caption{Release, correction, and companion identities.}
+\label{tab:evidence-publication}
+\end{table}
+
+The released publication sidecar adds the final PDF filename, byte size, and SHA-256 after PDF
+canonicalization. The public release manifest and \texttt{SHA256SUMS.txt} are the final transport
+checks for downloaded bytes.

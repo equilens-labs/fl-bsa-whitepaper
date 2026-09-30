@@ -1,0 +1,275 @@
+name: Build public technical whitepaper
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Exact product release characterized by this fixed workflow
+        required: true
+        default: v5.0.8
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-technical-whitepaper-v5.0.8
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'equilens-labs/fl-bsa-whitepaper' && github.ref == 'refs/heads/main' && inputs.release_tag == 'v5.0.8'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Check out exact whitepaper source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Record reproducible whitepaper identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          commit="$(git rev-parse HEAD)"
+          test "$(git rev-parse "${commit}^{commit}")" = "$commit"
+          echo "BUILD_COMMIT=${commit}" >> "$GITHUB_ENV"
+          echo "SOURCE_DATE_EPOCH=$(git show -s --format=%ct "$commit")" >> "$GITHUB_ENV"
+          echo "FORCE_SOURCE_DATE=1" >> "$GITHUB_ENV"
+          echo "TZ=UTC" >> "$GITHUB_ENV"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.11'
+
+      - name: Install locked Python and PDF tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = "x86_64"
+          python -m pip install --require-hashes -r requirements-ci-linux-x86_64.lock
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends mupdf-tools poppler-utils
+          test "$(dpkg-query -W -f='${Version}' mupdf-tools)" = "1.23.10+ds1-1build3"
+          test "$(/usr/bin/mutool -v 2>&1)" = "mutool version 1.23.10"
+
+      - name: Run whitepaper tests
+        run: make test
+
+      - name: Check out reviewed product source record
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          repository: equilens-labs/fl-bsa
+          ref: a853b62b42005477250c08edfe9f1e18f2e2cb50
+          token: ${{ secrets.PRODUCER_TOKEN }}
+          path: product-source
+          persist-credentials: false
+          sparse-checkout: |
+            config/public-technical-whitepaper-build-sources.v1.json
+            tools/ci
+          sparse-checkout-cone-mode: false
+
+      - name: Resolve and validate the fixed product build source
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_map="product-source/config/public-technical-whitepaper-build-sources.v1.json"
+          test "$(git -C product-source rev-parse HEAD)" = "a853b62b42005477250c08edfe9f1e18f2e2cb50"
+          mkdir -p build/technical-source/state
+          python product-source/tools/ci/public_technical_whitepaper_build_source.py \
+            --source-map "$source_map" \
+            --artifact-profile technical_whitepaper_v1 \
+            --product-tag v5.0.8 \
+            --json > build/technical-source/resolved-source.json
+          python scripts/technical_source_lock.py \
+            --source-lock technical/releases/v5.0.8.source-lock.json \
+            --product-source-map "$source_map" \
+            --resolved-source build/technical-source/resolved-source.json
+
+      - name: Resolve exact live producer state
+        env:
+          GH_TOKEN: ${{ secrets.PRODUCER_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$GH_TOKEN"
+          state="build/technical-source/state"
+          gh api repos/equilens-labs/fl-bsa/actions/runs/36152873675 > "$state/current-run.json"
+          gh api repos/equilens-labs/fl-bsa/actions/runs/36152873675/attempts/1 > "$state/source-run.json"
+          gh api 'repos/equilens-labs/fl-bsa/actions/runs/36152873675/attempts/1/jobs?per_page=100' > "$state/source-jobs.json"
+          gh api repos/equilens-labs/fl-bsa/actions/artifacts/10872328152 > "$state/intake-artifact.json"
+          gh api repos/equilens-labs/fl-bsa/actions/artifacts/10873891925 > "$state/robustness-artifact.json"
+          python scripts/verify_technical_producer_state.py \
+            --source-lock technical/releases/v5.0.8.source-lock.json \
+            --current-run "$state/current-run.json" \
+            --source-run "$state/source-run.json" \
+            --source-jobs "$state/source-jobs.json" \
+            --intake-artifact "$state/intake-artifact.json" \
+            --robustness-artifact "$state/robustness-artifact.json"
+
+      - name: Download exact retained Actions artifacts
+        env:
+          GH_TOKEN: ${{ secrets.PRODUCER_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          downloads="build/technical-source/downloads"
+          mkdir -p "$downloads"
+          gh api repos/equilens-labs/fl-bsa/actions/artifacts/10872328152/zip > "$downloads/intake.actions.zip"
+          gh api repos/equilens-labs/fl-bsa/actions/artifacts/10873891925/zip > "$downloads/robustness.actions.zip"
+
+      - name: Revalidate producer state after download
+        env:
+          GH_TOKEN: ${{ secrets.PRODUCER_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          state="build/technical-source/state"
+          gh api repos/equilens-labs/fl-bsa/actions/runs/36152873675 > "$state/current-run-after.json"
+          python scripts/verify_technical_producer_state.py \
+            --source-lock technical/releases/v5.0.8.source-lock.json \
+            --current-run "$state/current-run.json" \
+            --source-run "$state/source-run.json" \
+            --source-jobs "$state/source-jobs.json" \
+            --intake-artifact "$state/intake-artifact.json" \
+            --robustness-artifact "$state/robustness-artifact.json" \
+            --current-run-after "$state/current-run-after.json"
+
+      - name: Validate and safely extract retained bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          downloads="build/technical-source/downloads"
+          source_map="product-source/config/public-technical-whitepaper-build-sources.v1.json"
+          python scripts/technical_source_lock.py \
+            --source-lock technical/releases/v5.0.8.source-lock.json \
+            --product-source-map "$source_map" \
+            --resolved-source build/technical-source/resolved-source.json \
+            --intake-actions-archive "$downloads/intake.actions.zip" \
+            --robustness-actions-archive "$downloads/robustness.actions.zip"
+          python scripts/extract_actions_artifact.py \
+            "$downloads/intake.actions.zip" "$downloads/intake" \
+            --max-members 4 --max-uncompressed-bytes 1048576
+          python scripts/extract_actions_artifact.py \
+            "$downloads/robustness.actions.zip" "$downloads/robustness" \
+            --max-members 10000 --max-uncompressed-bytes 536870912
+          test -f "$downloads/intake/WhitePaper_Intake_Bundle_v4.zip"
+          test "$(find "$downloads/intake" -type f | wc -l)" -eq 1
+          python scripts/technical_source_lock.py \
+            --source-lock technical/releases/v5.0.8.source-lock.json \
+            --product-source-map "$source_map" \
+            --resolved-source build/technical-source/resolved-source.json \
+            --intake-actions-archive "$downloads/intake.actions.zip" \
+            --robustness-actions-archive "$downloads/robustness.actions.zip" \
+            --intake-bundle "$downloads/intake/WhitePaper_Intake_Bundle_v4.zip" \
+            --robustness-root "$downloads/robustness"
+
+      - name: Build bounded technical-paper evidence and companion
+        shell: bash
+        run: |
+          set -euo pipefail
+          resolved="build/technical-source/resolved-source.json"
+          downloads="build/technical-source/downloads"
+          output="dist/technical/v5.0.8/fl-bsa-v5.0.8-technical-companion.zip"
+          python scripts/public_technical_whitepaper.py prepare \
+            --repo-root . \
+            --build-dir build/technical/v5.0.8 \
+            --intake-bundle "$downloads/intake/WhitePaper_Intake_Bundle_v4.zip" \
+            --intake-sha256 "$(jq -r .intake_bundle_sha256 "$resolved")" \
+            --intake-artifact-id "$(jq -r .intake_artifact_id "$resolved")" \
+            --intake-artifact-digest "$(jq -r .intake_artifact_digest "$resolved")" \
+            --robustness-root "$downloads/robustness" \
+            --robustness-artifact-id "$(jq -r .robustness_artifact_id "$resolved")" \
+            --robustness-artifact-digest "$(jq -r .robustness_artifact_digest "$resolved")" \
+            --product-sha "$(jq -r .product_sha "$resolved")" \
+            --authorization "$resolved" \
+            --companion-output "$output"
+          python scripts/public_technical_whitepaper.py companion \
+            --repo-root . \
+            --build-dir build/technical/v5.0.8 \
+            --verifier scripts/verify_public_technical_companion.py \
+            --output "$output"
+          make technical-assets
+          python scripts/verify_public_technical_companion.py "$output"
+
+      - name: Compile technical whitepaper
+        uses: xu-cheng/latex-action@e2f99d4b3685b0da93f97e1b86ad8fab81105098 # v3.3.0
+        with:
+          root_file: technical/main.tex
+          docker_image: ghcr.io/xu-cheng/texlive-full@sha256:d9bfb267e3e3f5e0820ca86e867ee59ebb133fc29561bb28677d9b5a1a9e84ff
+          work_in_root_file_dir: false
+          pre_compile: |
+            export SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
+            export FORCE_SOURCE_DATE=1
+            export TZ=UTC
+            test "$SOURCE_DATE_EPOCH" -gt 0
+            test "$FORCE_SOURCE_DATE" = 1
+            test "$TZ" = UTC
+
+      - name: Canonicalize and validate technical whitepaper
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/canonicalize_release_pdf.py main.pdf
+          python scripts/check_release_layout.py main.log --pdf main.pdf --max-overfull-pt 2
+          python scripts/check_release_pdf_passive.py main.pdf
+          python scripts/check_pdf_tag_structure.py \
+            --expected-header-cells 47 \
+            --expected-figures 1 \
+            main.pdf
+          python scripts/verify_public_technical_pdf.py \
+            main.pdf \
+            --summary build/technical/v5.0.8/evidence-summary.json
+
+      - name: Preflight PDF/UA structure with pinned official veraPDF
+        shell: bash
+        run: |
+          set -euo pipefail
+          report="build/technical/v5.0.8/verapdf-ua1-preflight.xml"
+          status=0
+          docker run --rm -v "$PWD:/data:ro" \
+            docker.io/verapdf/cli@sha256:e1c674f6dd0ee08418cfa525f6f47040377236432d55d67f747b2bc9c55e7d66 \
+            -f ua1 /data/main.pdf > "$report" || status=$?
+          test "$status" -eq 1
+          python scripts/verify_verapdf_ua_preflight.py "$report"
+
+      - name: Finalize exact review artifact set
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="dist/technical/v5.0.8"
+          cp main.pdf "$output/whitepaper.pdf"
+          python scripts/public_technical_whitepaper.py finalize \
+            --build-dir build/technical/v5.0.8 \
+            --pdf "$output/whitepaper.pdf" \
+            --output "$output/whitepaper_release.json" \
+            --whitepaper-run-id "$GITHUB_RUN_ID" \
+            --whitepaper-run-attempt "$GITHUB_RUN_ATTEMPT"
+          (
+            cd "$output"
+            sha256sum \
+              fl-bsa-v5.0.8-technical-companion.zip \
+              whitepaper.pdf \
+              whitepaper_release.json > SHA256SUMS.txt
+            sha256sum --check SHA256SUMS.txt
+            test "$(find . -mindepth 1 -maxdepth 1 -type f | wc -l)" -eq 4
+          )
+          python scripts/verify_public_technical_companion.py \
+            "$output/fl-bsa-v5.0.8-technical-companion.zip"
+          python scripts/verify_public_technical_pdf.py \
+            "$output/whitepaper.pdf" \
+            --summary build/technical/v5.0.8/evidence-summary.json
+
+      - name: Upload exact technical-paper review set
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: public-technical-whitepaper-v5.0.8-${{ github.run_attempt }}
+          path: |
+            dist/technical/v5.0.8/SHA256SUMS.txt
+            dist/technical/v5.0.8/fl-bsa-v5.0.8-technical-companion.zip
+            dist/technical/v5.0.8/whitepaper.pdf
+            dist/technical/v5.0.8/whitepaper_release.json
+          if-no-files-found: error
+          retention-days: 90

@@ -1,0 +1,231 @@
+\DocumentMetadata{
+  lang=en-US,
+  pdfversion=1.7,
+  testphase={phase-III,table}
+}
+
+% The source creates a tagged, language-bound PDF. Formal PDF/UA conformance is
+% withheld until the exact publication bytes complete assistive-technology review.
+\ifdefined\pdfinfoomitdate\pdfinfoomitdate=1\fi
+\ifdefined\pdftrailerid\pdftrailerid{}\fi
+\ifdefined\pdfsuppressptexinfo\pdfsuppressptexinfo=15\fi
+
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=22mm,headheight=26pt,headsep=8mm,footskip=12mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{eso-pic}
+\usepackage{xcolor}
+\usepackage{xspace}
+\usepackage{booktabs}
+\makeatletter
+\def\@BTnormal{%
+  {\tagmcbegin{artifact}\CT@arc@\hrule\@height\@thisrulewidth\tagmcend}%
+  \futurenonspacelet\@tempa\@BTendrule}
+\makeatother
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{ragged2e}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{fancyhdr}
+\usepackage[section]{placeins}
+\usepackage{float}
+\usepackage{siunitx}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{enumitem}
+\usepackage{url}
+\usepackage{xurl}
+\usepackage{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+
+\ExplSyntaxOn
+\keys_if_exist:nnT { __tag / setup } { attach-css }
+  { \tagpdfsetup { attach-css=false } }
+\keys_if_exist:nnT { __tag / setup } { math/setup }
+  { \tagpdfsetup { math/setup={} } }
+\keys_if_exist:nnT { __tag / setup } { math/alt/use }
+  { \tagpdfsetup { math/alt/use=true } }
+\cs_if_exist:NT \socket_if_exist:nT
+  {
+    \socket_if_exist:nT { hyp/link/GoTo/Contents }
+      { \socket_assign_plug:nn { hyp/link/GoTo/Contents } { default } }
+    \socket_if_exist:nT { hyp/link/GoToR/Contents }
+      { \socket_assign_plug:nn { hyp/link/GoToR/Contents } { default } }
+    \socket_if_exist:nT { hyp/link/URI/Contents }
+      { \socket_assign_plug:nn { hyp/link/URI/Contents } { default } }
+  }
+\ExplSyntaxOff
+
+\definecolor{EquilensNavy}{HTML}{1B365D}
+\definecolor{EquilensBlue}{HTML}{0072B2}
+\definecolor{EquilensGreen}{HTML}{007A5E}
+\definecolor{EquilensOrange}{HTML}{A85D00}
+\definecolor{EquilensRed}{HTML}{A62020}
+\definecolor{EquilensLight}{HTML}{EEF3F7}
+\definecolor{EquilensText}{HTML}{1E2732}
+\color{EquilensText}
+
+\hypersetup{
+  pdftitle={FL-BSA v5.0.8 Technical Whitepaper},
+  pdfauthor={Equilens},
+  pdfsubject={Release-bound methods, architecture, evidence, results, and limitations},
+  pdfkeywords={FL-BSA, v5.0.8, fair lending, synthetic data, fairness evidence, robustness, provenance},
+  pdfdisplaydoctitle=true,
+  % Avoid an otherwise passive catalog /OpenAction used only to select a page.
+  pdfstartpage={},
+  bookmarksopen=true,
+  bookmarksnumbered=true,
+  colorlinks=true,
+  linkcolor=EquilensNavy,
+  citecolor=EquilensNavy,
+  urlcolor=EquilensBlue
+}
+\sisetup{detect-all,round-mode=places,round-precision=3,round-pad=true,table-number-alignment=center}
+\setlist{itemsep=2pt,topsep=4pt,leftmargin=1.5em}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt}
+\renewcommand{\arraystretch}{1.17}
+\setcounter{tocdepth}{2}
+\graphicspath{{technical/figures/}{build/technical/v5.0.8/figures/}}
+
+\input{technical/includes/macros}
+\input{build/technical/v5.0.8/includes/technical_identity}
+\input{build/technical/v5.0.8/includes/technical_quality}
+\input{build/technical/v5.0.8/includes/technical_robustness}
+\input{build/technical/v5.0.8/includes/provenance_macros}
+\input{build/technical/v5.0.8/includes/metrics_macros}
+
+\newcommand{\AccessibleTableHeaderRow}{\tagpdfsetup{table-header-rows={1}}}
+\newcommand{\IdentityText}[1]{\nolinkurl{#1}}
+\newcommand{\StatusPill}[1]{%
+  \begingroup\setlength{\fboxsep}{6pt}%
+  \colorbox{EquilensOrange!15}{\textcolor{EquilensNavy}{\bfseries #1}}%
+  \endgroup}
+\newsavebox{\KeyBoxStorage}
+\newenvironment{KeyBox}{%
+  \par\medskip\noindent\setlength{\fboxsep}{9pt}%
+  \begin{lrbox}{\KeyBoxStorage}\begin{minipage}{0.94\linewidth}%
+}{%
+  \end{minipage}\end{lrbox}%
+  \fcolorbox{EquilensBlue!45}{EquilensLight}{\usebox{\KeyBoxStorage}}%
+  \par\medskip}
+\newenvironment{KeyValueList}{%
+  \setlist[description]{font=\normalfont\bfseries,leftmargin=3em}%
+  \begin{description}\setlength{\itemsep}{1pt}\setlength{\parsep}{0pt}\setlength{\parskip}{0pt}%
+}{\end{description}}
+\newcommand{\DemoEvaluationWatermark}{DEMO / EVALUATION ONLY}
+
+\AddToShipoutPictureBG{%
+  \tagmcbegin{artifact}%
+  \put(\LenToUnit{0.5\paperwidth},\LenToUnit{0.52\paperheight}){%
+    \makebox(0,0){\rotatebox{35}{%
+      \textcolor{black!6}{\bfseries\fontsize{35}{41}\selectfont\DemoEvaluationWatermark}}}}%
+  \tagmcend}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\includegraphics[artifact,height=0.58cm]{equilens-wordmark-light.png}}
+\fancyhead[R]{\scriptsize FL-BSA v5.0.8 \textbar{} Technical Whitepaper}
+\fancyfoot[L]{\scriptsize \TechnicalDocumentVersion{} \textbar{} \PaperPublicationStatus}
+\fancyfoot[R]{\scriptsize \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\newcommand{\MakeCoverTitle}{%
+  \null\vskip 2em%
+  \begin{center}
+    \includegraphics[artifact,width=0.31\textwidth]{equilens-wordmark-light.png}\\[9mm]
+    \textcolor{EquilensNavy}{\bfseries\LARGE FL-BSA v5.0.8\\[5pt]Technical Whitepaper}\\[10pt]
+    {\large Architecture, methods, release evidence, robustness, and limitations\par}
+    \vskip 1.5em
+    {\large Equilens\par}\vskip 1em
+    {\large \PublicationAsOf\par}
+  \end{center}\par\vskip 1.5em}
+
+\begin{document}
+\hypersetup{pageanchor=false}
+\thispagestyle{empty}
+\MakeCoverTitle
+\begin{center}
+  \vspace{-8mm}
+  \StatusPill{\PaperPublicationStatus}\\[3mm]
+  {\small\bfseries\DemoEvaluationWatermark}
+\end{center}
+\vfill
+\begin{KeyBox}
+\small
+\begin{KeyValueList}
+  \item[Document] \TechnicalDocumentVersion
+  \item[Product] \ProductReleaseTag{} at \IdentityText{\ProductCommitRaw}
+  \item[Evidence] release-evidence run \EvidenceRunRaw; retained source attempt
+    \EvidenceSourceAttemptRaw; current successful attempt \EvidenceCurrentAttemptRaw
+  \item[Backend] \texttt{first\_party\_evidence\_native}
+  \item[Companion] \CompanionFilenameRaw; SHA-256 \IdentityText{\CompanionShaRaw}
+\end{KeyValueList}
+\end{KeyBox}
+\small
+This is a public technical characterization of synthetic/demo evidence. It is not customer
+evidence, a production-utility demonstration, legal advice, a compliance determination, regulator
+approval, certification, or authorization to use FL-BSA for live lending decisions.
+\clearpage
+\hypersetup{pageanchor=true}
+
+\pagenumbering{roman}
+\setcounter{page}{1}
+\begin{abstract}
+FL-BSA is a customer-hosted evidence appliance for controlled fair-outcomes simulation. Its selected
+v5 path uses a first-party, profile-based tabular generator with two separately fitted branches:
+an amplification branch that retains configured outcome/protected strata, and an intrinsic control
+that excludes outcome aliases during fitting and applies a declared equal-rate post-label policy.
+This paper binds its statements to product tag \ProductReleaseTag{}, commit
+\IdentityText{\ProductCommitRaw}, and retained v5.0.8 release evidence. In the exact synthetic
+fixture, amplification gender AIR is \GenderAIRAmplification{} with 95\% interval
+[\GenderAIRAmplificationLCI{}, \GenderAIRAmplificationUCI{}], below the internal 0.80 screen;
+the intrinsic policy control is \GenderAIRIntrinsic{}. AOD and EOD are unavailable, equalized-odds
+outputs are not informative because the confusion surface is degenerate, and calibration is not
+evaluated. Both branch quality scores exceed the configured 0.80 composite threshold, but that
+composite includes a privacy quality heuristic and is neither a formal privacy guarantee nor a
+predictive-utility result. All \RobustnessPasses{}/\RobustnessRuns{} configured robustness scenario
+contracts passed. The amplification utility diagnostic averages \UtilityMeanAUC{} ROC AUC;
+\UtilityBelowFloor{} of 40 runs are below the configured 0.70 floor, so production utility is not
+established. The accompanying deterministic ZIP provides the exact intake, a sanitized 40-run
+projection, source identities, checksums, and an offline verifier.
+\end{abstract}
+\begingroup
+\small
+\setlength{\parskip}{0pt}
+\tableofcontents
+\endgroup
+\clearpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\input{technical/sections/01_scope_and_summary}
+\input{technical/sections/02_system_and_evidence_architecture}
+\input{technical/sections/03_problem_estimands}
+\input{technical/sections/04_generation_methods}
+\input{technical/sections/05_evaluation_design}
+\input{technical/sections/06_results}
+\input{technical/sections/07_robustness}
+\input{technical/sections/08_integrity_security_privacy}
+\input{technical/sections/09_regulatory_interpretation}
+\input{technical/sections/10_reproducibility}
+\input{technical/sections/11_limitations_and_monitoring}
+
+\bibliographystyle{plainnat}
+\bibliography{bib/references}
+
+\clearpage
+\appendix
+\begingroup
+\small
+\input{technical/sections/appendix_a_metric_definitions}
+\input{technical/sections/appendix_b_evidence_register}
+\input{technical/sections/appendix_c_configuration}
+\input{technical/sections/appendix_d_regulatory_matrix}
+\input{technical/sections/appendix_e_review_checklist}
+\endgroup
+\end{document}

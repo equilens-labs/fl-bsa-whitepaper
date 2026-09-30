@@ -15,12 +15,21 @@ EXPECTED_FIGURE_TAGS=7
 # Official production v1.28.2 image; upstream GHCR development images are purged weekly.
 VERAPDF_IMAGE=docker.io/verapdf/cli@sha256:e1c674f6dd0ee08418cfa525f6f47040377236432d55d67f747b2bc9c55e7d66
 VERAPDF_REPORT=dist/verapdf-ua1-preflight.xml
+TECHNICAL_BUILD=build/technical/v5.0.8
+TECHNICAL_PDF=dist/technical/v5.0.8/whitepaper.pdf
+TECHNICAL_COMPANION=dist/technical/v5.0.8/fl-bsa-v5.0.8-technical-companion.zip
+TECHNICAL_RENDER_DIR=$(TECHNICAL_BUILD)/render
+TECHNICAL_RENDER_PDF=$(TECHNICAL_RENDER_DIR)/whitepaper.pdf
+TECHNICAL_RENDER_LOG=$(TECHNICAL_RENDER_DIR)/whitepaper.log
+TECHNICAL_TEX_IMAGE=ghcr.io/xu-cheng/texlive-full@sha256:d9bfb267e3e3f5e0820ca86e867ee59ebb133fc29561bb28677d9b5a1a9e84ff
+TECHNICAL_TABLE_HEADER_CELLS=47
+TECHNICAL_FIGURE_TAGS=1
 SOURCE_DATE_EPOCH ?= $(shell git log -1 --format=%ct HEAD)
 export SOURCE_DATE_EPOCH
 export FORCE_SOURCE_DATE = 1
 export TZ = UTC
 
-.PHONY: all test macros plots characterization assets release-claims-lint release-macros release-plots release-regulatory release-assets release-pdf companion identity pdf candidate ua-preflight arxiv publication-candidate publication-candidate-repeatability clean
+.PHONY: all test macros plots characterization assets release-claims-lint release-macros release-plots release-regulatory release-assets release-pdf technical-source-lock technical-assets technical-pdf technical-verify companion identity pdf candidate ua-preflight arxiv publication-candidate publication-candidate-repeatability clean
 
 all: pdf
 
@@ -67,6 +76,62 @@ release-pdf: release-assets
 	python3 scripts/check_release_pdf_passive.py main.pdf
 	mkdir -p dist/release-whitepaper
 	cp main.pdf dist/release-whitepaper/whitepaper.pdf
+
+# The public technical paper consumes an already validated, exact release-bound
+# evidence set under $(TECHNICAL_BUILD). The official workflow performs the
+# private cross-repository download and all source-lock checks before this step.
+technical-source-lock:
+	python3 scripts/technical_source_lock.py \
+		--source-lock technical/releases/v5.0.8.source-lock.json
+
+technical-assets:
+	python3 scripts/gen_tex_macros_from_metrics.py --strict \
+		--metrics $(TECHNICAL_BUILD)/intake-source/intake/metrics_long.csv \
+		--sap $(TECHNICAL_BUILD)/intake-source/config/sap.yaml \
+		--outdir $(TECHNICAL_BUILD)/includes
+	python3 scripts/gen_tex_preamble_from_manifest.py --strict \
+		--manifest $(TECHNICAL_BUILD)/intake-source/intake/manifest.json \
+		--sap $(TECHNICAL_BUILD)/intake-source/config/sap.yaml \
+		--out $(TECHNICAL_BUILD)/includes/provenance_macros.tex
+	python3 scripts/gen_plots_from_intake.py --require-all \
+		--selection $(TECHNICAL_BUILD)/intake-source/intake/selection_rates.csv \
+		--metrics $(TECHNICAL_BUILD)/intake-source/intake/metrics_long.csv \
+		--outdir $(TECHNICAL_BUILD)/figures
+
+technical-pdf: technical-source-lock technical-assets
+	test -f $(TECHNICAL_BUILD)/evidence-summary.json
+	test -f $(TECHNICAL_COMPANION)
+	mkdir -p $(TECHNICAL_RENDER_DIR)
+	docker run --rm \
+		-e SOURCE_DATE_EPOCH="$(SOURCE_DATE_EPOCH)" \
+		-e FORCE_SOURCE_DATE=1 \
+		-e TZ=UTC \
+		-v "$(CURDIR):/work" -w /work \
+		$(TECHNICAL_TEX_IMAGE) \
+		/bin/sh -c 'latexmk -C -outdir=$(TECHNICAL_RENDER_DIR) \
+			-jobname=whitepaper technical/main.tex && \
+			test ! -e $(TECHNICAL_RENDER_PDF) && \
+			latexmk -pdf -interaction=nonstopmode -halt-on-error \
+			-outdir=$(TECHNICAL_RENDER_DIR) -jobname=whitepaper technical/main.tex'
+	test -s $(TECHNICAL_RENDER_PDF)
+	test -s $(TECHNICAL_RENDER_LOG)
+	python3 scripts/canonicalize_release_pdf.py $(TECHNICAL_RENDER_PDF)
+	python3 scripts/check_release_layout.py $(TECHNICAL_RENDER_LOG) \
+		--pdf $(TECHNICAL_RENDER_PDF) --max-overfull-pt 2
+	python3 scripts/check_release_pdf_passive.py $(TECHNICAL_RENDER_PDF)
+	python3 scripts/check_pdf_tag_structure.py \
+		--expected-header-cells $(TECHNICAL_TABLE_HEADER_CELLS) \
+		--expected-figures $(TECHNICAL_FIGURE_TAGS) \
+		$(TECHNICAL_RENDER_PDF)
+	python3 scripts/verify_public_technical_pdf.py \
+		$(TECHNICAL_RENDER_PDF) --summary $(TECHNICAL_BUILD)/evidence-summary.json
+	mkdir -p $(dir $(TECHNICAL_PDF))
+	cp $(TECHNICAL_RENDER_PDF) $(TECHNICAL_PDF)
+
+technical-verify:
+	python3 scripts/verify_public_technical_companion.py $(TECHNICAL_COMPANION)
+	python3 scripts/verify_public_technical_pdf.py \
+		$(TECHNICAL_PDF) --summary $(TECHNICAL_BUILD)/evidence-summary.json
 
 companion: assets
 	python3 scripts/build_companion_bundle.py --repo-root . --output $(COMPANION)
@@ -166,5 +231,6 @@ publication-candidate-repeatability:
 clean:
 	latexmk -C
 	latexmk -C release/main.tex
+	latexmk -C technical/main.tex
 	rm -f $(IDENTITY) $(PDF) $(CANDIDATE_PDF) $(COMPANION)
 	rm -f release/includes/release_identity.tex
