@@ -67,8 +67,10 @@ jobs:
           path: product-source
           persist-credentials: false
           sparse-checkout: |
-            config/public-technical-whitepaper-build-sources.v1.json
-            tools/ci
+            /config/public-technical-whitepaper-build-sources.v1.json
+            /tools/ci
+            /flbsa/__init__.py
+            /flbsa/crypto
           sparse-checkout-cone-mode: false
 
       - name: Resolve and validate the fixed product build source

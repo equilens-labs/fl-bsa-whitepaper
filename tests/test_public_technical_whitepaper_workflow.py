@@ -44,6 +44,8 @@ class PublicTechnicalWhitepaperWorkflowTests(unittest.TestCase):
             "scripts/verify_technical_producer_state.py",
             "--current-run-after",
             "scripts/technical_source_lock.py",
+            "/flbsa/__init__.py",
+            "/flbsa/crypto",
             "--intake-actions-archive",
             "--robustness-actions-archive",
             "scripts/extract_actions_artifact.py",
@@ -52,6 +54,34 @@ class PublicTechnicalWhitepaperWorkflowTests(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, self.text)
         self.assertNotIn("latest", self.text.lower())
+
+    def test_product_source_checkout_is_exact_and_minimal(self) -> None:
+        steps = self.workflow["jobs"]["build"]["steps"]
+        checkout = next(
+            step
+            for step in steps
+            if step.get("name") == "Check out reviewed product source record"
+        )
+        self.assertEqual(
+            "actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+            checkout["uses"],
+        )
+        options = checkout["with"]
+        self.assertEqual("equilens-labs/fl-bsa", options["repository"])
+        self.assertEqual("a853b62b42005477250c08edfe9f1e18f2e2cb50", options["ref"])
+        self.assertEqual("${{ secrets.PRODUCER_TOKEN }}", options["token"])
+        self.assertEqual("product-source", options["path"])
+        self.assertFalse(options["persist-credentials"])
+        self.assertFalse(options["sparse-checkout-cone-mode"])
+        self.assertEqual(
+            [
+                "/config/public-technical-whitepaper-build-sources.v1.json",
+                "/tools/ci",
+                "/flbsa/__init__.py",
+                "/flbsa/crypto",
+            ],
+            options["sparse-checkout"].splitlines(),
+        )
 
     def test_builds_and_checks_the_complete_exact_review_set(self) -> None:
         required = (
