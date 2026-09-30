@@ -53,13 +53,16 @@ class PullWpIntakeContractTests(unittest.TestCase):
             'if [[ ! "$run_id" =~ ^[1-9][0-9]*$ ]]; then',
             'if ! run_json="$(gh api "repos/${PRODUCER_REPO}/actions/runs/${run_id}")"; then',
             "for ((attempt=1; attempt<=81; attempt++)); do",
-            "actions/runs/${run_id}/attempts/${run_attempt}/jobs?per_page=100",
+            "actions/runs/${run_id}/attempts/${PRODUCER_RUN_ATTEMPT}",
+            "actions/runs/${run_id}/attempts/${PRODUCER_RUN_ATTEMPT}/jobs?per_page=100",
             'producer_job_name="WP Evidence (release-grade)"',
             "Release intake authorized by completed ${producer_job_name} job",
             '((.path // "") | split("@")[0]) == $workflow_path',
             ".head_branch == $branch",
             ".head_repository.full_name == $producer_repo",
-            'if [ "$PRODUCER_ARTIFACT" != "wp-intake-bundle-v4-${run_attempt}" ]; then',
+            'if [ "$PRODUCER_ARTIFACT" != "wp-intake-bundle-v4-${source_run_attempt}" ]; then',
+            "PRODUCER_RUN_ATTEMPT < current_run_attempt",
+            'A retained prior-attempt artifact requires the current producer run to be completed successfully.',
             'if [ "$PRODUCER_ARTIFACT_ID" != "$artifact_id" ]; then',
             'if [ "$PRODUCER_ARTIFACT_DIGEST" != "$artifact_digest" ]; then',
             'artifact_match_count="$(jq --arg name "$PRODUCER_ARTIFACT"',
@@ -67,7 +70,10 @@ class PullWpIntakeContractTests(unittest.TestCase):
             'downloaded_digest="sha256:$(sha256sum "$artifact_archive"',
             'expected_bundle_filename="WhitePaper_Intake_Bundle_v4.zip"',
             "gh attestation verify",
-            '[[ "$artifact_created_at" < "$run_started_at" ]]',
+            '[[ "$artifact_created_at" < "$source_run_started_at" ]]',
+            '[[ "$artifact_created_at" > "$current_run_started_at" || "$artifact_created_at" == "$current_run_started_at" ]]',
+            'validate_current_run_anchor "while the artifact was selected"',
+            'validate_current_run_anchor "while the artifact was downloaded"',
             "product_sha != expected_head_sha",
             "producer bundle contains non-public/unreviewed members",
             "Stage and replace managed intake/config surfaces",
@@ -122,6 +128,7 @@ class PullWpIntakeContractTests(unittest.TestCase):
             "gh pr ",
             "intake-pr-soft-fail",
             "github.event.client_payload.workflow_file == 'release-evidence.yml'",
+            'if [ "$PRODUCER_RUN_ATTEMPT" != "$current_run_attempt" ]; then',
         )
         lowered = workflow.lower()
         for fragment in forbidden:
@@ -255,7 +262,7 @@ class PullWpIntakeContractTests(unittest.TestCase):
             ".head_repository.full_name == $producer_repo",
             'gh api "repos/${PRODUCER_REPO}/actions/artifacts/${artifact_id}/zip"',
             'downloaded_digest="sha256:$(sha256sum "$artifact_archive"',
-            'if [ "$PRODUCER_ARTIFACT" != "wp-intake-bundle-v4-${run_attempt}" ]; then',
+            'if [ "$PRODUCER_ARTIFACT" != "wp-intake-bundle-v4-${source_run_attempt}" ]; then',
             'if [ "$PRODUCER_ARTIFACT_ID" != "$artifact_id" ]; then',
             'if [ "$PRODUCER_ARTIFACT_DIGEST" != "$artifact_digest" ]; then',
             "rm -rf intake config",
@@ -327,8 +334,36 @@ class PullWpIntakeContractTests(unittest.TestCase):
         self.assertIn(".head_branch == $branch", download)
         self.assertIn(".head_repository.full_name == $producer_repo", download)
         self.assertIn('run_event="$(jq -r \'.event // ""\' <<<"$run_json")"', download)
-        self.assertIn("wp-intake-bundle-v4-${run_attempt}", download)
-        self.assertIn('[[ "$artifact_created_at" < "$run_started_at" ]]', download)
+        self.assertIn("wp-intake-bundle-v4-${source_run_attempt}", download)
+        self.assertIn(
+            '[[ "$artifact_created_at" < "$source_run_started_at" ]]', download
+        )
+        self.assertIn(
+            '[[ "$artifact_created_at" > "$current_run_started_at" || "$artifact_created_at" == "$current_run_started_at" ]]',
+            download,
+        )
+        selected_recheck = 'validate_current_run_anchor "while the artifact was selected"'
+        downloaded_recheck = 'validate_current_run_anchor "while the artifact was downloaded"'
+        download_call = 'gh api "repos/${PRODUCER_REPO}/actions/artifacts/${artifact_id}/zip"'
+        digest_check = 'if [ "$downloaded_digest" != "$artifact_digest" ]'
+        self.assertEqual(1, download.count(selected_recheck))
+        self.assertEqual(1, download.count(downloaded_recheck))
+        self.assertLess(download.index(selected_recheck), download.index(download_call))
+        self.assertLess(download.index(download_call), download.index(digest_check))
+        self.assertLess(download.index(digest_check), download.index(downloaded_recheck))
+        self.assertIn(
+            "actions/runs/${run_id}/attempts/${PRODUCER_RUN_ATTEMPT}", download
+        )
+        self.assertIn("PRODUCER_RUN_ATTEMPT > current_run_attempt", download)
+        self.assertIn("PRODUCER_RUN_ATTEMPT < current_run_attempt", download)
+        self.assertIn(
+            'A retained prior-attempt artifact requires the current producer run to be completed successfully.',
+            download,
+        )
+        self.assertIn(
+            'source_run_attempt="$(jq -r \'.run_attempt | tostring\' <<<"$source_run_json")"',
+            download,
+        )
         self.assertIn("actions/artifacts/${artifact_id}/zip", download)
         self.assertIn('test("^[0-9a-f]{40}$")', download)
         self.assertLess(
@@ -428,6 +463,219 @@ class PullWpIntakeContractTests(unittest.TestCase):
             "failed": {**good, "conclusion": "failure"},
             "unknown status": {**good, "status": "mystery", "conclusion": None},
             "premature conclusion": {**good, "status": "in_progress"},
+        }
+        for label, payload in mutations.items():
+            with self.subTest(label=label):
+                self.assertNotEqual(0, run_predicate(payload).returncode)
+
+    def test_current_attempt_anchor_is_rechecked_fail_closed(self) -> None:
+        workflow = yaml.safe_load(self.workflow)
+        download = next(
+            step
+            for step in workflow["jobs"]["fetch-build"]["steps"]
+            if step.get("name") == "Download intake bundle from producer"
+        )["run"]
+        anchor_function = download.split("validate_current_run_anchor() {", 1)[1]
+        predicate = anchor_function.split(
+            '--arg workflow "$expected_workflow_path" \'', 1
+        )[1].split('\n    \' <<<"$fresh_run_json"', 1)[0]
+
+        run_id = "12345"
+        attempt = "2"
+        repo = "equilens-labs/fl-bsa"
+        branch = "main"
+        sha = "a" * 40
+        started_at = "2026-09-25T16:36:42Z"
+        workflow_path = ".github/workflows/release-evidence.yml"
+        good = {
+            "id": 12345,
+            "run_attempt": 2,
+            "run_started_at": started_at,
+            "repository": {"full_name": repo},
+            "head_repository": {"full_name": repo},
+            "path": workflow_path,
+            "head_branch": branch,
+            "head_sha": sha,
+            "event": "repository_dispatch",
+            "status": "completed",
+            "conclusion": "success",
+        }
+
+        def run_predicate(payload: dict, *, prior: bool) -> subprocess.CompletedProcess[str]:
+            return subprocess.run(
+                [
+                    "jq",
+                    "-e",
+                    "--arg",
+                    "attempt",
+                    attempt,
+                    "--arg",
+                    "branch",
+                    branch,
+                    "--arg",
+                    "prior",
+                    str(prior).lower(),
+                    "--arg",
+                    "repo",
+                    repo,
+                    "--arg",
+                    "run_id",
+                    run_id,
+                    "--arg",
+                    "sha",
+                    sha,
+                    "--arg",
+                    "started_at",
+                    started_at,
+                    "--arg",
+                    "workflow",
+                    workflow_path,
+                    predicate,
+                ],
+                input=json.dumps(payload),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+        self.assertEqual(0, run_predicate(good, prior=True).returncode)
+        self.assertNotEqual(
+            0,
+            run_predicate(
+                {**good, "status": "in_progress", "conclusion": None}, prior=True
+            ).returncode,
+        )
+        self.assertNotEqual(
+            0, run_predicate({**good, "conclusion": "failure"}, prior=True).returncode
+        )
+        self.assertNotEqual(
+            0, run_predicate({**good, "run_attempt": 3}, prior=True).returncode
+        )
+        self.assertNotEqual(
+            0,
+            run_predicate(
+                {**good, "run_started_at": "2026-09-25T17:00:00Z"}, prior=True
+            ).returncode,
+        )
+        self.assertEqual(
+            0,
+            run_predicate(
+                {**good, "status": "in_progress", "conclusion": None}, prior=False
+            ).returncode,
+        )
+
+    def test_retained_artifact_must_predate_current_attempt(self) -> None:
+        source_started_at = "2026-09-25T15:14:53Z"
+        current_started_at = "2026-09-25T16:36:42Z"
+
+        def accepted(created_at: str, *, source_attempt: int, current_attempt: int) -> bool:
+            if created_at < source_started_at:
+                return False
+            if source_attempt < current_attempt and created_at >= current_started_at:
+                return False
+            return True
+
+        self.assertTrue(
+            accepted(
+                "2026-09-25T15:24:04Z", source_attempt=1, current_attempt=2
+            )
+        )
+        self.assertFalse(
+            accepted(current_started_at, source_attempt=1, current_attempt=2)
+        )
+        self.assertFalse(
+            accepted("2026-09-25T16:36:43Z", source_attempt=1, current_attempt=2)
+        )
+        self.assertTrue(
+            accepted("2026-09-25T16:36:43Z", source_attempt=2, current_attempt=2)
+        )
+
+    def test_retained_source_attempt_must_match_verified_run_lineage(self) -> None:
+        workflow = yaml.safe_load(self.workflow)
+        download = next(
+            step
+            for step in workflow["jobs"]["fetch-build"]["steps"]
+            if step.get("name") == "Download intake bundle from producer"
+        )["run"]
+        predicate = download.split('--arg workflow "$expected_workflow_path" \'', 1)[
+            1
+        ].split('\n    \' <<<"$source_run_json"', 1)[0]
+        expected_predicate = """
+            (.id | tostring) == $run_id and
+            (.run_attempt | tostring) == $attempt and
+            .repository.full_name == $repo and
+            .head_repository.full_name == $repo and
+            ((.path // "") | split("@")[0]) == $workflow and
+            .head_branch == $branch and
+            .head_sha == $sha and
+            .event == "repository_dispatch"
+        """
+        self.assertEqual(
+            " ".join(expected_predicate.split()), " ".join(predicate.split())
+        )
+
+        run_id = "12345"
+        attempt = "1"
+        repo = "equilens-labs/fl-bsa"
+        branch = "main"
+        sha = "a" * 40
+        workflow_path = ".github/workflows/release-evidence.yml"
+        good = {
+            "id": 12345,
+            "run_attempt": 1,
+            "repository": {"full_name": repo},
+            "head_repository": {"full_name": repo},
+            "path": workflow_path,
+            "head_branch": branch,
+            "head_sha": sha,
+            "event": "repository_dispatch",
+            # A later failed job may make the attempt fail after the retained
+            # WP producer job and artifact already succeeded.
+            "status": "completed",
+            "conclusion": "failure",
+        }
+
+        def run_predicate(payload: dict) -> subprocess.CompletedProcess[str]:
+            return subprocess.run(
+                [
+                    "jq",
+                    "-e",
+                    "--arg",
+                    "attempt",
+                    attempt,
+                    "--arg",
+                    "branch",
+                    branch,
+                    "--arg",
+                    "repo",
+                    repo,
+                    "--arg",
+                    "run_id",
+                    run_id,
+                    "--arg",
+                    "sha",
+                    sha,
+                    "--arg",
+                    "workflow",
+                    workflow_path,
+                    predicate,
+                ],
+                input=json.dumps(payload),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+        self.assertEqual(0, run_predicate(good).returncode)
+        mutations = {
+            "run id": {**good, "id": 99999},
+            "attempt": {**good, "run_attempt": 2},
+            "repo": {**good, "repository": {"full_name": "other/repo"}},
+            "head repo": {**good, "head_repository": {"full_name": "other/repo"}},
+            "workflow": {**good, "path": ".github/workflows/other.yml"},
+            "branch": {**good, "head_branch": "feature"},
+            "SHA": {**good, "head_sha": "b" * 40},
+            "event": {**good, "event": "workflow_dispatch"},
         }
         for label, payload in mutations.items():
             with self.subTest(label=label):

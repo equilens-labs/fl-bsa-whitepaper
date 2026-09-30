@@ -124,14 +124,13 @@ jobs:
 
             run_status="$(jq -r '.status' <<<"$run_json")"
             run_conclusion="$(jq -r '.conclusion // ""' <<<"$run_json")"
-            run_attempt="$(jq -r '.run_attempt | tostring' <<<"$run_json")"
-            if [[ ! "$run_attempt" =~ ^[1-9][0-9]*$ ]]; then
-              echo "Producer run ${run_id} has a missing or malformed run_attempt=${run_attempt@Q}." >&2
+            current_run_attempt="$(jq -r '.run_attempt | tostring' <<<"$run_json")"
+            if [[ ! "$current_run_attempt" =~ ^[1-9][0-9]*$ ]]; then
+              echo "Producer run ${run_id} has a missing or malformed run_attempt=${current_run_attempt@Q}." >&2
               exit 1
             fi
-
-            if [ "$PRODUCER_RUN_ATTEMPT" != "$run_attempt" ]; then
-              echo "Dispatched producer run attempt ${PRODUCER_RUN_ATTEMPT} does not match API attempt ${run_attempt}." >&2
+            if (( PRODUCER_RUN_ATTEMPT > current_run_attempt )); then
+              echo "Dispatched producer source attempt ${PRODUCER_RUN_ATTEMPT} is newer than current API attempt ${current_run_attempt}." >&2
               exit 1
             fi
             case "$run_status" in
@@ -147,17 +146,48 @@ jobs:
                 exit 1
                 ;;
             esac
+            if (( PRODUCER_RUN_ATTEMPT < current_run_attempt )) && \
+               [ "$run_status" != "completed" ]; then
+              echo "A retained prior-attempt artifact requires the current producer run to be completed successfully." >&2
+              exit 1
+            fi
 
+            if ! source_run_json="$(gh api \
+              "repos/${PRODUCER_REPO}/actions/runs/${run_id}/attempts/${PRODUCER_RUN_ATTEMPT}")"; then
+              echo "Unable to resolve exact producer source attempt ${run_id}/${PRODUCER_RUN_ATTEMPT}." >&2
+              exit 1
+            fi
+            if ! jq -e \
+              --arg attempt "$PRODUCER_RUN_ATTEMPT" \
+              --arg branch "$PRODUCER_BRANCH" \
+              --arg repo "$PRODUCER_REPO" \
+              --arg run_id "$run_id" \
+              --arg sha "$(jq -r '.head_sha' <<<"$run_json")" \
+              --arg workflow "$expected_workflow_path" '
+                (.id | tostring) == $run_id and
+                (.run_attempt | tostring) == $attempt and
+                .repository.full_name == $repo and
+                .head_repository.full_name == $repo and
+                ((.path // "") | split("@")[0]) == $workflow and
+                .head_branch == $branch and
+                .head_sha == $sha and
+                .event == "repository_dispatch"
+              ' <<<"$source_run_json" >/dev/null; then
+              jq '{id, run_attempt, status, conclusion, path, head_branch, head_sha, event}' \
+                <<<"$source_run_json" >&2
+              echo "Exact producer source attempt does not match the verified run lineage." >&2
+              exit 1
+            fi
             if ! jobs_json="$(gh api --paginate --slurp \
-              "repos/${PRODUCER_REPO}/actions/runs/${run_id}/attempts/${run_attempt}/jobs?per_page=100")"; then
-              echo "Unable to resolve exact-attempt producer jobs for run ${run_id}/${run_attempt}." >&2
+              "repos/${PRODUCER_REPO}/actions/runs/${run_id}/attempts/${PRODUCER_RUN_ATTEMPT}/jobs?per_page=100")"; then
+              echo "Unable to resolve exact-attempt producer jobs for run ${run_id}/${PRODUCER_RUN_ATTEMPT}." >&2
               exit 1
             fi
             producer_job_name="WP Evidence (release-grade)"
             producer_job_count="$(jq --arg name "$producer_job_name" \
               '[.[].jobs[] | select(.name == $name)] | length' <<<"$jobs_json")"
             if [ "$producer_job_count" -gt 1 ]; then
-              echo "Producer run ${run_id}/${run_attempt} has duplicate ${producer_job_name@Q} jobs." >&2
+              echo "Producer run ${run_id}/${PRODUCER_RUN_ATTEMPT} has duplicate ${producer_job_name@Q} jobs." >&2
               exit 1
             fi
             if [ "$producer_job_count" -eq 1 ]; then
@@ -165,7 +195,7 @@ jobs:
                 '[.[].jobs[] | select(.name == $name)][0]' <<<"$jobs_json")"
               if ! jq -e \
                 --arg run_id "$run_id" \
-                --arg run_attempt "$run_attempt" \
+                --arg run_attempt "$PRODUCER_RUN_ATTEMPT" \
                 --arg head_sha "$(jq -r '.head_sha' <<<"$run_json")" \
                 --arg job_name "$producer_job_name" '
                   (.id | tostring | test("^[1-9][0-9]*$")) and
@@ -195,7 +225,7 @@ jobs:
                   echo "Exact release producer job completed without success." >&2
                   exit 1
                 fi
-                echo "Release intake authorized by completed ${producer_job_name} job in active run ${run_id}/${run_attempt}."
+                echo "Release intake authorized by completed ${producer_job_name} job in source attempt ${run_id}/${PRODUCER_RUN_ATTEMPT}."
                 break
               fi
               case "$producer_job_status" in
@@ -215,24 +245,76 @@ jobs:
             continue
           done
           run_head_sha="$(jq -r '.head_sha' <<<"$run_json")"
-          run_attempt="$(jq -r '.run_attempt | tostring' <<<"$run_json")"
-          run_started_at="$(jq -r '.run_started_at // ""' <<<"$run_json")"
-          if [[ ! "$run_attempt" =~ ^[1-9][0-9]*$ ]]; then
-            echo "Producer run ${run_id} has a missing or malformed run_attempt=${run_attempt@Q}." >&2
+          current_run_attempt="$(jq -r '.run_attempt | tostring' <<<"$run_json")"
+          current_run_started_at="$(jq -r '.run_started_at // ""' <<<"$run_json")"
+          source_run_attempt="$(jq -r '.run_attempt | tostring' <<<"$source_run_json")"
+          source_run_started_at="$(jq -r '.run_started_at // ""' <<<"$source_run_json")"
+          if [[ ! "$current_run_attempt" =~ ^[1-9][0-9]*$ ]] || \
+             [[ ! "$source_run_attempt" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Producer run ${run_id} has malformed current/source attempt metadata." >&2
             exit 1
           fi
-          if [[ ! "$run_started_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]]; then
-            echo "Producer run ${run_id} has malformed run_started_at=${run_started_at@Q}." >&2
+          if [ "$source_run_attempt" != "$PRODUCER_RUN_ATTEMPT" ]; then
+            echo "Exact source-attempt API returned ${source_run_attempt}; expected ${PRODUCER_RUN_ATTEMPT}." >&2
             exit 1
           fi
-          if [ "$PRODUCER_ARTIFACT" != "wp-intake-bundle-v4-${run_attempt}" ]; then
-            echo "Artifact ${PRODUCER_ARTIFACT} is not qualified for verified run attempt ${run_attempt}." >&2
+          if [[ ! "$current_run_started_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]]; then
+            echo "Producer current attempt ${run_id}/${current_run_attempt} has malformed run_started_at=${current_run_started_at@Q}." >&2
             exit 1
           fi
-          if [ "$PRODUCER_RUN_ATTEMPT" != "$run_attempt" ]; then
-            echo "Dispatched producer run attempt ${PRODUCER_RUN_ATTEMPT} does not match API attempt ${run_attempt}." >&2
+          if [[ ! "$source_run_started_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]]; then
+            echo "Producer source attempt ${run_id}/${source_run_attempt} has malformed run_started_at=${source_run_started_at@Q}." >&2
             exit 1
           fi
+          if [ "$PRODUCER_ARTIFACT" != "wp-intake-bundle-v4-${source_run_attempt}" ]; then
+            echo "Artifact ${PRODUCER_ARTIFACT} is not qualified for verified source attempt ${source_run_attempt}." >&2
+            exit 1
+          fi
+
+          validate_current_run_anchor() {
+            local phase="$1"
+            local fresh_run_json
+            local prior_attempt=false
+            if (( source_run_attempt < current_run_attempt )); then
+              prior_attempt=true
+            fi
+            if ! fresh_run_json="$(gh api "repos/${PRODUCER_REPO}/actions/runs/${run_id}")"; then
+              echo "Unable to re-resolve producer run ${run_id} ${phase}." >&2
+              exit 1
+            fi
+            if ! jq -e \
+              --arg attempt "$current_run_attempt" \
+              --arg branch "$PRODUCER_BRANCH" \
+              --arg prior "$prior_attempt" \
+              --arg repo "$PRODUCER_REPO" \
+              --arg run_id "$run_id" \
+              --arg sha "$run_head_sha" \
+              --arg started_at "$current_run_started_at" \
+              --arg workflow "$expected_workflow_path" '
+                (.id | tostring) == $run_id and
+                (.run_attempt | tostring) == $attempt and
+                .run_started_at == $started_at and
+                .repository.full_name == $repo and
+                .head_repository.full_name == $repo and
+                ((.path // "") | split("@")[0]) == $workflow and
+                .head_branch == $branch and
+                .head_sha == $sha and
+                .event == "repository_dispatch" and
+                (if $prior == "true" then
+                   .status == "completed" and .conclusion == "success"
+                 else
+                   (.status == "completed" and .conclusion == "success") or
+                   ((.status == "queued" or .status == "in_progress" or
+                     .status == "requested" or .status == "waiting" or
+                     .status == "pending") and .conclusion == null)
+                 end)
+              ' <<<"$fresh_run_json" >/dev/null; then
+              jq '{id, run_attempt, run_started_at, status, conclusion, path, head_branch, head_sha, event}' \
+                <<<"$fresh_run_json" >&2
+              echo "Producer current-attempt authorization changed ${phase}." >&2
+              exit 1
+            fi
+          }
 
           if ! artifacts_json="$(gh api --paginate --slurp \
             "repos/${PRODUCER_REPO}/actions/runs/${run_id}/artifacts?per_page=100")"; then
@@ -267,8 +349,13 @@ jobs:
             exit 1
           fi
           if [[ ! "$artifact_created_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || \
-             [[ "$artifact_created_at" < "$run_started_at" ]]; then
-            echo "Artifact ${artifact_id} creation ${artifact_created_at@Q} predates or cannot be bound to current attempt start ${run_started_at@Q}." >&2
+             [[ "$artifact_created_at" < "$source_run_started_at" ]]; then
+            echo "Artifact ${artifact_id} creation ${artifact_created_at@Q} predates or cannot be bound to source attempt start ${source_run_started_at@Q}." >&2
+            exit 1
+          fi
+          if (( source_run_attempt < current_run_attempt )) && \
+             [[ "$artifact_created_at" > "$current_run_started_at" || "$artifact_created_at" == "$current_run_started_at" ]]; then
+            echo "Artifact ${artifact_id} creation ${artifact_created_at@Q} does not predate current attempt start ${current_run_started_at@Q}." >&2
             exit 1
           fi
           if ! jq -e \
@@ -291,8 +378,9 @@ jobs:
             echo "Dispatched artifact digest ${PRODUCER_ARTIFACT_DIGEST} does not match API digest ${artifact_digest}." >&2
             exit 1
           fi
+          validate_current_run_anchor "while the artifact was selected"
 
-          echo "Downloading artifact ${artifact_id} (${PRODUCER_ARTIFACT}) from ${PRODUCER_REPO} run ${run_id} attempt ${run_attempt}"
+          echo "Downloading artifact ${artifact_id} (${PRODUCER_ARTIFACT}) from ${PRODUCER_REPO} run ${run_id} source attempt ${source_run_attempt}; current attempt ${current_run_attempt}"
           artifact_archive="$(mktemp "${RUNNER_TEMP}/producer-artifact.XXXXXX.zip")"
           gh api "repos/${PRODUCER_REPO}/actions/artifacts/${artifact_id}/zip" > "$artifact_archive"
           downloaded_digest="sha256:$(sha256sum "$artifact_archive" | cut -d' ' -f1)"
@@ -301,6 +389,7 @@ jobs:
             echo "Downloaded artifact bytes do not match API identity: expected=${artifact_digest}/${artifact_size} actual=${downloaded_digest}/${downloaded_size}." >&2
             exit 1
           fi
+          validate_current_run_anchor "while the artifact was downloaded"
           expected_bundle_filename="WhitePaper_Intake_Bundle_v4.zip"
           export ARTIFACT_ARCHIVE="$artifact_archive"
           export EXPECTED_BUNDLE_FILENAME="$expected_bundle_filename"
@@ -344,7 +433,7 @@ jobs:
           echo "SELECTED_PRODUCER_ARTIFACT_DIGEST=${artifact_digest}" >> "$GITHUB_ENV"
           echo "SELECTED_PRODUCER_CONTRACT_SHA256=${producer_contract_sha256}" >> "$GITHUB_ENV"
           echo "SELECTED_PRODUCER_RUN_ID=${run_id}" >> "$GITHUB_ENV"
-          echo "SELECTED_PRODUCER_RUN_ATTEMPT=${run_attempt}" >> "$GITHUB_ENV"
+          echo "SELECTED_PRODUCER_RUN_ATTEMPT=${source_run_attempt}" >> "$GITHUB_ENV"
 
       - name: Unpack intake bundle
         env:

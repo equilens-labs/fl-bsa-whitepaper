@@ -39,12 +39,15 @@ repositories. Both sides require the exact repository, `release-evidence.yml`, `
 literal `persist_intake_pr=false`. A missing or extra field, retired workflow, timer event, branch
 drift, malformed identity, or contract mismatch fails before the consumer queries producer state.
 
-The consumer does not search workflow history. It resolves only the dispatched run ID and attempt,
-checks the exact workflow path/repository/branch/head/event through the Actions API, and polls only
-the exact-attempt `WP Evidence (release-grade)` job. That job must complete successfully. This
-bounded active-run rule breaks the product/whitepaper dependency cycle without treating the whole
-still-running Release Evidence workflow as successful. A failed completed run or job, duplicate job,
-wrong attempt, unsupported pending state, or timeout fails closed.
+The consumer does not search workflow history. It resolves only the dispatched run ID and source
+attempt, checks the current run plus that exact attempt through the Actions API, and polls only the
+source-attempt `WP Evidence (release-grade)` job. That job must complete successfully. The source
+attempt may be earlier than the current successful rerun when its exact retained artifact came from
+that earlier attempt; the consumer proves that both attempts have the same repository, workflow,
+branch, event, and head SHA, and binds artifact creation to the source-attempt start time. This
+supports retained attempt-qualified artifacts without falling back to a latest-run or name-only
+search. A newer-than-current source attempt, failed producer job, duplicate job, wrong lineage,
+unsupported pending state, or timeout fails closed.
 
 ## Authentication
 
@@ -62,9 +65,12 @@ accepted; duplicate or missing artifacts fail closed. It validates the `wp-intak
 schema and current-release `fairness_uncertainty.v2` metrics schema; the checked-in v1 intake
 remains a historical baseline. Before download, the dispatched run ID is
 resolved through the Actions API and must match the exact workflow path, approved event, source
-repository, branch, SHA, and attempt policy. The exact-attempt `WP Evidence (release-grade)` job
-must complete successfully; a failed job, failed completed run, wrong attempt, wrong SHA, duplicate
-job name, or unsupported pending state fails closed.
+repository, branch, SHA, and attempt policy. The source-attempt `WP Evidence (release-grade)` job
+must complete successfully. A later step may have failed that source attempt after the qualified job
+and artifact succeeded. When the source is a retained prior attempt, the current producer attempt
+must be completed successfully; an active current run is accepted only when it is also the source
+attempt. Every retained-attempt identity and timestamp check still applies. A failed producer job, wrong
+attempt lineage, wrong SHA, duplicate job name, or unsupported pending state fails closed.
 
 After unpacking, the bundle product commit and every recorded commit alias must equal that
 API-verified run head SHA.
@@ -169,8 +175,10 @@ that smoke PDF as release evidence.
 The manifest binds the PDF digest and visible product, producer-run, whitepaper-commit/run, and
 snapshot identities. The product release workflow downloads that exact downstream run, validates
 both files, and re-uploads them as a product-bound signing input before the release can proceed.
-The release paper remains a demo/evaluation characterization artifact; it is not customer evidence
-or a published paper.
+The release paper remains a demo/evaluation characterization artifact and is not customer evidence.
+Its generation-time status is `candidate_not_published`; a separate reviewed publication
+receipt or bound published-state transition may make those exact bytes publicly downloadable
+without changing the characterization-only evidence posture.
 
 This separation is deliberate: the repository's archival document is fixed to v5.0.1, so compiling
 it with arbitrary newer intake would create a mixed-version artifact. Each current release paper is
