@@ -8,10 +8,11 @@ configuration, and the release inventory binds artifact coordinates and member h
 build refuses a mismatched product SHA, bundle hash, artifact digest, backend identity, branch,
 quality disposition, robustness plan, or claim boundary.
 
-The public companion is deterministic: members are sorted, timestamps derive from the source
-commit epoch, paths are canonical, symbolic links and traversal paths are rejected, and
-\texttt{MANIFEST.json} records SHA-256 and size for every member. Its verifier rechecks exact
-membership and hashes before parsing evidence.
+The public companion is deterministic: members are sorted, outer ZIP timestamps are fixed to
+1980-01-01, regular entries use mode \texttt{0600} (\texttt{0700} for the offline verifier), paths
+are canonical, symbolic links and traversal paths are rejected, and \texttt{MANIFEST.json}
+records SHA-256 and size for every member. Its verifier rechecks exact membership and hashes before
+parsing evidence.
 
 \subsection{Application and deployment boundary}
 

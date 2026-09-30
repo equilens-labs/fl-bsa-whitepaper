@@ -89,6 +89,8 @@ class PublicTechnicalWhitepaperWorkflowTests(unittest.TestCase):
             "public_technical_whitepaper.py companion",
             "make technical-assets",
             "verify_public_technical_companion.py",
+            "sanitize_artifact_bytes",
+            "not stable under the protected public scanner",
             "root_file: technical/main.tex",
             "check_release_layout.py main.log --pdf main.pdf",
             "check_release_pdf_passive.py main.pdf",

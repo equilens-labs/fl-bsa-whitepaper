@@ -2,6 +2,7 @@ import argparse
 import copy
 import importlib.util
 import json
+import stat
 import tempfile
 import unittest
 from pathlib import Path
@@ -18,6 +19,33 @@ SPEC.loader.exec_module(PAPER)
 
 
 class PublicTechnicalWhitepaperTests(unittest.TestCase):
+    def test_integrity_narrative_matches_canonical_zip_metadata(self) -> None:
+        narrative = (
+            ROOT / "technical" / "sections" / "08_integrity_security_privacy.tex"
+        ).read_text(encoding="utf-8")
+        self.assertIn("outer ZIP timestamps are fixed to", narrative)
+        self.assertIn("1980-01-01", narrative)
+        self.assertIn(
+            r"mode \texttt{0600} (\texttt{0700} for the offline verifier)", narrative
+        )
+        self.assertNotIn("timestamps derive from the source", narrative)
+
+    def test_companion_zip_metadata_matches_protected_scanner(self) -> None:
+        regular = PAPER._zip_info("evidence/summary.json")
+        executable = PAPER._zip_info("verify.py", executable=True)
+        for info in (regular, executable):
+            self.assertEqual((1980, 1, 1, 0, 0, 0), info.date_time)
+            self.assertEqual(3, info.create_system)
+            self.assertEqual(PAPER.zipfile.ZIP_DEFLATED, info.compress_type)
+        self.assertEqual(
+            stat.S_IFREG | 0o600,
+            (regular.external_attr >> 16) & 0xFFFF,
+        )
+        self.assertEqual(
+            stat.S_IFREG | 0o700,
+            (executable.external_attr >> 16) & 0xFFFF,
+        )
+
     def test_decision_driver_does_not_substitute_lowest_intersection(self) -> None:
         intersectional = {
             "reference_intersection": "male|white",

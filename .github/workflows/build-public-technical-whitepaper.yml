@@ -195,6 +195,19 @@ jobs:
             --output "$output"
           make technical-assets
           python scripts/verify_public_technical_companion.py "$output"
+          PYTHONPATH=product-source python - "$output" <<'PY'
+          import sys
+          from pathlib import Path
+
+          from tools.ci.sanitize_artifact_bytes import sanitize_artifact_bytes
+
+          companion = Path(sys.argv[1])
+          payload = companion.read_bytes()
+          if sanitize_artifact_bytes(suffix=".zip", payload=payload) != payload:
+              raise SystemExit(
+                  "technical companion is not stable under the protected public scanner"
+              )
+          PY
 
       - name: Compile technical whitepaper
         uses: xu-cheng/latex-action@e2f99d4b3685b0da93f97e1b86ad8fab81105098 # v3.3.0

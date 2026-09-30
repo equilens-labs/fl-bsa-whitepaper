@@ -8,12 +8,10 @@ import csv
 import hashlib
 import json
 import math
-import os
 import re
 import shutil
 import statistics
 import subprocess
-import time
 import zipfile
 from collections.abc import Iterable
 from pathlib import Path, PurePosixPath
@@ -1268,11 +1266,11 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
     return summary
 
 
-def _zip_info(name: str, epoch: int, *, executable: bool = False) -> zipfile.ZipInfo:
-    info = zipfile.ZipInfo(name, time.gmtime(max(epoch, 315532800))[:6])
+def _zip_info(name: str, *, executable: bool = False) -> zipfile.ZipInfo:
+    info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
     info.compress_type = zipfile.ZIP_DEFLATED
     info.create_system = 3
-    info.external_attr = ((0o100755 if executable else 0o100644) & 0xFFFF) << 16
+    info.external_attr = ((0o100700 if executable else 0o100600) & 0xFFFF) << 16
     return info
 
 
@@ -1310,19 +1308,10 @@ def companion(args: argparse.Namespace) -> dict[str, Any]:
     members["MANIFEST.json"] = (
         json.dumps(manifest, indent=2, sort_keys=True) + "\n"
     ).encode()
-    epoch_raw = os.environ.get("SOURCE_DATE_EPOCH") or _git(
-        args.repo_root, "show", "-s", "--format=%ct", "HEAD"
-    )
-    try:
-        epoch = int(epoch_raw)
-    except ValueError as exc:
-        raise TechnicalPaperError("SOURCE_DATE_EPOCH must be an integer") from exc
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(args.output, "w") as archive:
         for name, data in sorted(members.items()):
-            archive.writestr(
-                _zip_info(name, epoch, executable=name.endswith(".py")), data
-            )
+            archive.writestr(_zip_info(name, executable=name.endswith(".py")), data)
     summary["companion"] = {
         "filename": args.output.name,
         "sha256": _sha256_file(args.output),
