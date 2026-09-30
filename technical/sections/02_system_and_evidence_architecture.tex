@@ -1,0 +1,75 @@
+\section{System and Evidence Architecture}
+
+\subsection{Deployment boundary}
+
+FL-BSA is deployed in the customer's or evaluator's environment as an API, worker/orchestrator, and
+supporting services. The API accepts configuration and task requests; a Celery worker coordinates
+generation, validation, metrics, reporting, and evidence assembly; Redis supplies broker and result
+state. Operators control storage, network policy, TLS termination, access control, retention, and
+deletion.
+
+\begin{table}[htbp]
+\centering
+\small
+\AccessibleTableHeaderRow
+\begin{tabular}{@{}>{\RaggedRight\arraybackslash}p{0.20\linewidth}
+                    >{\RaggedRight\arraybackslash}p{0.34\linewidth}
+                    >{\RaggedRight\arraybackslash}p{0.36\linewidth}@{}}
+\toprule
+Layer & Function & Principal output or boundary \\
+\midrule
+API and orchestration & Validate requests and coordinate asynchronous tasks & Task state, controlled inputs, health and metrics surfaces \\
+Native generator & Fit independent amplification and intrinsic profiles & Two synthetic branch datasets and generation certificates \\
+Validation and analysis & Compute quality, disparity, integrity, and scenario diagnostics & Machine-readable metrics and dispositions \\
+Reporting & Render human-readable evidence & PDF report and summaries derived from canonical metrics \\
+Evidence integrity and signatures & Hash-link and optionally sign evidence records & Internal certificates, manifests, signatures, trust-root metadata \\
+Operator perimeter & Enforce network, TLS, storage, identity, and retention controls & Deployment security outside the Python application boundary \\
+\bottomrule
+\end{tabular}
+\caption{High-level FL-BSA system decomposition.}
+\label{tab:system-architecture}
+\end{table}
+
+\subsection{Dual-branch invariant}
+
+Amplification and intrinsic are separate profiles with separate generation and evidence surfaces.
+They are not two labels attached to a shared fitted model. The amplification profile can observe the
+configured decision outcome and protected/outcome strata. The intrinsic profile removes outcome
+aliases before fitting and only receives a decision column after synthetic feature generation,
+through a declared post-label policy. This separation makes the comparison auditable and prevents
+the intrinsic control from silently learning the historical decision outcome.
+
+The intrinsic branch is a policy control. It answers whether the pipeline can construct an
+otherwise comparable synthetic surface under a declared equal-rate label policy. It does not
+estimate the causal effect of removing discrimination, and it is not an optimized lending policy.
+
+\subsection{Evidence graph}
+
+Each stage emits evidence rather than relying on a final report alone. The exact paper source is
+linked as follows:
+
+\begin{enumerate}
+  \item the annotated product tag identifies the product commit;
+  \item the release-evidence run identifies the runtime and producer jobs;
+  \item the retained intake ZIP binds the dataset/config hashes, branch certificates, metric files,
+    and report inputs;
+  \item the robustness aggregate binds the four-scenario, ten-seed plan and per-run integrity
+    results;
+  \item the paper build validates those identities and derives one canonical public summary;
+  \item the deterministic companion lists every included byte by SHA-256 and carries an offline
+    verifier; and
+  \item the publication sidecar binds the final PDF and companion hashes after rendering.
+\end{enumerate}
+
+The companion byte-binds the vendor release manifest, attestation, and trust-root records through
+reviewed digests. Its small standard-library verifier checks membership, hashes, identities, claim
+boundaries, retained-attempt lineage, metric availability, and the 40-row public projection. It does
+not claim to perform an independent cryptographic validation of every vendor ECDSA signature.
+
+\subsection{Why the source uses a retained attempt}
+
+GitHub Actions reruns can place valid producer artifacts in an earlier workflow attempt while the
+current attempt supplies the successful overall disposition. That happened for v5.0.8. The intake
+artifact and robustness aggregate exist in attempt 1, whose producer jobs succeeded; attempt 2 is
+the successful current run. The paper records both and pins artifact ID, digest, archive size, job
+identity, and inner file hash. This is a provenance fact, not a reconstruction from artifact names.

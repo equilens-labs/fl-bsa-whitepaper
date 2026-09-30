@@ -1,0 +1,57 @@
+\section{Metric and Status Definitions}
+\label{app:metrics}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\AccessibleTableHeaderRow
+\begin{tabular}{@{}>{\RaggedRight\arraybackslash}p{0.16\linewidth}
+                    >{\RaggedRight\arraybackslash}p{0.35\linewidth}
+                    >{\RaggedRight\arraybackslash}p{0.39\linewidth}@{}}
+\toprule
+Metric & Definition & Interpretation boundary \\
+\midrule
+AIR & Protected-group selection rate divided by reference-group selection rate & Descriptive association; 0.80 is an internal review screen \\
+SRG / SPD & Protected-group selection rate minus reference-group selection rate & Difference in percentage-point form; not causal \\
+AOD & Average of group false-positive-rate and true-positive-rate differences & Requires meaningful ground-truth/prediction provenance; unavailable here \\
+EOD & Group true-positive-rate difference & Requires meaningful positive-class outcome provenance; unavailable here \\
+Equalized odds & Joint review of group true-positive and false-positive behavior & Not informative on this run's degenerate confusion surface \\
+ECE & Weighted difference between predicted probabilities and empirical outcomes across bins & Not evaluated without probability scores \\
+ROC AUC & Rank discrimination of a score or model between outcome classes & Advisory amplification-only diagnostic in the robustness evidence \\
+\bottomrule
+\end{tabular}
+\caption{Fairness, calibration, and utility definitions.}
+\label{tab:metric-definitions}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\AccessibleTableHeaderRow
+\begin{tabular}{@{}>{\RaggedRight\arraybackslash}p{0.20\linewidth}
+                    >{\RaggedRight\arraybackslash}p{0.33\linewidth}
+                    >{\RaggedRight\arraybackslash}p{0.37\linewidth}@{}}
+\toprule
+Metric or status & Definition & Interpretation boundary \\
+\midrule
+Distribution quality & Comparison of selected marginal distributions & Does not establish full joint-distribution fidelity \\
+Correlation preservation & Comparison of selected dependence structure & Limited to configured relationships and metrics \\
+Bias preservation & Preservation of the configured disparity signal & Does not endorse the preserved disparity \\
+Privacy quality heuristic & Declared duplicate/distance quality diagnostics & Not differential privacy or an independent attack evaluation \\
+Scenario pass & Configured expectations and integrity checks held & Can coexist with an expected fairness warning \\
+Unavailable & Required inputs or provenance are missing & No numeric replacement is valid \\
+Not informative & Computation exists but intended interpretation is unsupported & Must not be counted as pass \\
+Not evaluated & Capability or test was outside the declared plan & Must not be inferred from other metrics \\
+\bottomrule
+\end{tabular}
+\caption{Quality and status definitions.}
+\label{tab:status-definitions}
+\end{table}
+
+Headline AIR confidence intervals use Wilson intervals for selection rates and a delta method for
+the log ratio \citep{wilson1927probable,oehlert1992delta}. SRG intervals use conservative
+differences of Wilson endpoints. Pairwise race p-values use Holm's procedure
+\citep{holm1979sequential}. These are conditional row-surface approximations and omit fixture,
+source-population, profile-fitting, seed, version, selection, and deployment uncertainty. The
+machine-readable intake also retains the legacy BCa/bootstrap annex configuration (2,000
+replicates, seed 42), but the deterministic v4 uncertainty surface is the PDF source of truth.

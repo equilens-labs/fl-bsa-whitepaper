@@ -184,6 +184,35 @@ This separation is deliberate: the repository's archival document is fixed to v5
 it with arbitrary newer intake would create a mixed-version artifact. Each current release paper is
 generated only from its own exact Release Evidence run and retained as an Actions artifact.
 
+## Public technical-paper build
+
+The comprehensive v5.0.8 technical paper uses a separate, manual build because it combines the exact
+release intake with the retained 40-run robustness artifact. Its source-selection authority is the
+reviewed `technical_whitepaper_v1` record in the product repository, pinned by commit, file digest,
+and size in `technical/releases/v5.0.8.source-lock.json`.
+
+`.github/workflows/build-public-technical-whitepaper.yml` accepts only the literal `v5.0.8` selector
+on `main`. It resolves no moving release, workflow run, attempt, or artifact name. Before download it
+checks the exact current and retained attempts, successful producer job IDs, artifact metadata,
+chronology, and expiry through the GitHub API. After download it rechecks the current run, validates
+both Actions archive hashes and sizes, safely extracts bounded regular files, validates the exact
+inner intake and reviewed robustness files, and constructs a sanitized public projection. Raw
+robustness evidence remains transient workflow input and is not uploaded in the review set.
+
+The build-source record also carries the bounded correction for the historical v5.0.8 release-index
+whitepaper eligibility field. The technical paper, sidecar, and companion all retain
+`customer_evidence_eligible=false`, `customer_evidence_disposition=characterization_only`, and
+`production_utility_established=false`. The workflow refuses a record that widens those claims.
+
+The digest-pinned TeX build is followed by PDF canonicalization, footer collision and horizontal
+overflow checks, passive-content checks, tag-count checks, visible identity and claim checks, and a
+forced PDF/UA-1 veraPDF preflight. The review artifact contains only `whitepaper.pdf`,
+`fl-bsa-v5.0.8-technical-companion.zip`, `whitepaper_release.json`, and `SHA256SUMS.txt`.
+
+This workflow builds exact review bytes. It has `contents: read` permission and no release or
+repository-write step. Public distribution is a later, separately recorded decision bound to all
+four reviewed files and their SHA-256 values.
+
 ## Stable-v5 compatibility anchor
 
 `baselines/stable-v5-characterization.json` is the repository-owned durable anchor for the

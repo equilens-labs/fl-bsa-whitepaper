@@ -1,0 +1,99 @@
+\section{Single-Run Results}
+
+\subsection{Selection-rate disparity}
+
+\begin{table}[htbp]
+\centering
+\small
+\input{build/technical/v5.0.8/includes/table_gender_air_slices}
+\caption{Gender AIR across the generated historical fixture and the two branch outputs. The
+intrinsic value follows an equal-rate post-label control and is not a causal estimate.}
+\label{tab:gender-air-slices}
+\end{table}
+
+The generated historical fixture has male selection rate 0.5775 and female selection rate 0.4383.
+Amplification reproduces these at 0.5774 and 0.4383. Its AIR is
+\GenderAIRAmplification{} with 95\% interval [\GenderAIRAmplificationLCI{},
+\GenderAIRAmplificationUCI{}], and SRG is \GenderSRG{} with interval
+[\GenderSRGLCI{}, \GenderSRGUCI{}]. The interval lies below the 0.80 internal screen, so the exact
+scenario calls for review.
+
+Intrinsic assigns approximately 0.6997 selection rate to both groups after its equal-rate policy,
+yielding AIR \GenderAIRIntrinsic{}. This confirms branch and post-label mechanics. It does not show
+that the underlying feature distribution is unbiased or that an equal approval rate is an
+appropriate production policy.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[alt={Gender adverse impact ratio for the historical fixture, amplification branch, and intrinsic policy control, with uncertainty intervals and the internal 0.80 screen.},width=0.82\linewidth]{gender_air_slices.pdf}
+\caption{Release-bound gender AIR comparison. The intrinsic result is a policy control.}
+\label{fig:gender-air}
+\end{figure}
+
+\subsection{Race display policy}
+\label{sec:pair-selection}
+
+The effective pairwise race comparison uses the group with the highest observed selection rate as
+reference for the run; that is Black, even though the configuration's provenance reference is
+White. The worst retained pair (not an automated headline verdict) is Other versus Black, AIR \RaceWorstAIR{} with 95\% interval
+[\RaceWorstAIRLCI{}, \RaceWorstAIRUCI{}] and Holm--Bonferroni adjusted p-value
+\RaceWorstAIRPValueAdj{}. Because the Hispanic group has only \RaceObservedMinGroupN{} rows
+(2.73\%), the predeclared 300-row and 5\% display conditions are not met. The race calculation is
+retained in the companion and must not be read as an unconditional race verdict. The reference and
+pair were selected from the observed rates before the four emitted pairwise tests. Holm adjustment
+covers that emitted family but not the data-dependent comparator selection; the interval and
+p-value are descriptive and exploratory, not confirmatory post-selection inference.
+
+\subsection{Unavailable and non-informative metrics}
+
+\begin{table}[H]
+\centering
+\small
+\AccessibleTableHeaderRow
+\begin{tabular}{@{}>{\RaggedRight\arraybackslash}p{0.22\linewidth}
+                    >{\RaggedRight\arraybackslash}p{0.20\linewidth}
+                    >{\RaggedRight\arraybackslash}p{0.48\linewidth}@{}}
+\toprule
+Surface & Disposition & Reason \\
+\midrule
+AOD and EOD & Unavailable & Required independent ground-truth/prediction provenance is absent; no numeric zero is substituted. \\
+Equalized odds & Not informative & Every group has FP=0 and FN=0, so TPR=1 and FPR=0 by construction. \\
+ECE/calibration & Not evaluated & Probability-score capability is disabled and no calibration-bin evidence is present. \\
+Single-run utility & Not evaluated & Branch quality certificates carry no evaluated utility result. \\
+\bottomrule
+\end{tabular}
+\caption{Availability semantics for the exact single-run evidence.}
+\label{tab:availability}
+\end{table}
+
+\subsection{Quality decomposition}
+
+\begin{table}[htbp]
+\centering
+\small
+\AccessibleTableHeaderRow
+\begin{tabular}{@{}lSSSSS@{}}
+\toprule
+Branch & {Distribution} & {Correlation} & {Demographic-rate fidelity} & {Privacy heuristic} & {Composite} \\
+\midrule
+Amplification & \AmpDistribution & \AmpCorrelation & \AmpBias & \AmpPrivacyHeuristic & \AmpQuality \\
+Intrinsic & \IntDistribution & \IntCorrelation & \multicolumn{1}{c}{\IntBias{}*} & \IntPrivacyHeuristic & \IntQuality \\
+\bottomrule
+\end{tabular}
+\caption{Equal-weight quality components. The privacy component is a quality heuristic; the
+composite excludes predictive utility.}
+\label{tab:quality}
+\end{table}
+
+\textit{*Intrinsic demographic-rate fidelity defaults to 1.000 because its certificate comparison
+surface has no outcome; it is not an observed perfect result. The producer-defined composite
+includes this default.}
+
+Both composites exceed 0.80. Amplification's marginal-distribution and demographic-rate-fidelity
+scores are close to one for this fixture. The side-by-side composites have different evaluated
+surfaces and are not an apples-to-apples branch ranking: amplification is scored after deterministic,
+outcome-stratified quantile alignment against the original input, while intrinsic has no recorded
+quantile-alignment stage and its distribution component compares only the seven feature/protected
+columns before post-labeling. Intrinsic does not score the later outcome, and its demographic-rate
+component is the default described above. These scores characterize the exact synthetic run and do
+not generalize to customer data without a new deployment-specific evaluation.

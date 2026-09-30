@@ -47,6 +47,47 @@ class ReleaseLayoutTests(unittest.TestCase):
             LAYOUT.footer_intrusions_from_bbox_xml(xml),
         )
 
+    def test_footer_bbox_accepts_technical_identity_and_bare_page_number(self) -> None:
+        xml = """<?xml version="1.0"?>
+        <html xmlns="http://www.w3.org/1999/xhtml"><body><doc>
+          <page width="595.28" height="841.89">
+            <flow><block xMin="72" yMin="800.2" xMax="420" yMax="810.5">
+              <line><word>WP-5.0.8-public.1</word><word>|</word><word>PUBLIC</word>
+              <word>TECHNICAL</word><word>CHARACTERIZATION</word></line></block></flow>
+            <flow><block xMin="500" yMin="800.2" xMax="530" yMax="810.5">
+              <line><word>1</word></line></block></flow>
+          </page>
+        </doc></body></html>"""
+        self.assertEqual([], LAYOUT.footer_intrusions_from_bbox_xml(xml))
+
+    def test_footer_bbox_rejects_unreviewed_technical_footer(self) -> None:
+        xml = """<?xml version="1.0"?>
+        <html xmlns="http://www.w3.org/1999/xhtml"><body><doc>
+          <page width="595.28" height="841.89">
+            <flow><block xMin="72" yMin="800.2" xMax="420" yMax="810.5">
+              <line><word>WP-5.0.8-public.0</word><word>|</word><word>PUBLIC</word>
+              <word>TECHNICAL</word><word>CHARACTERIZATION</word></line></block></flow>
+            <flow><block xMin="500" yMin="800.2" xMax="530" yMax="810.5">
+              <line><word>2</word></line></block></flow>
+          </page>
+        </doc></body></html>"""
+        self.assertEqual(
+            [
+                "page=1 yMin=800.20 text='WP-5.0.8-public.0 | PUBLIC TECHNICAL CHARACTERIZATION'",
+            ],
+            LAYOUT.footer_intrusions_from_bbox_xml(xml),
+        )
+
+    def test_footer_bbox_accepts_roman_page_number(self) -> None:
+        xml = """<?xml version="1.0"?>
+        <html xmlns="http://www.w3.org/1999/xhtml"><body><doc>
+          <page width="595.28" height="841.89">
+            <flow><block xMin="500" yMin="800.2" xMax="530" yMax="810.5">
+              <line><word>ii</word></line></block></flow>
+          </page>
+        </doc></body></html>"""
+        self.assertEqual([], LAYOUT.footer_intrusions_from_bbox_xml(xml))
+
     def test_footer_bbox_rejects_block_that_straddles_reserved_boundary(self) -> None:
         xml = """<?xml version="1.0"?>
         <html xmlns="http://www.w3.org/1999/xhtml"><body><doc>
@@ -106,6 +147,37 @@ class ReleaseLayoutTests(unittest.TestCase):
                 LAYOUT.ReleaseLayoutError, "does not record a completed main.pdf"
             ):
                 LAYOUT.validate_release_layout(log, max_overfull_pt=2.0)
+
+    def test_accepts_exact_named_pdf_with_wrapped_byte_count(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            log = Path(temporary) / "whitepaper.log"
+            log.write_text(
+                "Output written on build/technical/v5.0.8/render/whitepaper.pdf "
+                "(21 pages, 56624\n0 bytes).\n",
+                encoding="utf-8",
+            )
+            LAYOUT.validate_release_layout(
+                log,
+                max_overfull_pt=2.0,
+                expected_pdf=Path("build/technical/v5.0.8/render/whitepaper.pdf"),
+            )
+
+    def test_rejects_completed_marker_for_a_different_pdf(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            log = Path(temporary) / "whitepaper.log"
+            log.write_text(
+                "Output written on stale.pdf (21 pages, 566240 bytes).\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                LAYOUT.ReleaseLayoutError,
+                "does not record a completed expected.pdf",
+            ):
+                LAYOUT.validate_release_layout(
+                    log,
+                    max_overfull_pt=2.0,
+                    expected_pdf=Path("expected.pdf"),
+                )
 
     def test_rejects_negative_or_nonfinite_tolerance(self) -> None:
         for tolerance in (-0.1, float("nan"), float("inf")):

@@ -1,0 +1,61 @@
+\section{Multi-Seed Robustness}
+
+\subsection{Scenario outcomes}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\input{build/technical/v5.0.8/includes/table_technical_robustness}
+\caption{Technical outcome, fairness disposition, headline gender Female/Male ratio, and the
+lowest decision-driving comparison over ten fixed seeds. Each driver is read from the run's
+\texttt{compliance\_decision.basis.worst\_case}; the tested group or intersection, reference,
+ratio, threshold status, and seed stay together. A technical pass and a fairness review warning are
+separate fields.}
+\label{tab:robustness}
+\end{table}
+
+All \RobustnessPasses{} configured scenario runs passed their technical contracts. Balanced and
+security scenarios keep the headline disparity ratio close to one. The outlier scenario spans
+\OutliersRatioMin{} to \OutliersRatioMax{}. The gender-bias positive control consistently produces a
+ratio near 0.65: range \GenderBiasRatioMin{}--\GenderBiasRatioMax{}, mean
+\GenderBiasRatioMean{}. Every one of those ten runs is outside the fairness screen, as expected by
+the test design, while still passing the scenario contract.
+
+This distinction matters for evaluators. The positive control demonstrates that the pipeline does
+not erase a planted disparity and that the review status travels with the controlling comparison.
+Across its plan, the lowest gender-bias decision driver is the Female--Asian intersection versus
+the evidence-recorded male--White intersection at 0.532605 (seed 101). For seed 42, the driver is
+Female--White versus male--White with ratio 0.611312. In the balanced plan, the lowest driver is the
+race Other group versus the observed-rate-selected Hispanic reference at 0.887639 (seed 101).
+Section~\ref{sec:pair-selection} explains this release's observed-rate race-reference policy and its
+post-selection limitation. The public 40-row projection keeps scenario, seed, controlling
+attribute, tested group or intersection, reference, ratio, threshold and status, technical scenario
+status, AOD/EOD availability, and integrity results together. It retains the lowest intersectional
+comparison as a separately named diagnostic rather than treating it as the decision driver.
+
+\subsection{Evidence integrity across the plan}
+
+Every projected row records successful PDF numeric parity, certificate-chain validation,
+certificate-signature validation, evidence encryption, and internal LC11 contract-certificate
+validation. The public
+projection is sanitized: it excludes private runner paths, logs, per-seed working directories,
+row-level data, and the full private Gold tree.
+
+A 40/40 result is evidence that this exact planned set completed consistently. It is not a confidence
+interval over all future datasets, configurations, operating systems, dependency versions, or
+adversarial conditions. The seed list and four scenarios define the supported robustness claim.
+
+\subsection{Advisory utility limitation}
+
+Amplification utility AUC ranges from \UtilityMinAUC{} to \UtilityMaxAUC{}, with mean
+\UtilityMeanAUC{}. Only \UtilityAtOrAboveFloor{} of 40 runs are at or above the configured 0.70
+floor; \UtilityBelowFloor{} are warnings. Accuracy ranges from \UtilityMinAccuracy{} to
+\UtilityMaxAccuracy{}, with mean \UtilityMeanAccuracy{}; no accuracy threshold is configured, so
+these values have no pass/warn disposition. The result is stable enough to expose a consistent
+limitation: the present public evidence does not establish strong train-on-synthetic predictive
+utility even on these generated input fixtures. No intrinsic utility result exists.
+
+The utility diagnostic and the quality composite answer different questions. Distribution,
+correlation, demographic-rate fidelity, and a privacy heuristic can yield a composite above 0.80
+while the advisory AUC remains below 0.70. The paper therefore reports both and does not use the
+quality gate to imply predictive performance.

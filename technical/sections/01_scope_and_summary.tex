@@ -1,0 +1,64 @@
+\section{Scope and Summary}
+
+\subsection{Question answered by this paper}
+
+This paper explains what the selected \ProductReleaseTag{} implementation does, how its dual-branch
+simulation is constructed, which statistical quantities its exact release evidence contains, how
+the evidence is bound to code and runtime identities, and where the evidence stops. It is intended
+for technical evaluators, model-risk teams, fair-outcomes specialists, security reviewers, and
+procurement engineers who need more than a sample report.
+
+The subject is one exact release: annotated tag \ProductReleaseTag{} at product commit
+\IdentityText{\ProductCommitRaw}. The evidence source is release-evidence run \EvidenceRunRaw.
+The intake and robustness producers completed successfully in retained attempt
+\EvidenceSourceAttemptRaw; the overall workflow attempt later ended in failure. Current attempt
+\EvidenceCurrentAttemptRaw{} succeeded. This split-attempt history is explicit because resolving
+artifacts from the current attempt would select the wrong source.
+
+\subsection{What FL-BSA is}
+
+FL-BSA is a self-hosted fair-outcomes evidence appliance. It ingests a configured tabular credit
+dataset inside the operator's environment, constructs two synthetic simulation branches, evaluates
+disparity and quality diagnostics, and emits reports, manifests, certificates, and evidence bundles.
+It does not approve, deny, rank, or override live credit decisions. The default v5 workflow is a
+simulation path rather than a production scoring service.
+
+The selected v5 backend is \texttt{first\_party\_evidence\_native}. It is a profile-based tabular
+generator, not CTGAN, DataCebo, a GAN, or a neural generator. CTGAN remains an explicitly gated
+legacy comparison path and is outside the evidence characterized here.
+
+\subsection{Release-bound findings}
+
+\begin{KeyBox}
+\begin{KeyValueList}
+  \item[Gender disparity] Amplification AIR is \GenderAIRAmplification{}
+    [\GenderAIRAmplificationLCI{}, \GenderAIRAmplificationUCI{}] for female versus male selection.
+    The point estimate and interval are below the internal \AIRThreshold{} screen.
+  \item[Branch separation] Historical-fixture AIR is \GenderAIRHistorical{}; amplification AIR is
+    \GenderAIRAmplification{}; the intrinsic equal-rate policy control is \GenderAIRIntrinsic{}.
+  \item[Availability] AOD and EOD are unavailable. Equalized-odds results are not informative on the
+    degenerate confusion surface. ECE is not evaluated because the scenario has no probability-score
+    surface.
+  \item[Quality] Composite quality is \AmpQuality{} for amplification and \IntQuality{} for
+    intrinsic against a configured 0.80 threshold. These are quality composites, not utility or
+    privacy guarantees.
+  \item[Robustness] \RobustnessPasses{}/\RobustnessRuns{} scenario contracts passed across four
+    scenarios and ten predeclared seeds. A scenario-contract pass can include an expected fairness
+    warning, as in the gender-bias positive control.
+  \item[Utility] Amplification advisory AUC ranges from \UtilityMinAUC{} to \UtilityMaxAUC{}, with
+    mean \UtilityMeanAUC{}. \UtilityBelowFloor{} of 40 runs fall below the 0.70 floor. Accuracy
+    ranges from \UtilityMinAccuracy{} to \UtilityMaxAccuracy{}, with mean \UtilityMeanAccuracy{};
+    it has no configured threshold. Intrinsic utility was not evaluated. Production utility is not
+    established.
+\end{KeyValueList}
+\end{KeyBox}
+
+\subsection{Claim boundary}
+
+This paper and companion have disposition \texttt{characterization\_only} and are
+customer-evidence ineligible. The underlying product release evidence has separately scoped native
+eligibility metadata; that eligibility does not transfer to these public artifacts. The reviewed
+correction changes only the whitepaper field. Public availability does not convert this
+synthetic/demo characterization into customer validation, production qualification, certification,
+compliance, regulator approval, Marketplace/GA availability, or a claim that the method improves
+real lending outcomes.

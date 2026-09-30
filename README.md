@@ -2,7 +2,7 @@
 
 ## Repository roles
 
-This repository has two deliberately separate surfaces:
+This repository has three deliberately separate surfaces:
 
 1. The root build described below is the fixed, archival `v5.0.1` characterization candidate. Its
    source identities and `candidate_not_published` posture are historical and must not be rewritten
@@ -12,6 +12,13 @@ This repository has two deliberately separate surfaces:
    documented in [`docs/ci_intake.md`](docs/ci_intake.md). A successful build consumes release truth;
    it does not create or widen product, publication, customer-evidence, Marketplace/GA, compliance,
    or regulator authority.
+3. [`technical/`](technical/) is the source for a thorough public technical characterization of
+   FL-BSA v5.0.8. It covers architecture, methods, estimands, exact release results, 40-run
+   robustness, integrity, security/privacy boundaries, regulatory interpretation, reproducibility,
+   limitations, and evaluator checks. Its official manual build is fixed to the source identities in
+   `technical/releases/v5.0.8.source-lock.json`; it emits a PDF, a sanitized offline companion,
+   a claim-bound sidecar, and checksums for exact-byte review. Public distribution requires a
+   separate exact-byte authorization after that review.
 
 There is no live task queue in this repository. GitHub issues and pull requests own accepted work;
 historical review conversations and the former v4 ship plan are retained under `tasks/ARCHIVE/`.
@@ -42,6 +49,22 @@ Outputs:
 - `dist/fl-bsa-v5.0.1-characterization-candidate.pdf`
 - `dist/fl-bsa-v5.0.1-companion-evidence.zip`
 - compatibility alias `dist/whitepaper.pdf`
+
+The v5.0.8 technical paper is built by the manual
+`build-public-technical-whitepaper.yml` workflow on `main`. The workflow resolves only the locked
+product record, retained producer attempt, jobs, and artifact IDs; rechecks the live producer state;
+verifies downloaded archive bytes; creates the sanitized companion; compiles the tagged PDF in the
+digest-pinned TeX image; and runs layout, passive-content, visible-claim, structure, and veraPDF
+preflight checks. It uploads exactly:
+
+- `whitepaper.pdf`
+- `fl-bsa-v5.0.8-technical-companion.zip`
+- `whitepaper_release.json`
+- `SHA256SUMS.txt`
+
+See [`technical/README.md`](technical/README.md) for scope and local inspection commands. The
+11-page `release/` output remains the release-bound evidence note; it is not the comprehensive
+technical whitepaper.
 
 `make pdf` regenerates strict intake macros, plots, characterization assets, the deterministic
 companion ZIP, and an untracked self-identity include before compiling. Development builds record a

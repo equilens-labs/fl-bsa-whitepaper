@@ -1,0 +1,62 @@
+\section{Problem Formulation and Estimands}
+
+Let $A$ denote a protected-group attribute, $Y$ a binary observed or synthetic decision, and
+$S$ an optional score. For a protected group $g$ and reference group $r$, the selection rate is
+$\Pr(Y=1\mid A=g)$. The adverse impact ratio used here is
+\begin{equation}
+  \mathrm{AIR}_{g:r}=\frac{\Pr(Y=1\mid A=g)}{\Pr(Y=1\mid A=r)}.
+\end{equation}
+The selection-rate gap is
+\begin{equation}
+  \mathrm{SRG}_{g:r}=\Pr(Y=1\mid A=g)-\Pr(Y=1\mid A=r).
+\end{equation}
+AIR and SRG describe association in the evaluated surface. They do not identify the cause of a gap,
+the treatment effect of protected-group membership, or the legal permissibility of a decision rule.
+
+\subsection{Internal screens}
+
+The configured AIR point screen is \AIRThreshold{}. It is inspired by a four-fifths heuristic, but
+this paper does not treat it as a fair-lending safe harbor or legal test. A point estimate and its
+uncertainty interval are reported separately. The exact amplification interval is derived with
+Wilson selection-rate intervals and a delta-method interval on the log ratio. Race pairwise
+p-values use Holm's sequentially rejective Bonferroni adjustment; gender has one predeclared pair
+\citep{wilson1927probable,oehlert1992delta,holm1979sequential}.
+
+These intervals and p-values are conditional descriptive approximations for this generated row
+surface, treating its rows as observations. They do not propagate uncertainty from fixture
+construction, source-population sampling, fitted profiles, seed choice, generator version, model
+selection, or deployment shift. The fixed-seed plan in Section~7 reports variation over ten
+declared seeds separately; it is not a population-sampling interval.
+
+The technical status terms mean:
+
+\begin{description}
+  \item[Within screen] the configured numerical comparison is on the expected side of its internal
+    threshold;
+  \item[Outside screen] the comparison triggers review under the configured technical rule;
+  \item[Unavailable] required inputs or provenance are absent, so no number is reported;
+  \item[Not informative] a number may be mechanically computable, but the evidence surface cannot
+    support the intended interpretation; and
+  \item[Not evaluated] the metric was outside the scenario's enabled capabilities.
+\end{description}
+
+\subsection{Outcome-conditioned metrics}
+
+Equal opportunity and equalized-odds quantities require meaningful, independent ground-truth and prediction
+provenance. Average odds difference (AOD) combines group differences in false-positive and
+true-positive rates; equal opportunity difference (EOD) compares true-positive rates. These are
+not interchangeable with selection-rate gaps \citep{hardt2016equality}.
+
+For the exact v5.0.8 intake, every reported group has false positives and false negatives equal to
+zero by construction. The resulting TPR=1 and FPR=0 surface is degenerate. FL-BSA therefore records
+equalized odds as \texttt{NOT\_INFORMATIVE}; AOD and EOD are unavailable rather than reported as
+zero. This distinction prevents a missing evidentiary surface from appearing to be perfect parity.
+
+\subsection{Calibration and predictive utility}
+
+Expected calibration error requires probability scores and outcome labels. The exact scenario has
+\path{ece_enabled=false}; ECE is not evaluated. The single-run branch quality certificates also
+mark predictive utility unevaluated. The robustness evidence supplies a separate amplification-only
+advisory AUC diagnostic. That diagnostic is reported as a limitation because most runs are below its
+configured floor; it does not convert the quality composite into a utility result
+\citep{guo2017calibration,fawcett2006roc}.

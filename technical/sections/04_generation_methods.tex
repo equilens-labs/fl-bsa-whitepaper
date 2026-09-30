@@ -1,0 +1,73 @@
+\section{Generation Methods}
+
+\subsection{Selected native backend}
+
+The exact release uses backend \path{first_party_evidence_native}, version 0.1.0, under the
+\path{commercial_no_datacebo} dependency posture. The backend fits empirical tabular profiles
+rather than a neural network. It declares the claim limits \texttt{not\_ctgan},
+\texttt{not\_datacebo}, \texttt{not\_gan}, \texttt{not\_neural},
+\texttt{not\_differential\_privacy}, and \texttt{not\_full\_distribution\_clone}.
+
+The input fixture contains numerical credit features, gender, race, and a binary decision. Each
+branch produces 10,000 synthetic rows using deterministic seed 42. Profile fitting and sampling are
+CPU-compatible. The exact runtime image is \IdentityText{\RuntimeImageDigestRaw}.
+
+The native sampler first draws each column from a fitted empirical profile. Categoricals use the
+observed category probabilities. Numerics select an empirical quantile-histogram bin and draw
+uniformly within its edges, then apply recorded range clipping and integer rounding where required.
+The initial feature draws are independent; configured strata and dependence controls are applied in
+subsequent recorded stages. This ordering is material: the backend is not a single fitted joint
+probability model.
+
+\subsection{Amplification branch}
+
+Amplification fits a branch-specific profile with the decision surface present. Its stratum profile
+is the empirical joint count table over the configured protected attributes and outcome. For the
+requested row count, the sampler uses largest-remainder allocation to obtain exact integer stratum
+counts and a seeded permutation to place those assignments on the independently sampled feature
+rows. Recorded rank/correlation repairs and outcome-alias synchronization follow before the
+exact-output controls.
+
+For the exact release, a final quantile-alignment stage maps credit score, income,
+debt-to-income, loan amount, and age against the original training-data reference, stratified by
+\texttt{loan\_approved}. It is applied after the generic post-processing stage and before realism
+validation. For example, the recorded income KS statistic changes from 0.082200 before alignment to
+0.001167 afterward; the headline quality score is therefore a post-alignment result. The alignment
+also runs an exact-reference-row rejection check.
+
+The branch is intended to reproduce a status-quo disparity signal sufficiently for controlled
+simulation. In the exact run, historical gender AIR \GenderAIRHistorical{} and amplification AIR
+\GenderAIRAmplification{} differ by only \GenderAIRFidelityAbs{} in absolute terms. This is evidence
+for the specified disparity statistic, not proof that the entire joint distribution is cloned.
+
+\subsection{Intrinsic policy control}
+
+Intrinsic fits its own profile after excluding the decision, ground-truth aliases, and outcome
+probability aliases. It uses protected-anchor profile resampling stratified over gender and race,
+generates the feature surface, and then applies a post-label policy independently within each
+gender--race intersection. The policy assigns $\lfloor 0.70n_g\rfloor$ approvals in intersection
+$g$, selecting the highest merit rows when a merit score is available. The resulting AIR of
+\GenderAIRIntrinsic{} is therefore a mechanical property of that declared construction. Its
+interval is only the conditional row-surface approximation described in Section~3; it does not
+estimate a causal counterfactual or validate the policy for use in credit decisions.
+
+\subsection{Realism and repair controls}
+
+Configuration can apply recorded, deterministic realism hooks, including band constraints,
+reference-aware rank/correlation repair, and monotonicity checks. The execution order is schema
+sampling, stratum overwrite where applicable, dependence repair, outcome-alias synchronization,
+and exact-row prevention/output-wall checks. These controls aim to keep configured relationships
+within declared bounds. A pass does not establish full-distribution fidelity, privacy, CTGAN
+equivalence, or suitability for a particular lender.
+
+Both exact branches report zero exact training-row matches among the 10,000 checked synthetic rows
+after the final exact-output wall. This addresses exact tuple reproduction over the comparison
+columns only. It does not measure near-duplicate risk, membership inference, attribute inference,
+linkage, or differential privacy \citep{stadler2022synthetic}.
+
+\subsection{Legacy comparator boundary}
+
+The repository retains a separately gated CTGAN/RDT compatibility and comparator path. None of its
+training behavior, loss histories, conditional sampling, GPU expectations, or pickle artifacts are
+part of the v5.0.8 evidence summarized here. Selecting that path requires an explicit legacy/full
+dependency profile and the applicable authorization controls.

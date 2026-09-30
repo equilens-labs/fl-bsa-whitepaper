@@ -35,5 +35,6 @@ release/includes/table_regulatory_matrix.tex
 release/includes/table_srg_summary.tex
 
 # Local build directories
+build/technical/
 dist/
 out/
