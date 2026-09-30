@@ -1,5 +1,21 @@
 # FL-BSA v5.0.1 Characterization Whitepaper
 
+## Repository roles
+
+This repository has two deliberately separate surfaces:
+
+1. The root build described below is the fixed, archival `v5.0.1` characterization candidate. Its
+   source identities and `candidate_not_published` posture are historical and must not be rewritten
+   as current product or release truth.
+2. [`release/`](release/) is the renderer for an exact release-bound intake produced by the private
+   `equilens-labs/fl-bsa` Release Evidence workflow. The bounded cross-repository mechanism is
+   documented in [`docs/ci_intake.md`](docs/ci_intake.md). A successful build consumes release truth;
+   it does not create or widen product, publication, customer-evidence, Marketplace/GA, compliance,
+   or regulator authority.
+
+There is no live task queue in this repository. GitHub issues and pull requests own accepted work;
+historical review conversations and the former v4 ship plan are retained under `tasks/ARCHIVE/`.
+
 This repository builds the review candidate, figures, and standalone companion evidence for the
 FL-BSA v5.0.1 characterization paper. The candidate is bound to:
 
