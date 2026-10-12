@@ -146,6 +146,17 @@ files remain unchanged. These audit fields record input treatment; they do not w
 gender/race characterization scope or establish signature authenticity, customer eligibility,
 legal/regulatory approval or publication authority.
 
+The release intake may also retain the producer's aggregate `age_group` metadata at its exact
+fairness-config, manifest, run-summary and uncertainty paths. This extension is bounded to the
+five configured bands (18–24, 25–34, 35–49, 50–64, 65+), the 35–49 reference, exclusion of unknown
+ages and the fixed display thresholds of 300 observations and 5 percent. The reviewed uncertainty
+case has all five bands, four complete comparisons and a positive reference selection rate;
+missing-band, custom-band and non-evaluable cases still fail closed pending separate review.
+Counts bind selection rates, Wilson/SRG intervals, observed support, suppressed groups, extrema
+and the display disposition. Private diagnostics, arbitrary labels and unreviewed shapes remain
+forbidden. This preserves producer engineering metadata; the paper generators still select only
+gender and race, and age display metadata grants no expanded characterization or regulatory claim.
+
 The consumer stages a complete replacement for the producer-managed surfaces:
 
 - `intake/*.csv` and `intake/*.json`

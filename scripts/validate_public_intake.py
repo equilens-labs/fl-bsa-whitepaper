@@ -216,16 +216,97 @@ _INPUT_AUDIT_SCHEMA = {
         column: _INPUT_IMPUTATION_ITEM_SCHEMA for column in _INPUT_IMPUTATION_COLUMNS
     },
 }
+_AGE_REFERENCE = "35-49"
+_AGE_PROTECTED = ["18-24", "25-34", "50-64", "65+"]
+_AGE_BANDS = [
+    {"label": "18-24", "min_age": 18, "max_age": 24},
+    {"label": "25-34", "min_age": 25, "max_age": 34},
+    {"label": "35-49", "min_age": 35, "max_age": 49},
+    {"label": "50-64", "min_age": 50, "max_age": 64},
+    {"label": "65+", "min_age": 65, "max_age": None},
+]
+_AGE_CONFIG_SCHEMA = {
+    "reference": "",
+    "protected": [""],
+    "unknown_treatment": "",
+    "bands": [{"label": "", "min_age": 0, "max_age": 0}],
+}
+_AGE_DISPLAY_SCHEMA = {"min_group_n": 0, "min_group_pct": 0.0}
+_AGE_RATE_SCHEMA = {"p": 0.0, "ci95": [0.0]}
+_AGE_METRIC_SCHEMA = {
+    "point": 0.0,
+    "ci95": [0.0],
+    "p_value": 0.0,
+    "p_value_adjusted": 0.0,
+    "p_value_adjustment": "",
+    "method": "",
+}
+_AGE_PAIR_SCHEMA = {
+    "counts": {"ref_n": 0, "prot_n": 0, "ref_approved": 0, "prot_approved": 0},
+    "selection_rates": {"ref": _AGE_RATE_SCHEMA, "prot": _AGE_RATE_SCHEMA},
+    "air": _AGE_METRIC_SCHEMA,
+    "srg": _AGE_METRIC_SCHEMA,
+    "small_n_flag": False,
+    "p_value_method": "",
+    "confidence_level": 0.0,
+    "seed_material": "",
+}
+_AGE_METRICS_SCHEMA = {
+    "reference_group": "",
+    "configured_reference_group": "",
+    "configured_protected_groups": [""],
+    "unknown_treatment": "",
+    "reference_group_selection_policy": "",
+    "selection_rate_range": {
+        "min_group": "",
+        "min_rate": 0.0,
+        "max_group": "",
+        "max_rate": 0.0,
+    },
+    "pairs": {group: _AGE_PAIR_SCHEMA for group in _AGE_PROTECTED},
+    "worst_case_pair": "",
+    "missing_groups": None,
+    "policy": {"display_age_group_in_main_pdf": _AGE_DISPLAY_SCHEMA},
+    "observed": {"total_n": 0, "min_group_n": 0, "min_group_pct": 0.0},
+    "suppressed_groups": [_RACE_SUPPRESSION_ITEM_SCHEMA],
+    "verdict_scope": "",
+    "display_in_main_pdf": False,
+}
 _REVIEWED_SCHEMA_EXTENSIONS = {
+    ("config/fairness_config.yaml", "attributes", "age_group"): _AGE_CONFIG_SCHEMA,
+    (
+        "config/fairness_config.yaml",
+        "policy",
+        "display_age_group_in_main_pdf",
+    ): _AGE_DISPLAY_SCHEMA,
+    (
+        "intake/metrics_uncertainty.json",
+        "fairness_uncertainty",
+        "age_group",
+    ): _AGE_METRICS_SCHEMA,
+    **{
+        (
+            location,
+            "fairness_policy",
+            "display_age_group_in_main_pdf",
+        ): _AGE_DISPLAY_SCHEMA
+        for location in _SRG_PROVENANCE_LOCATIONS
+    },
+    **{
+        (location, "fairness_protected_groups", "age_group"): [""]
+        for location in _SRG_PROVENANCE_LOCATIONS
+    },
+    **{
+        (location, "fairness_reference_groups", "age_group"): ""
+        for location in _SRG_PROVENANCE_LOCATIONS
+    },
     **{
         (_INPUT_CERTIFICATE_LOCATION, field): schema
         for field, schema in _INPUT_AUDIT_SCHEMA.items()
     },
     (*_METRICS_RACE_SCHEMA_PATH, "configured_protected_groups"): [""],
     (*_METRICS_RACE_SCHEMA_PATH, "unknown_treatment"): "",
-    (*_METRICS_RACE_SCHEMA_PATH, "suppressed_groups"): [
-        _RACE_SUPPRESSION_ITEM_SCHEMA
-    ],
+    (*_METRICS_RACE_SCHEMA_PATH, "suppressed_groups"): [_RACE_SUPPRESSION_ITEM_SCHEMA],
     (*_METRICS_RACE_SCHEMA_PATH, "verdict_scope"): "",
     (*_AIR_RACE_SCHEMA_PATH, "suppressed_groups"): [_RACE_SUPPRESSION_ITEM_SCHEMA],
     (*_AIR_RACE_SCHEMA_PATH, "status_caveat"): "",
@@ -449,7 +530,7 @@ def _validate_structure(
                 continue
             field_schema_path = (*schema_path, key)
             if field_schema_path in _REVIEWED_SCHEMA_EXTENSIONS:
-                # Product-side evidence may add these reviewed race-disclosure
+                # Product-side evidence may add these exact reviewed disclosure
                 # fields without rewriting the historical public baseline.
                 _validate_structure(
                     value,
@@ -1069,7 +1150,9 @@ def _validate_input_contract_audit(candidate: dict[str, Any], location: str) -> 
         or not isinstance(source, str)
         or source not in {"ingest_source_file", "dataset_upload_metadata.raw_sha256"}
     ):
-        raise DisclosureError(f"{location} has malformed input hash provenance; value redacted")
+        raise DisclosureError(
+            f"{location} has malformed input hash provenance; value redacted"
+        )
 
     aliases = candidate["column_aliases_applied"]
     if not isinstance(aliases, dict):
@@ -1077,7 +1160,9 @@ def _validate_input_contract_audit(candidate: dict[str, Any], location: str) -> 
     targets: set[str] = set()
     for alias, target in aliases.items():
         if alias not in _INPUT_COLUMN_ALIASES or target != _INPUT_COLUMN_ALIASES[alias]:
-            raise DisclosureError(f"{location} has an unreviewed alias mapping; key/value redacted")
+            raise DisclosureError(
+                f"{location} has an unreviewed alias mapping; key/value redacted"
+            )
         if target in targets:
             raise DisclosureError(f"{location} has ambiguous reviewed alias mappings")
         targets.add(target)
@@ -1096,7 +1181,9 @@ def _validate_input_contract_audit(candidate: dict[str, Any], location: str) -> 
             or not isinstance(record, dict)
             or set(record) != {"rows", "fraction", "strategy"}
         ):
-            raise DisclosureError(f"{location} has an unreviewed imputation record; key redacted")
+            raise DisclosureError(
+                f"{location} has an unreviewed imputation record; key redacted"
+            )
         rows, fraction = record["rows"], record["fraction"]
         if (
             type(rows) is not int
@@ -1108,7 +1195,9 @@ def _validate_input_contract_audit(candidate: dict[str, Any], location: str) -> 
             or rows / data_rows > 0.20
             or fraction != round(rows / data_rows, 6)
         ):
-            raise DisclosureError(f"{location} has invalid imputation counts or strategy; value redacted")
+            raise DisclosureError(
+                f"{location} has invalid imputation counts or strategy; value redacted"
+            )
 
 
 def _validate_certificate_semantics(
@@ -1301,6 +1390,222 @@ def _validate_csv(candidate_path: Path, baseline_path: Path) -> None:
                     ) from exc
 
 
+def _validate_age_display(value: Any, location: str) -> None:
+    policy = _require_exact_keys(value, set(_AGE_DISPLAY_SCHEMA), location)
+    if (
+        type(policy["min_group_n"]) is not int
+        or policy["min_group_n"] != 300
+        or type(policy["min_group_pct"]) not in (int, float)
+        or policy["min_group_pct"] != 0.05
+    ):
+        raise DisclosureError(f"{location} has an unreviewed age display policy")
+
+
+def _validate_age_metrics(value: Any, location: str) -> None:
+    """Accept the reviewed complete five-band aggregate, never an age claim grant."""
+    age = _require_exact_keys(value, set(_AGE_METRICS_SCHEMA), location)
+    if (
+        age["reference_group"] != _AGE_REFERENCE
+        or age["configured_reference_group"] != _AGE_REFERENCE
+        or age["configured_protected_groups"] != _AGE_PROTECTED
+        or age["unknown_treatment"] != "exclude"
+        or age["reference_group_selection_policy"] != "configured_reference_band"
+        or age["missing_groups"] is not None
+    ):
+        raise DisclosureError(
+            f"{location} has unreviewed age bands or reference policy"
+        )
+    policy = _require_exact_keys(
+        age["policy"], {"display_age_group_in_main_pdf"}, location
+    )
+    _validate_age_display(policy["display_age_group_in_main_pdf"], location)
+    pairs = _require_exact_keys(age["pairs"], set(_AGE_PROTECTED), location)
+    # The existing recursive checker binds every age SRG point, Wilson interval
+    # and conservative endpoint difference to positive integer disclosed counts.
+    _validate_srg_artifact({"age_group": age}, location)
+    counts: dict[str, tuple[int, int]] = {}
+    for group, candidate in pairs.items():
+        pair = _require_exact_keys(candidate, set(_AGE_PAIR_SCHEMA), location)
+        row = pair["counts"]
+        reference = (row["ref_n"], row["ref_approved"])
+        if _AGE_REFERENCE in counts and counts[_AGE_REFERENCE] != reference:
+            raise DisclosureError(f"{location} has inconsistent age reference counts")
+        counts[_AGE_REFERENCE] = reference
+        counts[group] = (row["prot_n"], row["prot_approved"])
+        if (
+            type(pair["small_n_flag"]) is not bool
+            or pair["small_n_flag"]
+            != (
+                min(row["ref_n"], row["prot_n"]) < 50
+                or min(
+                    row["ref_approved"],
+                    row["ref_n"] - row["ref_approved"],
+                    row["prot_approved"],
+                    row["prot_n"] - row["prot_approved"],
+                )
+                < 5
+            )
+            or pair["p_value_method"] not in {"two_proportion_z_test", "fisher_exact"}
+            or not isinstance(pair["seed_material"], str)
+            or not _DIGEST_RE.fullmatch(pair["seed_material"])
+        ):
+            raise DisclosureError(f"{location} has unreviewed age pair metadata")
+        for name, method in (("air", "wilson+delta"), ("srg", _SRG_CI_METHOD)):
+            metric = _require_exact_keys(pair[name], set(_AGE_METRIC_SCHEMA), location)
+            if (
+                metric["method"] != method
+                or metric["p_value_adjustment"] != "holm_bonferroni"
+            ):
+                raise DisclosureError(
+                    f"{location} has unreviewed age uncertainty methods"
+                )
+            for field in ("p_value", "p_value_adjusted"):
+                _numeric_point(
+                    metric[field], location=location, lower_limit=0.0, upper_limit=1.0
+                )
+        air = pair["air"]
+        _numeric_interval(
+            air["ci95"], location=location, lower_limit=0.0, upper_limit=math.inf
+        )
+        air_point = _numeric_point(
+            air["point"], location=location, lower_limit=0.0, upper_limit=math.inf
+        )
+        ref_rate = row["ref_approved"] / row["ref_n"]
+        if ref_rate <= 0 or not math.isclose(
+            air_point, row["prot_approved"] / row["prot_n"] / ref_rate, abs_tol=1e-12
+        ):
+            raise DisclosureError(f"{location} has an inconsistent age AIR point")
+
+    total = sum(n for n, _ in counts.values())
+    minimum = min(n for n, _ in counts.values())
+    observed = _require_exact_keys(
+        age["observed"], {"total_n", "min_group_n", "min_group_pct"}, location
+    )
+    if (
+        type(observed["total_n"]) is not int
+        or observed["total_n"] != total
+        or type(observed["min_group_n"]) is not int
+        or observed["min_group_n"] != minimum
+        or not math.isclose(
+            _finite_float(observed["min_group_pct"], location=location),
+            minimum / total,
+            rel_tol=0,
+            abs_tol=1e-12,
+        )
+    ):
+        raise DisclosureError(f"{location} has inconsistent age observed support")
+    expected_suppressed = {}
+    for group, (n, _) in counts.items():
+        reasons = []
+        if n < 300:
+            reasons.append("below_min_group_n")
+        if n / total < 0.05:
+            reasons.append("below_min_group_pct")
+        if reasons:
+            expected_suppressed[group] = (n, n / total, reasons)
+    suppressed = age["suppressed_groups"]
+    if not isinstance(suppressed, list) or len(suppressed) != len(expected_suppressed):
+        raise DisclosureError(f"{location} has inconsistent age suppression")
+    seen = set()
+    for candidate in suppressed:
+        item = _require_exact_keys(
+            candidate, set(_RACE_SUPPRESSION_ITEM_SCHEMA), location
+        )
+        group = item["group"]
+        if (
+            not isinstance(group, str)
+            or group not in expected_suppressed
+            or group in seen
+        ):
+            raise DisclosureError(f"{location} has unreviewed age suppression groups")
+        seen.add(group)
+        n, pct, reasons = expected_suppressed[group]
+        if (
+            type(item["n"]) is not int
+            or item["n"] != n
+            or item["reasons"] != reasons
+            or not math.isclose(
+                _finite_float(item["pct"], location=location),
+                pct,
+                rel_tol=0,
+                abs_tol=1e-12,
+            )
+        ):
+            raise DisclosureError(f"{location} has inconsistent age suppression")
+    rates = {group: selected / n for group, (n, selected) in counts.items()}
+    worst = min(_AGE_PROTECTED, key=lambda group: (rates[group], group))
+    rate_range = _require_exact_keys(
+        age["selection_rate_range"],
+        {"min_group", "min_rate", "max_group", "max_rate"},
+        location,
+    )
+    for edge, extremum in (("min", min(rates.values())), ("max", max(rates.values()))):
+        group = rate_range[f"{edge}_group"]
+        rate = _finite_float(rate_range[f"{edge}_rate"], location=location)
+        if (
+            not isinstance(group, str)
+            or group not in rates
+            or rates[group] != extremum
+            or not math.isclose(rate, extremum, rel_tol=0, abs_tol=1e-12)
+        ):
+            raise DisclosureError(
+                f"{location} has inconsistent age selection-rate range"
+            )
+    scope = (
+        "display_policy_conditional" if expected_suppressed else "all_configured_groups"
+    )
+    if (
+        age["worst_case_pair"] != worst
+        or age["verdict_scope"] != scope
+        or type(age["display_in_main_pdf"]) is not bool
+        or age["display_in_main_pdf"] != (not expected_suppressed)
+    ):
+        raise DisclosureError(f"{location} has inconsistent age display disposition")
+
+
+def _validate_age_metadata(payload: Any, location: str) -> None:
+    if location in _SRG_PROVENANCE_LOCATIONS | {
+        "config/fairness_config.yaml",
+        "intake/metrics_uncertainty.json",
+    } and not isinstance(payload, dict):
+        raise DisclosureError(f"{location} is not a reviewed metadata object")
+    if location == "config/fairness_config.yaml":
+        attributes = payload.get("attributes") or {}
+        if "age_group" in attributes:
+            age = _require_exact_keys(
+                attributes["age_group"], set(_AGE_CONFIG_SCHEMA), location
+            )
+            if age != {
+                "reference": _AGE_REFERENCE,
+                "protected": _AGE_PROTECTED,
+                "unknown_treatment": "exclude",
+                "bands": _AGE_BANDS,
+            } or any(
+                type(band["min_age"]) is not int
+                or (band["max_age"] is not None and type(band["max_age"]) is not int)
+                for band in age["bands"]
+            ):
+                raise DisclosureError(f"{location} has unreviewed age configuration")
+        policy = payload.get("policy") or {}
+    elif location in _SRG_PROVENANCE_LOCATIONS:
+        policy = payload.get("fairness_policy") or {}
+    else:
+        policy = {}
+    if "display_age_group_in_main_pdf" in policy:
+        _validate_age_display(policy["display_age_group_in_main_pdf"], location)
+    if location in _SRG_PROVENANCE_LOCATIONS:
+        references = payload.get("fairness_reference_groups") or {}
+        if "age_group" in references and references["age_group"] != _AGE_REFERENCE:
+            raise DisclosureError(f"{location} has an unreviewed age reference")
+        protected = payload.get("fairness_protected_groups") or {}
+        if "age_group" in protected and protected["age_group"] != _AGE_PROTECTED:
+            raise DisclosureError(f"{location} has unreviewed age protected groups")
+    if location == "intake/metrics_uncertainty.json":
+        fairness = payload.get("fairness_uncertainty") or {}
+        if "age_group" in fairness:
+            _validate_age_metrics(fairness["age_group"], location)
+
+
 def validate_bundle(bundle_root: Path, schema_root: Path) -> None:
     """Validate every extracted public intake file against tracked reviewed schemas."""
 
@@ -1332,6 +1637,7 @@ def validate_bundle(bundle_root: Path, schema_root: Path) -> None:
             baseline_payload = _load_structured(baseline)
             relative_name = relative.as_posix()
             _validate_structure(candidate_payload, baseline_payload, relative_name)
+            _validate_age_metadata(candidate_payload, relative_name)
             if relative_name in _CI_RUNTIME_MANIFEST_LOCATIONS:
                 _validate_ci_runtime_manifest_binding(candidate_payload, relative_name)
             if relative_name in _SRG_ARTIFACT_LOCATIONS:
