@@ -18,6 +18,130 @@ SPEC.loader.exec_module(DISCLOSURE)
 
 
 class PublicIntakeDisclosureTests(unittest.TestCase):
+    def _input_audit_bundle(self, root: Path) -> tuple[Path, Path, dict]:
+        bundle = self._bundle(root)
+        path = bundle / "certificates/input_validation_certificate.json"
+        payload = json.loads(
+            (ROOT / "intake/certificates/input_validation_certificate.json").read_text()
+        )
+        payload.update(
+            raw_upload_sha256="a" * 64,
+            raw_upload_sha256_source="dataset_upload_metadata.raw_sha256",
+            column_aliases_applied={},
+            imputed_columns={},
+        )
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        return bundle, path, payload
+
+    def test_input_contract_audit_accepts_exact_reviewed_aliases_and_counts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle, path, payload = self._input_audit_bundle(Path(tmp))
+            payload["column_aliases_applied"] = {"sex": "gender", "fico_score": "credit_score"}
+            payload["imputed_columns"] = {
+                "income": {"rows": 600, "fraction": 0.2, "strategy": "median"}
+            }
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_input_contract_audit_accepts_legacy_and_unavailable_hash(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle, path, payload = self._input_audit_bundle(Path(tmp))
+            payload["raw_upload_sha256"] = payload["raw_upload_sha256_source"] = None
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            DISCLOSURE.validate_bundle(bundle, ROOT)
+            for field in DISCLOSURE._INPUT_AUDIT_SCHEMA:
+                del payload[field]
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_input_contract_audit_requires_complete_bounded_hash_provenance(self) -> None:
+        bad_values = (
+            {"raw_upload_sha256": "a" * 63},
+            {"raw_upload_sha256": "A" * 64},
+            {"raw_upload_sha256": None},
+            {"raw_upload_sha256_source": None},
+            {"raw_upload_sha256_source": "unreviewed_source"},
+            {"raw_upload_sha256_source": {"raw_rows": []}},
+        )
+        for mutation in bad_values:
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as tmp:
+                bundle, path, payload = self._input_audit_bundle(Path(tmp))
+                payload.update(mutation)
+                path.write_text(json.dumps(payload), encoding="utf-8")
+                with self.assertRaises(DISCLOSURE.DisclosureError):
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+        for field in DISCLOSURE._INPUT_AUDIT_SCHEMA:
+            with self.subTest(missing=field), tempfile.TemporaryDirectory() as tmp:
+                bundle, path, payload = self._input_audit_bundle(Path(tmp))
+                del payload[field]
+                path.write_text(json.dumps(payload), encoding="utf-8")
+                with self.assertRaisesRegex(DISCLOSURE.DisclosureError, "incomplete"):
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_input_contract_aliases_reject_unreviewed_or_ambiguous_mappings(self) -> None:
+        for aliases in (
+            {"private_alias_sentinel": "gender"},
+            {"sex": "race"},
+            {"approved": "loan_approved", "decision": "loan_approved"},
+            {"sex": {"gender": "raw_value"}},
+            None,
+        ):
+            with self.subTest(aliases=aliases), tempfile.TemporaryDirectory() as tmp:
+                bundle, path, payload = self._input_audit_bundle(Path(tmp))
+                payload["column_aliases_applied"] = aliases
+                path.write_text(json.dumps(payload), encoding="utf-8")
+                with self.assertRaises(DISCLOSURE.DisclosureError) as error:
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+                self.assertNotIn("private_alias_sentinel", str(error.exception))
+
+    def test_input_contract_imputation_rejects_protected_or_unknown_columns(self) -> None:
+        for column in ("age", "gender", "race", "age_group", "loan_approved", "private_column_sentinel"):
+            with self.subTest(column=column), tempfile.TemporaryDirectory() as tmp:
+                bundle, path, payload = self._input_audit_bundle(Path(tmp))
+                payload["imputed_columns"] = {
+                    column: {"rows": 3, "fraction": 0.001, "strategy": "median"}
+                }
+                path.write_text(json.dumps(payload), encoding="utf-8")
+                with self.assertRaises(DISCLOSURE.DisclosureError) as error:
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+                self.assertNotIn("private_column_sentinel", str(error.exception))
+
+    def test_input_contract_imputation_rejects_bad_counts_and_raw_values(self) -> None:
+        base = {"rows": 3, "fraction": 0.001, "strategy": "median"}
+        mutations = (
+            {"rows": True}, {"rows": 0}, {"rows": -1}, {"rows": 3.0},
+            {"rows": 601, "fraction": round(601 / 3000, 6)},
+            {"fraction": True}, {"fraction": -0.1}, {"fraction": 0.1},
+            {"fraction": float("nan")}, {"fraction": float("inf")},
+            {"strategy": "mean"}, {"median": 12345}, {"raw_values": [1, 2]},
+        )
+        for mutation in mutations:
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as tmp:
+                bundle, path, payload = self._input_audit_bundle(Path(tmp))
+                payload["imputed_columns"] = {"income": {**base, **mutation}}
+                path.write_text(json.dumps(payload), encoding="utf-8")
+                with self.assertRaises(DISCLOSURE.DisclosureError):
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_input_contract_audit_cannot_extend_another_certificate_or_nested_object(self) -> None:
+        for relative, nested in (
+            ("certificates/synthetic_quality_certificate.json", False),
+            ("certificates/input_validation_certificate.json", True),
+        ):
+            with self.subTest(relative=relative, nested=nested), tempfile.TemporaryDirectory() as tmp:
+                bundle, input_path, payload = self._input_audit_bundle(Path(tmp))
+                fields = {field: payload[field] for field in DISCLOSURE._INPUT_AUDIT_SCHEMA}
+                if nested:
+                    payload["column_type_issues"] = {"nested_audit": fields}
+                    input_path.write_text(json.dumps(payload), encoding="utf-8")
+                else:
+                    path = bundle / relative
+                    candidate = json.loads(path.read_text())
+                    candidate.update(fields)
+                    path.write_text(json.dumps(candidate), encoding="utf-8")
+                with self.assertRaises(DISCLOSURE.DisclosureError):
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+
     @staticmethod
     def _set_current_srg_methods(payload: object) -> None:
         if isinstance(payload, list):

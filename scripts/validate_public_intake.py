@@ -193,7 +193,34 @@ _RUN_SUMMARY_AIR_RACE_SCHEMA_PATH = (
     "per_attribute",
     "race",
 )
+_INPUT_CERTIFICATE_LOCATION = "certificates/input_validation_certificate.json"
+# Exact #1855 producer audit surface. These fields disclose hashes, documented
+# header names and bounded aggregate counts, never uploaded values or medians.
+_INPUT_COLUMN_ALIASES = {
+    "approved": "loan_approved",
+    "decision": "loan_approved",
+    "fico_score": "credit_score",
+    "ethnicity": "race",
+    "sex": "gender",
+    "age_bin": "age_group",
+}
+_INPUT_IMPUTATION_COLUMNS = frozenset(
+    {"income", "credit_score", "loan_amount", "debt_to_income"}
+)
+_INPUT_IMPUTATION_ITEM_SCHEMA = {"rows": 0, "fraction": 0.0, "strategy": ""}
+_INPUT_AUDIT_SCHEMA = {
+    "raw_upload_sha256": "",
+    "raw_upload_sha256_source": "",
+    "column_aliases_applied": {alias: "" for alias in _INPUT_COLUMN_ALIASES},
+    "imputed_columns": {
+        column: _INPUT_IMPUTATION_ITEM_SCHEMA for column in _INPUT_IMPUTATION_COLUMNS
+    },
+}
 _REVIEWED_SCHEMA_EXTENSIONS = {
+    **{
+        (_INPUT_CERTIFICATE_LOCATION, field): schema
+        for field, schema in _INPUT_AUDIT_SCHEMA.items()
+    },
     (*_METRICS_RACE_SCHEMA_PATH, "configured_protected_groups"): [""],
     (*_METRICS_RACE_SCHEMA_PATH, "unknown_treatment"): "",
     (*_METRICS_RACE_SCHEMA_PATH, "suppressed_groups"): [
@@ -1023,6 +1050,67 @@ def _validate_certificate_signature_adornments(
         ) from exc
 
 
+def _validate_input_contract_audit(candidate: dict[str, Any], location: str) -> None:
+    """Bound the optional, complete input audit without disclosing raw values."""
+
+    present = _INPUT_AUDIT_SCHEMA.keys() & candidate.keys()
+    if not present:
+        return  # Historical certificates have none of this producer extension.
+    if present != _INPUT_AUDIT_SCHEMA.keys():
+        raise DisclosureError(f"{location} has an incomplete reviewed input audit")
+    digest = candidate["raw_upload_sha256"]
+    source = candidate["raw_upload_sha256_source"]
+    if digest is None:
+        if source is not None:
+            raise DisclosureError(f"{location} has an unbound input hash source")
+    elif (
+        not isinstance(digest, str)
+        or not _SHA256_RE.fullmatch(digest)
+        or not isinstance(source, str)
+        or source not in {"ingest_source_file", "dataset_upload_metadata.raw_sha256"}
+    ):
+        raise DisclosureError(f"{location} has malformed input hash provenance; value redacted")
+
+    aliases = candidate["column_aliases_applied"]
+    if not isinstance(aliases, dict):
+        raise DisclosureError(f"{location} has an invalid reviewed alias map")
+    targets: set[str] = set()
+    for alias, target in aliases.items():
+        if alias not in _INPUT_COLUMN_ALIASES or target != _INPUT_COLUMN_ALIASES[alias]:
+            raise DisclosureError(f"{location} has an unreviewed alias mapping; key/value redacted")
+        if target in targets:
+            raise DisclosureError(f"{location} has ambiguous reviewed alias mappings")
+        targets.add(target)
+
+    imputed = candidate["imputed_columns"]
+    if not isinstance(imputed, dict):
+        raise DisclosureError(f"{location} has an invalid reviewed imputation map")
+    if not imputed:
+        return
+    data_rows = candidate.get("data_rows")
+    if type(data_rows) is not int or data_rows <= 0:
+        raise DisclosureError(f"{location} has invalid input row count for imputation")
+    for column, record in imputed.items():
+        if (
+            column not in _INPUT_IMPUTATION_COLUMNS
+            or not isinstance(record, dict)
+            or set(record) != {"rows", "fraction", "strategy"}
+        ):
+            raise DisclosureError(f"{location} has an unreviewed imputation record; key redacted")
+        rows, fraction = record["rows"], record["fraction"]
+        if (
+            type(rows) is not int
+            or not 0 < rows <= data_rows
+            or isinstance(fraction, bool)
+            or not isinstance(fraction, (int, float))
+            or not 0 <= fraction <= 0.20
+            or record["strategy"] != "median"
+            or rows / data_rows > 0.20
+            or fraction != round(rows / data_rows, 6)
+        ):
+            raise DisclosureError(f"{location} has invalid imputation counts or strategy; value redacted")
+
+
 def _validate_certificate_semantics(
     candidate: Any, baseline: Any, location: str
 ) -> None:
@@ -1031,6 +1119,8 @@ def _validate_certificate_semantics(
     if not isinstance(candidate, dict) or not isinstance(baseline, dict):
         return
     _validate_certificate_signature_adornments(candidate, location)
+    if location == _INPUT_CERTIFICATE_LOCATION:
+        _validate_input_contract_audit(candidate, location)
     candidate_analysis = candidate.get("correlation_analysis")
     baseline_analysis = baseline.get("correlation_analysis")
     candidate_statistical = candidate.get("statistical_comparison")
