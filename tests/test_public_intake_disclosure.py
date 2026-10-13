@@ -1,4 +1,5 @@
 import csv
+import copy
 import importlib.util
 import json
 import shutil
@@ -18,6 +19,414 @@ SPEC.loader.exec_module(DISCLOSURE)
 
 
 class PublicIntakeDisclosureTests(unittest.TestCase):
+    def _age_metrics(self) -> dict:
+        # Independent complete aggregate: all five bands have a 50% rate.
+        protected = {"18-24": 100, "25-34": 200, "50-64": 300, "65+": 400}
+        pairs = {}
+        ref_ci = list(DISCLOSURE._wilson_95_interval(500, 1000))
+        for group, n in protected.items():
+            prot_ci = list(DISCLOSURE._wilson_95_interval(n // 2, n))
+            metric = {
+                "point": 1.0,
+                "ci95": [0.5, 2.0],
+                "p_value": 1.0,
+                "p_value_adjusted": 1.0,
+                "p_value_adjustment": "holm_bonferroni",
+                "method": "wilson+delta",
+            }
+            pairs[group] = {
+                "counts": {
+                    "ref_n": 1000,
+                    "prot_n": n,
+                    "ref_approved": 500,
+                    "prot_approved": n // 2,
+                },
+                "selection_rates": {
+                    "ref": {"p": 0.5, "ci95": ref_ci},
+                    "prot": {"p": 0.5, "ci95": prot_ci},
+                },
+                "air": metric,
+                "srg": {
+                    **metric,
+                    "point": 0.0,
+                    "ci95": [prot_ci[0] - ref_ci[1], prot_ci[1] - ref_ci[0]],
+                    "method": "conservative_wilson_endpoint_difference",
+                },
+                "small_n_flag": False,
+                "p_value_method": "two_proportion_z_test",
+                "confidence_level": 0.95,
+                "seed_material": "sha256:" + "a" * 64,
+            }
+        return {
+            "reference_group": "35-49",
+            "configured_reference_group": "35-49",
+            "configured_protected_groups": list(protected),
+            "unknown_treatment": "exclude",
+            "reference_group_selection_policy": "configured_reference_band",
+            "selection_rate_range": {
+                "min_group": "18-24",
+                "min_rate": 0.5,
+                "max_group": "35-49",
+                "max_rate": 0.5,
+            },
+            "pairs": pairs,
+            "worst_case_pair": "18-24",
+            "missing_groups": None,
+            "policy": {
+                "display_age_group_in_main_pdf": {
+                    "min_group_n": 300,
+                    "min_group_pct": 0.05,
+                }
+            },
+            "observed": {"total_n": 2000, "min_group_n": 100, "min_group_pct": 0.05},
+            "suppressed_groups": [
+                {"group": g, "n": n, "pct": n / 2000, "reasons": ["below_min_group_n"]}
+                for g, n in protected.items()
+                if n < 300
+            ],
+            "verdict_scope": "display_policy_conditional",
+            "display_in_main_pdf": False,
+        }
+
+    def _validate_age_fixture(self, age: dict) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = self._bundle(Path(tmp))
+            path = bundle / "intake/metrics_uncertainty.json"
+            payload = json.loads(path.read_text())
+            payload["fairness_uncertainty"]["age_group"] = age
+            path.write_text(json.dumps(payload))
+            DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_age_complete_aggregate_is_reviewed_metadata(self) -> None:
+        self._validate_age_fixture(self._age_metrics())
+
+    def test_age_supported_display_flag_is_retained_without_new_claim_scope(
+        self,
+    ) -> None:
+        age = self._age_metrics()
+        ci = list(DISCLOSURE._wilson_95_interval(500, 1000))
+        for pair in age["pairs"].values():
+            pair["counts"]["prot_n"] = 1000
+            pair["counts"]["prot_approved"] = 500
+            pair["selection_rates"]["prot"]["ci95"] = ci
+            pair["srg"]["ci95"] = [ci[0] - ci[1], ci[1] - ci[0]]
+        age["observed"] = {"total_n": 5000, "min_group_n": 1000, "min_group_pct": 0.2}
+        age["suppressed_groups"] = []
+        age["verdict_scope"] = "all_configured_groups"
+        age["display_in_main_pdf"] = True
+        self._validate_age_fixture(age)
+
+    def test_age_unknown_bands_fields_and_incomplete_pairs_fail_closed(self) -> None:
+        for mutation in (
+            "extra_pair",
+            "missing_pair",
+            "extra_field",
+            "wrong_reference",
+            "missing_groups",
+            "raw_values",
+            "null_pair",
+        ):
+            with self.subTest(mutation=mutation):
+                age = self._age_metrics()
+                if mutation == "extra_pair":
+                    age["pairs"]["private_band_sentinel"] = age["pairs"]["18-24"]
+                elif mutation == "missing_pair":
+                    del age["pairs"]["18-24"]
+                elif mutation == "extra_field":
+                    age["private_field_sentinel"] = 1
+                elif mutation == "wrong_reference":
+                    age["configured_reference_group"] = "65+"
+                elif mutation == "missing_groups":
+                    age["missing_groups"] = ["18-24"]
+                elif mutation == "raw_values":
+                    age["pairs"]["18-24"]["raw_values"] = [19]
+                else:
+                    age["pairs"]["18-24"] = None
+                with self.assertRaises(DISCLOSURE.DisclosureError) as error:
+                    self._validate_age_fixture(age)
+                self.assertNotIn("private_band_sentinel", str(error.exception))
+                self.assertNotIn("private_field_sentinel", str(error.exception))
+
+    def test_age_counts_intervals_methods_and_probability_tampering_fail(self) -> None:
+        for parts, bad in (
+            (("counts", "ref_n"), True),
+            (("counts", "ref_approved"), 499),
+            (("srg", "ci95"), [-0.1, 0.1]),
+            (("srg", "point"), 0.01),
+            (("air", "point"), 0.9),
+            (("air", "p_value"), 1.1),
+            (("air", "p_value_adjustment"), "none"),
+            (("air", "method"), "private_method"),
+            (("selection_rates", "ref"), {"p": 0.5, "ci95": [0.4, 0.6]}),
+            (("small_n_flag",), True),
+            (("seed_material",), "private_seed"),
+        ):
+            with self.subTest(parts=parts):
+                age = self._age_metrics()
+                node = age["pairs"]["18-24"]
+                for part in parts[:-1]:
+                    node = node[part]
+                node[parts[-1]] = bad
+                with self.assertRaises(DISCLOSURE.DisclosureError):
+                    self._validate_age_fixture(age)
+
+    def test_age_display_and_suppression_bind_disclosed_counts(self) -> None:
+        for mutation in (
+            "total",
+            "minimum",
+            "share",
+            "suppressed",
+            "duplicate",
+            "reason",
+            "count",
+            "scope",
+            "display",
+            "worst",
+            "range",
+        ):
+            with self.subTest(mutation=mutation):
+                age = self._age_metrics()
+                if mutation in ("total", "minimum", "share"):
+                    field = {
+                        "total": "total_n",
+                        "minimum": "min_group_n",
+                        "share": "min_group_pct",
+                    }[mutation]
+                    age["observed"][field] = 0
+                elif mutation == "suppressed":
+                    age["suppressed_groups"] = []
+                elif mutation == "duplicate":
+                    age["suppressed_groups"][1] = copy.deepcopy(
+                        age["suppressed_groups"][0]
+                    )
+                elif mutation in ("reason", "count"):
+                    age["suppressed_groups"][0][
+                        "reasons" if mutation == "reason" else "n"
+                    ] = [] if mutation == "reason" else 101
+                elif mutation == "scope":
+                    age["verdict_scope"] = "all_configured_groups"
+                elif mutation == "display":
+                    age["display_in_main_pdf"] = True
+                elif mutation == "worst":
+                    age["worst_case_pair"] = "65+"
+                else:
+                    age["selection_rate_range"]["min_rate"] = 0.49
+                with self.assertRaises(DISCLOSURE.DisclosureError):
+                    self._validate_age_fixture(age)
+
+    def test_age_config_and_policy_are_exact_at_reviewed_paths(self) -> None:
+        config = {
+            "reference": "35-49",
+            "protected": ["18-24", "25-34", "50-64", "65+"],
+            "unknown_treatment": "exclude",
+            "bands": [
+                {"label": "18-24", "min_age": 18, "max_age": 24},
+                {"label": "25-34", "min_age": 25, "max_age": 34},
+                {"label": "35-49", "min_age": 35, "max_age": 49},
+                {"label": "50-64", "min_age": 50, "max_age": 64},
+                {"label": "65+", "min_age": 65, "max_age": None},
+            ],
+        }
+        for mutation in (
+            None,
+            "band",
+            "overlap",
+            "fractional",
+            "reference",
+            "protected",
+            "threshold",
+            "bool",
+        ):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as tmp:
+                bundle = self._bundle(Path(tmp))
+                age = copy.deepcopy(config)
+                policy = {"min_group_n": 300, "min_group_pct": 0.05}
+                if mutation == "band":
+                    age["bands"][0]["label"] = "custom_band"
+                elif mutation == "overlap":
+                    age["bands"][0]["max_age"] = 25
+                elif mutation == "fractional":
+                    age["bands"][0]["min_age"] = 18.0
+                elif mutation == "reference":
+                    age["reference"] = "65+"
+                elif mutation == "protected":
+                    age["protected"].append("35-49")
+                elif mutation == "threshold":
+                    policy["min_group_n"] = 299
+                elif mutation == "bool":
+                    policy["min_group_pct"] = True
+                path = bundle / "config/fairness_config.yaml"
+                path.write_text(
+                    json.dumps(
+                        {
+                            "attributes": {"age_group": age},
+                            "policy": {"display_age_group_in_main_pdf": policy},
+                        }
+                    )
+                )
+                if mutation is None:
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+                else:
+                    with self.assertRaises(DISCLOSURE.DisclosureError):
+                        DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def _input_audit_bundle(self, root: Path) -> tuple[Path, Path, dict]:
+        bundle = self._bundle(root)
+        path = bundle / "certificates/input_validation_certificate.json"
+        payload = json.loads(
+            (ROOT / "intake/certificates/input_validation_certificate.json").read_text()
+        )
+        payload.update(
+            raw_upload_sha256="a" * 64,
+            raw_upload_sha256_source="dataset_upload_metadata.raw_sha256",
+            column_aliases_applied={},
+            imputed_columns={},
+        )
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        return bundle, path, payload
+
+    def test_input_contract_audit_accepts_exact_reviewed_aliases_and_counts(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle, path, payload = self._input_audit_bundle(Path(tmp))
+            payload["column_aliases_applied"] = {
+                "sex": "gender",
+                "fico_score": "credit_score",
+            }
+            payload["imputed_columns"] = {
+                "income": {"rows": 600, "fraction": 0.2, "strategy": "median"}
+            }
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_input_contract_audit_accepts_legacy_and_unavailable_hash(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle, path, payload = self._input_audit_bundle(Path(tmp))
+            payload["raw_upload_sha256"] = payload["raw_upload_sha256_source"] = None
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            DISCLOSURE.validate_bundle(bundle, ROOT)
+            for field in DISCLOSURE._INPUT_AUDIT_SCHEMA:
+                del payload[field]
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_input_contract_audit_requires_complete_bounded_hash_provenance(
+        self,
+    ) -> None:
+        bad_values = (
+            {"raw_upload_sha256": "a" * 63},
+            {"raw_upload_sha256": "A" * 64},
+            {"raw_upload_sha256": None},
+            {"raw_upload_sha256_source": None},
+            {"raw_upload_sha256_source": "unreviewed_source"},
+            {"raw_upload_sha256_source": {"raw_rows": []}},
+        )
+        for mutation in bad_values:
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as tmp:
+                bundle, path, payload = self._input_audit_bundle(Path(tmp))
+                payload.update(mutation)
+                path.write_text(json.dumps(payload), encoding="utf-8")
+                with self.assertRaises(DISCLOSURE.DisclosureError):
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+        for field in DISCLOSURE._INPUT_AUDIT_SCHEMA:
+            with self.subTest(missing=field), tempfile.TemporaryDirectory() as tmp:
+                bundle, path, payload = self._input_audit_bundle(Path(tmp))
+                del payload[field]
+                path.write_text(json.dumps(payload), encoding="utf-8")
+                with self.assertRaisesRegex(DISCLOSURE.DisclosureError, "incomplete"):
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_input_contract_aliases_reject_unreviewed_or_ambiguous_mappings(
+        self,
+    ) -> None:
+        for aliases in (
+            {"private_alias_sentinel": "gender"},
+            {"sex": "race"},
+            {"approved": "loan_approved", "decision": "loan_approved"},
+            {"sex": {"gender": "raw_value"}},
+            None,
+        ):
+            with self.subTest(aliases=aliases), tempfile.TemporaryDirectory() as tmp:
+                bundle, path, payload = self._input_audit_bundle(Path(tmp))
+                payload["column_aliases_applied"] = aliases
+                path.write_text(json.dumps(payload), encoding="utf-8")
+                with self.assertRaises(DISCLOSURE.DisclosureError) as error:
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+                self.assertNotIn("private_alias_sentinel", str(error.exception))
+
+    def test_input_contract_imputation_rejects_protected_or_unknown_columns(
+        self,
+    ) -> None:
+        for column in (
+            "age",
+            "gender",
+            "race",
+            "age_group",
+            "loan_approved",
+            "private_column_sentinel",
+        ):
+            with self.subTest(column=column), tempfile.TemporaryDirectory() as tmp:
+                bundle, path, payload = self._input_audit_bundle(Path(tmp))
+                payload["imputed_columns"] = {
+                    column: {"rows": 3, "fraction": 0.001, "strategy": "median"}
+                }
+                path.write_text(json.dumps(payload), encoding="utf-8")
+                with self.assertRaises(DISCLOSURE.DisclosureError) as error:
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+                self.assertNotIn("private_column_sentinel", str(error.exception))
+
+    def test_input_contract_imputation_rejects_bad_counts_and_raw_values(self) -> None:
+        base = {"rows": 3, "fraction": 0.001, "strategy": "median"}
+        mutations = (
+            {"rows": True},
+            {"rows": 0},
+            {"rows": -1},
+            {"rows": 3.0},
+            {"rows": 601, "fraction": round(601 / 3000, 6)},
+            {"fraction": True},
+            {"fraction": -0.1},
+            {"fraction": 0.1},
+            {"fraction": float("nan")},
+            {"fraction": float("inf")},
+            {"strategy": "mean"},
+            {"median": 12345},
+            {"raw_values": [1, 2]},
+        )
+        for mutation in mutations:
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as tmp:
+                bundle, path, payload = self._input_audit_bundle(Path(tmp))
+                payload["imputed_columns"] = {"income": {**base, **mutation}}
+                path.write_text(json.dumps(payload), encoding="utf-8")
+                with self.assertRaises(DISCLOSURE.DisclosureError):
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+
+    def test_input_contract_audit_cannot_extend_another_certificate_or_nested_object(
+        self,
+    ) -> None:
+        for relative, nested in (
+            ("certificates/synthetic_quality_certificate.json", False),
+            ("certificates/input_validation_certificate.json", True),
+        ):
+            with (
+                self.subTest(relative=relative, nested=nested),
+                tempfile.TemporaryDirectory() as tmp,
+            ):
+                bundle, input_path, payload = self._input_audit_bundle(Path(tmp))
+                fields = {
+                    field: payload[field] for field in DISCLOSURE._INPUT_AUDIT_SCHEMA
+                }
+                if nested:
+                    payload["column_type_issues"] = {"nested_audit": fields}
+                    input_path.write_text(json.dumps(payload), encoding="utf-8")
+                else:
+                    path = bundle / relative
+                    candidate = json.loads(path.read_text())
+                    candidate.update(fields)
+                    path.write_text(json.dumps(candidate), encoding="utf-8")
+                with self.assertRaises(DISCLOSURE.DisclosureError):
+                    DISCLOSURE.validate_bundle(bundle, ROOT)
+
     @staticmethod
     def _set_current_srg_methods(payload: object) -> None:
         if isinstance(payload, list):

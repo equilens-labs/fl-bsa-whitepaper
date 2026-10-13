@@ -133,6 +133,30 @@ This is a disclosure-format and bounded-value check, not cryptographic verificat
 authenticity and trust-root membership remain the responsibility of the product's release
 verification path.
 
+The input-validation certificate alone may carry the product's four-field input-contract audit:
+`raw_upload_sha256`, `raw_upload_sha256_source`, `column_aliases_applied`, and `imputed_columns`.
+It must carry all four or none. A raw hash is lowercase SHA-256 with an exact reviewed source
+label, or both hash/source are null to disclose unavailable provenance. Alias mappings are limited
+to the six documented product aliases, with their exact canonical targets and no ambiguous pair.
+Imputation records cover only income, credit score, loan amount and debt-to-income: positive integer
+cell counts, six-decimal count-derived fractions up to 20 percent, and the literal median strategy.
+Outcome and protected/demographic columns, arbitrary column names, medians, raw values, unknown
+record fields and extensions at other certificate or nested paths fail closed. Historical intake
+files remain unchanged. These audit fields record input treatment; they do not widen the
+gender/race characterization scope or establish signature authenticity, customer eligibility,
+legal/regulatory approval or publication authority.
+
+The release intake may also retain the producer's aggregate `age_group` metadata at its exact
+fairness-config, manifest, run-summary and uncertainty paths. This extension is bounded to the
+five configured bands (18–24, 25–34, 35–49, 50–64, 65+), the 35–49 reference, exclusion of unknown
+ages and the fixed display thresholds of 300 observations and 5 percent. The reviewed uncertainty
+case has all five bands, four complete comparisons and a positive reference selection rate;
+missing-band, custom-band and non-evaluable cases still fail closed pending separate review.
+Counts bind selection rates, Wilson/SRG intervals, observed support, suppressed groups, extrema
+and the display disposition. Private diagnostics, arbitrary labels and unreviewed shapes remain
+forbidden. This preserves producer engineering metadata; the paper generators still select only
+gender and race, and age display metadata grants no expanded characterization or regulatory claim.
+
 The consumer stages a complete replacement for the producer-managed surfaces:
 
 - `intake/*.csv` and `intake/*.json`
